@@ -1,0 +1,462 @@
+#include <util/std.h>
+#include <beacon_device.h>
+#include <app_std.h>
+#include <json/json.h>
+#include <fstream>
+#include <rtsp/server.h>
+#include <rtsp/stream/stream_manager.h>
+#include <rtmp/session_manager.h>
+
+LOG_HANDLE g_app_log;
+LOG_HANDLE g_rtsp_log;
+LOG_HANDLE g_rtmp_log;
+
+#define BEACON_APP_VER "1.0"
+static pthread_t g_thread_1s;
+#define TMP_DIR_PATH "/tmp/beacon"
+#define TMP_VERSION_FILE TMP_DIR_PATH"/version"
+#define TMP_UPTIME_FILE TMP_DIR_PATH"/uptime"
+#define TMP_UPTIME_FILE2 TMP_DIR_PATH"/uptime2"
+
+#define UPTIME_TIMER_INTERVAL 5
+static uint32_t g_uptime = 1;
+static int g_uptime_timer_cnt=0;
+
+int g_chn = 0;
+static int get_etc_file(char* buf,int buf_len,const char* path)
+{
+    if(access(path,F_OK) < 0)
+    {
+        return -1;
+    }
+
+    char cmd[255];
+    sprintf(cmd,"cat %s",path);
+    FILE* f = popen(cmd,"r");
+    if(f == NULL)
+    {
+        return -1;
+    }
+
+    char*line = NULL;
+    size_t len = 0;
+    if(getline(&line,&len,f) < 0
+            || line == NULL
+            || strlen(line) > buf_len)
+    {
+        if(line)
+        {
+            free(line);
+        }
+        pclose(f);
+        return -1;
+    }
+
+    sprintf(buf,"%s",line);
+    if(strlen(buf) > 0)
+    {
+        if(buf[strlen(buf) - 1] == '\r' || buf[strlen(buf) - 1] == '\n')
+        {
+            buf[strlen(buf) - 1] = '\0';
+        }
+    }
+
+    free(line);
+    pclose(f);
+
+    return 0;
+}
+
+static int write_etc_file(const char* path,const char* str,...)
+{
+    char buf[512];
+    va_list arg_ptr;
+    va_start(arg_ptr, str);
+    vsprintf(buf, str, arg_ptr);
+    va_end(arg_ptr);
+
+    strcat(buf,"\n");
+
+    FILE* f = fopen(path,"w");
+    if(f == NULL)
+    {
+        return -1;
+    }
+
+    fwrite(buf,1,strlen(buf) + 1,f); 
+
+    fclose(f);
+    return 0;
+}
+
+static int touch_file(const char* file)
+{
+    return write_etc_file(file,"");
+}
+
+static void update_dev_uptime()
+{
+    write_etc_file(TMP_UPTIME_FILE,"%d",g_uptime);
+
+    int days = g_uptime / (24 * 3600);
+    int hours = (g_uptime % (24 * 3600)) / 3600;
+    int min = ((g_uptime % (24 * 3600)) % 3600) / 60;
+    write_etc_file(TMP_UPTIME_FILE2,"%d days,%d hours,%d minutes",days,hours,min);
+}
+
+static void on_quit(int signal)
+{
+    fprintf(stderr,"on quit\n");
+
+    beacon_hnr_stop(g_chn);
+    beacon_encode_stop_capture();
+    beacon_osd_date_set(g_chn,0,0,48,0,0,1,16,16,0,0);
+    beacon_osd_name_set(g_chn,0,0,48,0,0,1,3840,2160,NULL);
+    beacon_encode_stop(g_chn,0);
+
+    beacon_vi_release(g_chn);
+
+    beacon_vi_mipi_enable(g_chn,0,0);
+    beacon_vi_power_enable(g_chn,0);
+
+    beacon_device_release();
+
+    beacon_stop_log(g_app_log);
+    printf("quit ok\n");
+    exit(0);
+}
+
+static void * thread_1s(void *arg)
+{
+    while(1)
+    {
+        //uptime
+        g_uptime_timer_cnt++;
+        if(g_uptime_timer_cnt >= UPTIME_TIMER_INTERVAL)
+        {
+            update_dev_uptime();
+            g_uptime_timer_cnt = 0;
+        }
+        g_uptime++;
+
+        //ae
+        beacon_img_value_t v;
+        int ret = beacon_img_get_current_value(g_chn,&v);
+        if(ret == 0)
+        {
+            int exp_time = v.exp_time != 0 ? v.exp_time : 1;
+            APP_WRITE_LOG_DEBUG("shutter=1/%ds(%dus),again=%d,dgain=%d,ispgain=%d,iso=%d,is_max_exposure=%d,is_exposure_stable=%d",
+                    1000000 / exp_time,exp_time,
+                    v.again,
+                    v.dgain,
+                    v.ispgain,
+                    v.iso,
+                    v.is_max_exposure,
+                    v.is_exposure_stable);
+        }
+
+        sleep(1);
+    }
+
+    return NULL;
+}
+
+void update_dev_version()
+{
+    write_etc_file(TMP_VERSION_FILE,"app(ver)=%s,dev(ver)=%s",BEACON_APP_VER,beacon_device_version());
+}
+
+void touch_flag_file()
+{
+    char flag_file[255];
+    sprintf(flag_file,"%s/start",TMP_DIR_PATH);
+    touch_file(flag_file);
+}
+
+static void init_tmp_files()
+{
+    touch_flag_file();
+
+    update_dev_version();
+}
+
+static void on_frame(int type,const char* buf,int len)
+{
+}
+
+static void on_nalu(int chn,int stream,int type,uint64_t time_stamp,const char* buf,int len,int64_t userdata)
+{
+    static char* g_frame_buf = NULL;
+    static unsigned int g_frame_len = 0;
+    if(g_frame_buf == NULL)
+    {
+        g_frame_buf = new char[1024 * 1024];
+        g_frame_len = 0;
+    }
+
+    memcpy(g_frame_buf + g_frame_len, buf, len);
+    g_frame_len += len;
+
+    int nalu_type = buf[4] & 0x1f;
+    switch(nalu_type)
+    {
+        case 0x1:
+        case 0x5:
+            {
+                on_frame(nalu_type,g_frame_buf, g_frame_len);
+                g_frame_len = 0;
+                break;
+            }
+    }
+}
+
+static void on_stream(int chn,int stream,int type,uint64_t time_stamp,const char* buf,int len,int64_t userdata)
+{
+    if(type == 2)
+    {
+        //audio
+        return;
+    }
+
+    //printf("chn=%d,stream=%d,type=%d,len=%d,%02x,%02x,%02x,%02x,%02x\n",chn,stream,type,len,buf[0],buf[1],buf[2],buf[3],buf[4]);
+
+    beacon::util::stream_head sh;
+    sh.len = len + sizeof(sh);
+    sh.type = STREAM_NALU_SLICE;    
+    sh.time_stamp = time_stamp * 1000;
+    sh.tag = BEACON_TAG;
+    sh.sys_time = time(NULL);  
+    sh.nalu_count = 1;         
+    sh.nalu[0].data = (char*)buf + 4;
+    sh.nalu[0].size = len - 4; 
+    sh.nalu[0].timestamp = time_stamp * 90;
+
+    beacon::rtsp::stream_manager::instance()->process_data(chn,stream,&sh,buf,len);
+    beacon::rtmp::session_manager::instance()->process_data(chn,stream,&sh,(uint8_t*)buf,len);
+
+    on_nalu(chn,stream,type,time_stamp,buf,len,userdata);
+}
+
+#define VI_FILE_PATH "/opt/beacon/etc/vi.json"
+static beacon_vin_t g_vi_info[MAX_CHANNEL];
+static void init_vi_info()
+{
+    Json::Value root;
+    for(auto i = 0; i < MAX_CHANNEL; i++)
+    {
+        std::string sns = "sensor" + std::to_string(i + 1);
+
+        if(i < 4)
+        {
+            sprintf(g_vi_info[i].name,"OS04A10");
+            g_vi_info[i].w = 2688;
+            g_vi_info[i].h = 1520;
+            g_vi_info[i].fr = 30;
+            g_vi_info[i].flip = 0;
+        }
+        else
+        {
+            sprintf(g_vi_info[i].name,"IMX290");
+            g_vi_info[i].w = 1920;
+            g_vi_info[i].h = 1080;
+            g_vi_info[i].fr = 30;
+            g_vi_info[i].flip = (i == 5) ? 1 : 0;
+        }
+
+        root[sns]["name"] = g_vi_info[i].name;
+        root[sns]["w"] = g_vi_info[i].w;
+        root[sns]["h"] = g_vi_info[i].h;
+        root[sns]["fr"] = g_vi_info[i].fr;
+        root[sns]["flip"] = g_vi_info[i].flip;
+    }
+
+    std::string str= root.toStyledString();
+    std::ofstream ofs;
+    ofs.open(VI_FILE_PATH);
+    ofs << str;
+    ofs.close();
+}
+
+static int get_vi_info()
+{
+    try
+    {
+        if(access(VI_FILE_PATH,F_OK) < 0)
+        {
+            init_vi_info();
+
+            if(access(VI_FILE_PATH,F_OK) < 0)
+            {
+                return -1;
+            }
+        }
+
+        std::ifstream ifs;
+        ifs.open(VI_FILE_PATH);
+        if(!ifs.is_open())
+        {
+            return -1;
+        }
+        Json::Reader reader;  
+        Json::Value root; 
+        if (!reader.parse(ifs, root, false)) 
+        {
+            return -1;
+        }
+
+        Json::Value node; 
+        for(auto i = 0; i < MAX_CHANNEL; i++)
+        {
+            std::string sns = "sensor" + std::to_string(i + 1);
+            node = root[sns];
+
+            sprintf(g_vi_info[i].name,"%s",node["name"].asCString());
+            g_vi_info[i].w = node["w"].asInt();
+            g_vi_info[i].h = node["h"].asInt();
+            g_vi_info[i].fr = node["fr"].asInt();
+            g_vi_info[i].flip = node["flip"].asInt();
+        }
+
+        ifs.close();
+
+        return 0;
+    }
+    catch(...)
+    {
+        return -1;
+    }
+}
+
+int main(int argc,char* argv[])
+{
+    signal(SIGINT,on_quit);
+    signal(SIGQUIT,on_quit);
+    signal(SIGTERM,on_quit);
+
+    get_vi_info();
+    for(auto i = 0; i < MAX_CHANNEL; i++)
+    {
+        printf("sensor%d:\n",i + 1);
+        printf("\tname:%s\n",g_vi_info[i].name);
+        printf("\tw:%d\n",g_vi_info[i].w);
+        printf("\th:%d\n",g_vi_info[i].h);
+        printf("\tflip:%d\n",g_vi_info[i].flip);
+    }
+
+    int chn = 0;
+    if(argc > 1)
+    {
+        chn = atoi(argv[1]);
+    }
+    g_chn = chn;
+    printf("g_chn=%d\n",g_chn);
+
+    if(access(TMP_DIR_PATH,F_OK) != 0)
+    {
+        mkdir(TMP_DIR_PATH,0777);
+    }
+
+    g_app_log = beacon_start_log("beacon_app",BEACON_LOG_MODE_CONSOLE,BEACON_LOG_DEBUG,NULL,0);
+    APP_WRITE_LOG_INFO("==========================star========================");
+
+    g_rtsp_log = beacon_start_log("beacon_rtsp",BEACON_LOG_MODE_CONSOLE,BEACON_LOG_INFO,NULL,0);
+    g_rtmp_log = beacon_start_log("beacon_rtmp",BEACON_LOG_MODE_CONSOLE,BEACON_LOG_INFO,NULL,0);
+
+    init_tmp_files();
+
+    APP_WRITE_LOG_INFO("device ver=%s",beacon_device_version());
+
+    beacon_device_set_log(1,BEACON_LOG_DEBUG,"/tmp/log.txt",100 *1024);
+   
+    //device init
+    int ret = 0;
+    ret = beacon_device_init(BEACON_DEV_MODE_0);
+    if(ret != BEACON_ERR_SUCCESS)
+    {
+        printf("11\n");
+        return -1;
+    }
+
+    ret = beacon_vi_power_enable(chn,1);
+    if(ret < 0)
+    {
+        return -1;
+    }
+    usleep(100000);
+    beacon_vi_mipi_enable(chn,1,1);
+
+    //vi init
+    ret = beacon_vi_init(chn,&g_vi_info[g_chn]);
+    if(ret != BEACON_ERR_SUCCESS)
+    {
+        return -1;
+    }
+
+    //ae 
+    ret = beacon_img_enable_ae(chn,1,5,10000);
+    if(ret != BEACON_ERR_SUCCESS)
+    {
+        return -1;
+    }
+
+    //encode start
+    beacon_encode_register_stream_callback(CALLBACK_FUN_NALU,on_stream,0);
+    beacon_h264_config_t main_enc;
+    memset(&main_enc,0,sizeof(main_enc));
+    main_enc.profile = 0;
+    main_enc.gop_interval = 30;
+    main_enc.bitrate_control = 0;
+    main_enc.bitrate_avg = 4000;
+    ret = beacon_encode_video_set_arg(chn,0,BEACON_RESOLUTION_1920_1080,30,BEACON_VIDEO_ENCODE_H264,&main_enc);
+    if(ret != BEACON_ERR_SUCCESS)
+    {
+        return -1;
+    }
+    ret = beacon_encode_start(chn,0);
+    if(ret != BEACON_ERR_SUCCESS)
+    {
+        return -1;
+    }
+    ret = beacon_encode_start_capture();
+    if(ret != BEACON_ERR_SUCCESS)
+    {
+        return -1;
+    }
+
+    //osd
+    ret = beacon_osd_date_set(chn,0,1,48,0,0,1,16,16,0,0);
+    if(ret != BEACON_ERR_SUCCESS)
+    {
+        return -1;
+    }
+
+    char name[32];
+    sprintf(name,"通道%d",chn + 1);
+    ret = beacon_osd_name_set(chn,0,1,48,0,0,1,1920,1080,name);
+    if(ret != BEACON_ERR_SUCCESS)
+    {
+        return -1;
+    }
+
+    pthread_create(&g_thread_1s,NULL,thread_1s,NULL);
+
+    beacon_scene_start();
+    beacon_hnr_start(chn);
+
+    beacon::rtsp::rtsp_server rs(554);
+    if(!rs.run())
+    {
+        APP_WRITE_LOG_ERROR("Start rtsp server failed!!!");
+        return -1;
+    }
+
+    //rtmp
+    std::string rtmp_url = "rtmp://192.168.0.184/live/" + std::to_string(chn + 1);
+    beacon::rtmp::session_manager::instance()->create_session(chn,0,rtmp_url.c_str(),60);
+    
+    while(1)
+    {
+        sleep(1);
+    }
+    return 0;
+}
