@@ -48,6 +48,11 @@ SRCXX += rtsp/rtp_serialize/rtp_serialize.cpp
 SRCXX += rtmp/session.cpp
 SRCXX += rtmp/session_manager.cpp
 
+#surpport scene
+SCENE_PATH = ../scene_auto
+INC_PATH += -I$(SCENE_PATH)/include
+INC_PATH += -I$(SCENE_PATH)/src/sample
+
 LIBS += -Wl,--start-group
 
 LIBS += $(THIRD_LIBRARY_PATH)/rtmpdump/librtmp/mybuild_aarch64_v01c01_linux_gnu/lib/librtmp.a
@@ -57,6 +62,14 @@ LIBS += $(THIRD_LIBRARY_PATH)/libevent-2.0.18-stable/mybuild_aarch64_v01c01_linu
 LIBS += $(THIRD_LIBRARY_PATH)/freetype-2.7.1/mybuild_aarch64_v01c01_linux_gnu/lib/libfreetype.a
 LIBS += ../beacon_device/libbeacon_device.a 
 LIBS += $(MPI_LIBS) $(SENSOR_LIBS) $(AUDIO_LIBA) $(REL_LIB)/libsecurec.a
+
+LIBS += $(SCENE_PATH)/src/core/ot_scene.o
+LIBS += $(SCENE_PATH)/src/core/ot_scene_setparam.o
+LIBS += $(SCENE_PATH)/src/core/scene_setparam_inner.o
+LIBS += $(SCENE_PATH)/src/sample/scene_loadparam.o
+LIBS += $(SCENE_PATH)/tools/configaccess/src/ot_confaccess.o
+LIBS += ../common/sample_comm_vi.o
+LIBS += ../common/sample_comm_isp.o
 
 LIBS+= -Wl,--end-group
 

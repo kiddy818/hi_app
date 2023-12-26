@@ -6,6 +6,11 @@
 #include <rtsp/server.h>
 #include <rtsp/stream/stream_manager.h>
 #include <rtmp/session_manager.h>
+extern "C"
+{
+#include <ot_scene.h>
+#include <scene_loadparam.h>
+}
 
 LOG_HANDLE g_app_log;
 LOG_HANDLE g_rtsp_log;
@@ -21,6 +26,16 @@ static pthread_t g_thread_1s;
 #define UPTIME_TIMER_INTERVAL 5
 static uint32_t g_uptime = 1;
 static int g_uptime_timer_cnt=0;
+
+typedef struct
+{
+    int enable;
+    char dir_path[255];
+    int mode;
+    ot_scene_param scene_param;
+    ot_scene_video_mode video_mode;
+}scene_info_t;
+scene_info_t g_scene_info;
 
 int g_chn = 0;
 static int get_etc_file(char* buf,int buf_len,const char* path)
@@ -108,7 +123,7 @@ static void on_quit(int signal)
 {
     fprintf(stderr,"on quit\n");
 
-    beacon_hnr_stop(g_chn);
+    ot_scene_deinit();
     beacon_encode_stop_capture();
     beacon_osd_date_set(g_chn,0,0,48,0,0,1,16,16,0,0);
     beacon_osd_name_set(g_chn,0,0,48,0,0,1,3840,2160,NULL);
@@ -327,6 +342,63 @@ static int get_vi_info()
     }
 }
 
+#define SCENE_FILE_PATH "/opt/beacon/scene/scene.json"
+static void init_scene_info()
+{
+    Json::Value root;
+
+    root["scene"]["enable"] = 1;
+    root["scene"]["mode"] = 0;
+    root["scene"]["dir_path"] = "/opt/beacon/scene/param/sensor_os04a10";
+    std::string str= root.toStyledString();
+    std::ofstream ofs;
+    ofs.open(SCENE_FILE_PATH);
+    ofs << str;
+    ofs.close();
+}
+
+static int get_scene_info()
+{
+    try
+    {
+        if(access(SCENE_FILE_PATH,F_OK) < 0)
+        {
+            init_scene_info();
+
+            if(access(SCENE_FILE_PATH,F_OK) < 0)
+            {
+                return -1;
+            }
+        }
+
+        std::ifstream ifs;
+        ifs.open(SCENE_FILE_PATH);
+        if(!ifs.is_open())
+        {
+            return -1;
+        }
+        Json::Reader reader;  
+        Json::Value root; 
+        if (!reader.parse(ifs, root, false)) 
+        {
+            return -1;
+        }
+
+        Json::Value node; 
+        g_scene_info.enable = root["scene"]["enable"].asInt();
+        g_scene_info.mode = root["scene"]["mode"].asInt();
+        sprintf(g_scene_info.dir_path,"%s",root["scene"]["dir_path"].asCString());
+
+        ifs.close();
+
+        return 0;
+    }
+    catch(...)
+    {
+        return -1;
+    }
+}
+
 int main(int argc,char* argv[])
 {
     signal(SIGINT,on_quit);
@@ -440,9 +512,6 @@ int main(int argc,char* argv[])
 
     pthread_create(&g_thread_1s,NULL,thread_1s,NULL);
 
-    beacon_scene_start();
-    beacon_hnr_start(chn);
-
     beacon::rtsp::rtsp_server rs(554);
     if(!rs.run())
     {
@@ -454,6 +523,38 @@ int main(int argc,char* argv[])
     std::string rtmp_url = "rtmp://192.168.0.184/live/" + std::to_string(chn + 1);
     beacon::rtmp::session_manager::instance()->create_session(chn,0,rtmp_url.c_str(),60);
     
+    //scene
+    get_scene_info();
+    printf("scene info\n");
+    printf("\tenable:%d\n",g_scene_info.enable);
+    printf("\tmode:%d\n",g_scene_info.mode);
+    printf("\tdir_path:%s\n",g_scene_info.dir_path);
+
+    if(g_scene_info.enable)
+    {
+        ret = ot_scene_create_param(g_scene_info.dir_path,&g_scene_info.scene_param,&g_scene_info.video_mode);
+        if(ret != TD_SUCCESS)
+        {
+            APP_WRITE_LOG_ERROR("ot_scene_create_param!!!");
+            return -1;
+        }
+
+        ret = ot_scene_init(&g_scene_info.scene_param);
+        if(ret != TD_SUCCESS)
+        {
+            APP_WRITE_LOG_ERROR("ot_scene_init!!!");
+            return -1;
+        }
+
+        int mode = g_scene_info.mode;
+        ret = ot_scene_set_scene_mode(&(g_scene_info.video_mode.video_mode[mode]));
+        if(ret != TD_SUCCESS)
+        {
+            APP_WRITE_LOG_ERROR("ot_scene_init!!!");
+            return -1;
+        }
+    }
+
     while(1)
     {
         sleep(1);
