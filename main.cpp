@@ -6,6 +6,8 @@
 #include <rtsp/server.h>
 #include <rtsp/stream/stream_manager.h>
 #include <rtmp/session_manager.h>
+#include <aiisp_bnr.h>
+
 extern "C"
 {
 #include <ot_scene.h>
@@ -35,7 +37,16 @@ typedef struct
     ot_scene_param scene_param;
     ot_scene_video_mode video_mode;
 }scene_info_t;
-scene_info_t g_scene_info;
+static scene_info_t g_scene_info;
+
+typedef struct
+{
+    int enable;
+    int mode; //0:bnr 1:drc 2:3dnr
+    char model_file[255];
+    aiisp* obj;
+}aiisp_info_t;
+static aiisp_info_t g_aiisp_info;
 
 int g_chn = 0;
 static int get_etc_file(char* buf,int buf_len,const char* path)
@@ -123,7 +134,22 @@ static void on_quit(int signal)
 {
     fprintf(stderr,"on quit\n");
 
-    ot_scene_deinit();
+    if(g_aiisp_info.enable)
+    {
+        if(g_aiisp_info.obj)
+        {
+            g_aiisp_info.obj->stop();
+            delete g_aiisp_info.obj;
+        }
+
+        aiisp_bnr::release();
+    }
+
+    if(g_scene_info.enable)
+    {
+        ot_scene_deinit();
+    }
+
     beacon_encode_stop_capture();
     beacon_osd_date_set(g_chn,0,0,48,0,0,1,16,16,0,0);
     beacon_osd_name_set(g_chn,0,0,48,0,0,1,3840,2160,NULL);
@@ -399,6 +425,61 @@ static int get_scene_info()
     }
 }
 
+#define AIISP_FILE_PATH "/opt/beacon/aiisp/aiisp.json"
+static void init_aiisp_info()
+{
+    Json::Value root;
+
+    root["aiisp"]["enable"] = 1;
+    root["aiisp"]["model_file"] = "/opt/beacon/aiisp/aibnr/model/aibnr_model_denoise_priority.bin";
+    std::string str= root.toStyledString();
+    std::ofstream ofs;
+    ofs.open(AIISP_FILE_PATH);
+    ofs << str;
+    ofs.close();
+}
+
+static int get_aiisp_info()
+{
+    try
+    {
+        if(access(AIISP_FILE_PATH,F_OK) < 0)
+        {
+            init_aiisp_info();
+
+            if(access(AIISP_FILE_PATH,F_OK) < 0)
+            {
+                return -1;
+            }
+        }
+
+        std::ifstream ifs;
+        ifs.open(AIISP_FILE_PATH);
+        if(!ifs.is_open())
+        {
+            return -1;
+        }
+        Json::Reader reader;  
+        Json::Value root; 
+        if (!reader.parse(ifs, root, false)) 
+        {
+            return -1;
+        }
+
+        Json::Value node; 
+        g_aiisp_info.enable = root["aiisp"]["enable"].asInt();
+        sprintf(g_aiisp_info.model_file,"%s",root["aiisp"]["model_file"].asCString());
+
+        ifs.close();
+
+        return 0;
+    }
+    catch(...)
+    {
+        return -1;
+    }
+}
+
 int main(int argc,char* argv[])
 {
     signal(SIGINT,on_quit);
@@ -445,17 +526,8 @@ int main(int argc,char* argv[])
     ret = beacon_device_init(BEACON_DEV_MODE_0);
     if(ret != BEACON_ERR_SUCCESS)
     {
-        printf("11\n");
         return -1;
     }
-
-    ret = beacon_vi_power_enable(chn,1);
-    if(ret < 0)
-    {
-        return -1;
-    }
-    usleep(100000);
-    beacon_vi_mipi_enable(chn,1,1);
 
     //vi init
     ret = beacon_vi_init(chn,&g_vi_info[g_chn]);
@@ -553,6 +625,21 @@ int main(int argc,char* argv[])
             APP_WRITE_LOG_ERROR("ot_scene_init!!!");
             return -1;
         }
+    }
+
+    //aiisp
+    get_aiisp_info();
+    printf("aiisp info\n");
+    printf("\tenable:%d\n",g_aiisp_info.enable);
+    printf("\tmode:%d\n",g_aiisp_info.mode);
+    printf("\tmodel_file:%s\n",g_aiisp_info.model_file);
+
+    if(g_aiisp_info.mode == 0)
+    {
+        //aibnr
+        aiisp_bnr::init(g_aiisp_info.model_file,g_vi_info[g_chn].w,g_vi_info[g_chn].h,0);
+        g_aiisp_info.obj = new aiisp_bnr(g_chn);
+        g_aiisp_info.obj->start();
     }
 
     while(1)

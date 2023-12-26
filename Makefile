@@ -15,6 +15,8 @@ INC_PATH += -I./rtsp/rtp_session/
 
 INC_PATH += -I../beacon_device/
 
+INC_PATH += -I./aiisp/
+
 INC_PATH += -I$(THIRD_LIBRARY_PATH)/boost_1_60_0/mybuild_aarch64_mix210/include/
 INC_PATH += -I$(THIRD_LIBRARY_PATH)/log4cpp/mybuild_aarch64_v01c01_linux_gnu/include/
 INC_PATH += -I$(THIRD_LIBRARY_PATH)/libevent-2.0.18-stable/mybuild_aarch64_v01c01_linux_gnu/include
@@ -47,6 +49,10 @@ SRCXX += rtsp/rtp_serialize/rtp_serialize.cpp
 #rtmp
 SRCXX += rtmp/session.cpp
 SRCXX += rtmp/session_manager.cpp
+
+#aiisp
+SRCXX += aiisp/aiisp.cpp
+SRCXX += aiisp/aiisp_bnr.cpp
 
 #surpport scene
 SCENE_PATH = ../scene_auto
