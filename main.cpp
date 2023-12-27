@@ -7,6 +7,7 @@
 #include <rtsp/stream/stream_manager.h>
 #include <rtmp/session_manager.h>
 #include <aiisp_bnr.h>
+#include <aiisp_drc.h>
 
 extern "C"
 {
@@ -143,6 +144,7 @@ static void on_quit(int signal)
         }
 
         aiisp_bnr::release();
+        aiisp_drc::release();
     }
 
     if(g_scene_info.enable)
@@ -605,12 +607,22 @@ int main(int argc,char* argv[])
     printf("\tmodel_file:%s\n",g_aiisp_info.model_file);
     if(g_aiisp_info.enable)
     {
-        if(g_aiisp_info.mode == 0)
+        switch(g_aiisp_info.mode)
         {
-            //aibnr
-            aiisp_bnr::init(g_aiisp_info.model_file,g_vi_info[g_chn].w,g_vi_info[g_chn].h,0);
-            g_aiisp_info.obj = new aiisp_bnr(g_chn);
-            g_aiisp_info.obj->start();
+            case 0://aibnr
+                {
+                    aiisp_bnr::init(g_aiisp_info.model_file,g_vi_info[g_chn].w,g_vi_info[g_chn].h,0);
+                    g_aiisp_info.obj = new aiisp_bnr(g_chn);
+                    g_aiisp_info.obj->start();
+                    break;
+                }
+            case 1://aidrc
+                {
+                    aiisp_drc::init(g_aiisp_info.model_file,g_vi_info[g_chn].w,g_vi_info[g_chn].h,0);
+                    g_aiisp_info.obj = new aiisp_drc(g_chn);
+                    g_aiisp_info.obj->start();
+                    break;
+                }
         }
     }
 

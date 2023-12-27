@@ -67,3 +67,17 @@ fail_0:
     return false;
 }
 
+ot_vb_pool aiisp::create_pool(td_u64 blk_size,td_u32 blk_cnt,ot_vb_remap_mode mode)
+{
+    ot_vb_pool_cfg vb_pool_cfg = {0};
+
+    vb_pool_cfg.blk_size = blk_size;
+    vb_pool_cfg.blk_cnt = blk_cnt;
+    vb_pool_cfg.remap_mode = mode;
+    return ss_mpi_vb_create_pool(&vb_pool_cfg);
+}
+
+void aiisp::destroy_pool(ot_vb_pool pool_id)
+{
+    ss_mpi_vb_destroy_pool(pool_id);
+}

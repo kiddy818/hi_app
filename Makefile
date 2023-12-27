@@ -53,6 +53,7 @@ SRCXX += rtmp/session_manager.cpp
 #aiisp
 SRCXX += aiisp/aiisp.cpp
 SRCXX += aiisp/aiisp_bnr.cpp
+SRCXX += aiisp/aiisp_drc.cpp
 
 #surpport scene
 SCENE_PATH = ../scene_auto

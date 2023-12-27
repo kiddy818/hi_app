@@ -1,16 +1,16 @@
-#ifndef aiisp_bnr_include_h
-#define aiisp_bnr_include_h
+#ifndef aiisp_drc_include_h
+#define aiisp_drc_include_h
 
 #include "aiisp.h"
-#include <ot_common_aibnr.h>
+#include <ot_common_aidrc.h>
 
-class aiisp_bnr
+class aiisp_drc
     :public aiisp
 {
 public:
-    aiisp_bnr(int pipe);
+    aiisp_drc(int pipe);
 
-    ~aiisp_bnr() override;
+    ~aiisp_drc() override;
 
     static bool init(const char* model,int w,int h,int is_wdr_mode);
 
@@ -24,9 +24,10 @@ private:
     int m_pipe;
 
 private:
-    static ot_aibnr_model g_model_info;
+    static ot_aidrc_model g_model_info;
     static td_s32 g_model_id;
-    static ot_vb_pool g_aiisp_bnr_pool;
+    static ot_vb_pool g_aiisp_drc_in_pool;
+    static ot_vb_pool g_aiisp_drc_out_pool;
 };
 
 #endif
