@@ -4,6 +4,7 @@
 
 ot_aibnr_model aiisp_bnr::g_model_info;
 td_s32 aiisp_bnr::g_model_id = -1;
+ot_vb_pool aiisp_bnr::g_aiisp_pool = OT_VB_INVALID_POOL_ID;
 
 aiisp_bnr::aiisp_bnr(int pipe)
     :m_pipe(pipe)
@@ -46,6 +47,19 @@ bool aiisp_bnr::init(const char* model_file,int w,int h,int is_wdr_mode)
         return false;
     }
 
+    td_s32 blk_size;
+    ot_vb_pool_cfg vb_pool_cfg = {0};
+    blk_size = ot_aibnr_get_pic_buf_size(w, h);
+    vb_pool_cfg.blk_size = blk_size;
+    vb_pool_cfg.blk_cnt = 7;
+    vb_pool_cfg.remap_mode = OT_VB_REMAP_MODE_NONE;
+    g_aiisp_pool = ss_mpi_vb_create_pool(&vb_pool_cfg);
+    if(g_aiisp_pool == OT_VB_INVALID_POOL_ID)
+    {
+        printf("[%s]: ss_mpi_vb_create_pool with error 0x%x\n",__FUNCTION__,ret);
+        return false;
+    }
+
     return true;
 }
 
@@ -62,11 +76,28 @@ void aiisp_bnr::release()
     {
         ss_mpi_sys_mmz_free(g_model_info.model.mem_info.phys_addr, g_model_info.model.mem_info.virt_addr);
     }
+
+    if (g_aiisp_pool != OT_VB_INVALID_POOL_ID)
+    {
+        ss_mpi_vb_destroy_pool(g_aiisp_pool);
+        g_aiisp_pool = OT_VB_INVALID_POOL_ID;
+    }
 }
 
 bool aiisp_bnr::start()
 {
     td_s32 ret;
+    
+    ot_aiisp_pool pool_attr;
+    memset(&pool_attr,0,sizeof(pool_attr));
+    pool_attr.aiisp_type = OT_AIISP_TYPE_AIBNR;
+    pool_attr.aibnr_pool.vb_pool = g_aiisp_pool;
+    ret = ss_mpi_vi_attach_aiisp_vb_pool(m_pipe, &pool_attr);
+    if(ret != TD_SUCCESS)
+    {
+        printf("[%s]: ss_mpi_vi_attach_aiisp_vb_pool failed with error 0x%x\n",__FUNCTION__,ret);
+        return false;
+    }
 
     ret = ss_mpi_aibnr_enable(m_pipe);
     if(ret != TD_SUCCESS)
@@ -110,6 +141,7 @@ void aiisp_bnr::stop()
         return ;
     }
 
+    ss_mpi_vi_detach_aiisp_vb_pool(m_pipe, OT_AIISP_TYPE_AIBNR);
     return ;
 }
 

@@ -431,7 +431,8 @@ static void init_aiisp_info()
     Json::Value root;
 
     root["aiisp"]["enable"] = 1;
-    root["aiisp"]["model_file"] = "/opt/beacon/aiisp/aibnr/model/aibnr_model_denoise_priority.bin";
+    root["aiisp"]["mode"] = 0;
+    root["aiisp"]["model_file"] = "/opt/beacon/aiisp/aibnr/model/aibnr_model_denoise_priority_lite.bin";
     std::string str= root.toStyledString();
     std::ofstream ofs;
     ofs.open(AIISP_FILE_PATH);
@@ -468,6 +469,7 @@ static int get_aiisp_info()
 
         Json::Value node; 
         g_aiisp_info.enable = root["aiisp"]["enable"].asInt();
+        g_aiisp_info.mode = root["aiisp"]["mode"].asInt();
         sprintf(g_aiisp_info.model_file,"%s",root["aiisp"]["model_file"].asCString());
 
         ifs.close();
@@ -595,13 +597,29 @@ int main(int argc,char* argv[])
     std::string rtmp_url = "rtmp://192.168.0.184/live/" + std::to_string(chn + 1);
     beacon::rtmp::session_manager::instance()->create_session(chn,0,rtmp_url.c_str(),60);
     
+    //aiisp
+    get_aiisp_info();
+    printf("aiisp info\n");
+    printf("\tenable:%d\n",g_aiisp_info.enable);
+    printf("\tmode:%d\n",g_aiisp_info.mode);
+    printf("\tmodel_file:%s\n",g_aiisp_info.model_file);
+    if(g_aiisp_info.enable)
+    {
+        if(g_aiisp_info.mode == 0)
+        {
+            //aibnr
+            aiisp_bnr::init(g_aiisp_info.model_file,g_vi_info[g_chn].w,g_vi_info[g_chn].h,0);
+            g_aiisp_info.obj = new aiisp_bnr(g_chn);
+            g_aiisp_info.obj->start();
+        }
+    }
+
     //scene
     get_scene_info();
     printf("scene info\n");
     printf("\tenable:%d\n",g_scene_info.enable);
     printf("\tmode:%d\n",g_scene_info.mode);
     printf("\tdir_path:%s\n",g_scene_info.dir_path);
-
     if(g_scene_info.enable)
     {
         ret = ot_scene_create_param(g_scene_info.dir_path,&g_scene_info.scene_param,&g_scene_info.video_mode);
@@ -625,21 +643,6 @@ int main(int argc,char* argv[])
             APP_WRITE_LOG_ERROR("ot_scene_init!!!");
             return -1;
         }
-    }
-
-    //aiisp
-    get_aiisp_info();
-    printf("aiisp info\n");
-    printf("\tenable:%d\n",g_aiisp_info.enable);
-    printf("\tmode:%d\n",g_aiisp_info.mode);
-    printf("\tmodel_file:%s\n",g_aiisp_info.model_file);
-
-    if(g_aiisp_info.mode == 0)
-    {
-        //aibnr
-        aiisp_bnr::init(g_aiisp_info.model_file,g_vi_info[g_chn].w,g_vi_info[g_chn].h,0);
-        g_aiisp_info.obj = new aiisp_bnr(g_chn);
-        g_aiisp_info.obj->start();
     }
 
     while(1)

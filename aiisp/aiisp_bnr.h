@@ -23,4 +23,5 @@ private:
 private:
     static ot_aibnr_model g_model_info;
     static td_s32 g_model_id;
+    static ot_vb_pool g_aiisp_pool;
 };

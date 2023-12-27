@@ -74,8 +74,10 @@ LIBS += $(SCENE_PATH)/src/core/ot_scene_setparam.o
 LIBS += $(SCENE_PATH)/src/core/scene_setparam_inner.o
 LIBS += $(SCENE_PATH)/src/sample/scene_loadparam.o
 LIBS += $(SCENE_PATH)/tools/configaccess/src/ot_confaccess.o
-LIBS += ../common/sample_comm_vi.o
-LIBS += ../common/sample_comm_isp.o
+
+#scene lib call sample_comm_vi/isp functions
+SRC += ../common/sample_comm_vi.c
+SRC += ../common/sample_comm_isp.c
 
 LIBS+= -Wl,--end-group
 
