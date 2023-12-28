@@ -7,16 +7,16 @@ THIRD_LIBRARY_PATH=../thirdlibrary
 INC_PATH += -I./
 INC_PATH += -I./util/
 INC_PATH += -I./json/
+INC_PATH += -I./log/
 
 INC_PATH += -I./rtsp/
 INC_PATH += -I./rtsp/stream/
 INC_PATH += -I./rtsp/rtp_serialize/
 INC_PATH += -I./rtsp/rtp_session/
-
-INC_PATH += -I../beacon_device/
-
 INC_PATH += -I./aiisp/
+INC_PATH += -I./device/
 
+INC_PATH += -I$(THIRD_LIBRARY_PATH)/freetype-2.7.1/mybuild_aarch64_v01c01_linux_gnu/include/freetype2
 INC_PATH += -I$(THIRD_LIBRARY_PATH)/boost_1_60_0/mybuild_aarch64_mix210/include/
 INC_PATH += -I$(THIRD_LIBRARY_PATH)/log4cpp/mybuild_aarch64_v01c01_linux_gnu/include/
 INC_PATH += -I$(THIRD_LIBRARY_PATH)/libevent-2.0.18-stable/mybuild_aarch64_v01c01_linux_gnu/include
@@ -24,7 +24,6 @@ INC_PATH += -I$(THIRD_LIBRARY_PATH)/rtmpdump/librtmp/mybuild_aarch64_v01c01_linu
 
 LIBPATH += -L./
 LIBPATH += -L./log
-LIBPATH += -L../beacon_device/
 
 SRCXX += main.cpp
 SRCXX += json/jsoncpp.cpp
@@ -55,6 +54,11 @@ SRCXX += aiisp/aiisp.cpp
 SRCXX += aiisp/aiisp_bnr.cpp
 SRCXX += aiisp/aiisp_drc.cpp
 
+#device files
+DEVICE_SRC += device/beacon_device.cpp
+DEVICE_SRC += device/beacon_freetype.cpp
+DEVICE_SRC += device/beacon_time_interval.cpp
+
 #surpport scene
 SCENE_PATH = ../scene_auto
 INC_PATH += -I$(SCENE_PATH)/include
@@ -67,7 +71,6 @@ LIBS += ./log/libbeacon_log.a
 LIBS += $(THIRD_LIBRARY_PATH)/log4cpp/mybuild_aarch64_v01c01_linux_gnu/lib/liblog4cpp.a
 LIBS += $(THIRD_LIBRARY_PATH)/libevent-2.0.18-stable/mybuild_aarch64_v01c01_linux_gnu/lib/libevent.a
 LIBS += $(THIRD_LIBRARY_PATH)/freetype-2.7.1/mybuild_aarch64_v01c01_linux_gnu/lib/libfreetype.a
-LIBS += ../beacon_device/libbeacon_device.a 
 LIBS += $(MPI_LIBS) $(SENSOR_LIBS) $(AUDIO_LIBA) $(REL_LIB)/libsecurec.a
 
 LIBS += $(SCENE_PATH)/src/core/ot_scene.o
@@ -88,8 +91,9 @@ all: $(target)
 
 PROGXX_OBJ= $(SRCXX:.cpp=.o)
 PROG_OBJ= $(SRC:.c=.o)
+DEVICE_OBJ= $(DEVICE_SRC:.cpp=.o)
 
-$(target):$(PROGXX_OBJ) $(PROG_OBJ)
+$(target):$(PROGXX_OBJ) $(PROG_OBJ) $(DEVICE_OBJ)
 	$(CXX) $^ -o $@ $(INC_PATH) $(LIBPATH) $(LIBS) $(CFLAGS) -lpthread
 	$(STRIP) $(target)
 
@@ -99,8 +103,11 @@ $(target):$(PROGXX_OBJ) $(PROG_OBJ)
 %.o:%.c
 	$(CC) -c -o  $@ $< $(INC_PATH) $(CFLAGS)
 
+device_clean:
+	-rm $(DEVICE_OBJ)
+
 clean:
-	-rm $(target) $(PROG_OBJ) $(PROGXX_OBJ)
+	-rm $(target) $(PROG_OBJ) $(PROGXX_OBJ) $(DEVICE_OBJ)
 
 install:
 	cp $(target) /home/mjj/work/nfs/3516dv500/

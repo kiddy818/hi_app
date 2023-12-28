@@ -159,9 +159,6 @@ static void on_quit(int signal)
 
     beacon_vi_release(g_chn);
 
-    beacon_vi_mipi_enable(g_chn,0,0);
-    beacon_vi_power_enable(g_chn,0);
-
     beacon_device_release();
 
     beacon_stop_log(g_app_log);
@@ -605,20 +602,25 @@ int main(int argc,char* argv[])
     printf("\tenable:%d\n",g_aiisp_info.enable);
     printf("\tmode:%d\n",g_aiisp_info.mode);
     printf("\tmodel_file:%s\n",g_aiisp_info.model_file);
+    int is_wdr_mode = 0;
+    if(strcmp(g_vi_info[chn].name,"OS04A10_WDR") == 0)
+    {
+        is_wdr_mode = 1;
+    }
     if(g_aiisp_info.enable)
     {
         switch(g_aiisp_info.mode)
         {
             case 0://aibnr
                 {
-                    aiisp_bnr::init(g_aiisp_info.model_file,g_vi_info[g_chn].w,g_vi_info[g_chn].h,0);
+                    aiisp_bnr::init(g_aiisp_info.model_file,g_vi_info[g_chn].w,g_vi_info[g_chn].h,is_wdr_mode);
                     g_aiisp_info.obj = new aiisp_bnr(g_chn);
                     g_aiisp_info.obj->start();
                     break;
                 }
             case 1://aidrc
                 {
-                    aiisp_drc::init(g_aiisp_info.model_file,g_vi_info[g_chn].w,g_vi_info[g_chn].h,0);
+                    aiisp_drc::init(g_aiisp_info.model_file,g_vi_info[g_chn].w,g_vi_info[g_chn].h,is_wdr_mode);
                     g_aiisp_info.obj = new aiisp_drc(g_chn);
                     g_aiisp_info.obj->start();
                     break;
