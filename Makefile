@@ -59,6 +59,10 @@ DEVICE_SRC += device/beacon_device.cpp
 DEVICE_SRC += device/beacon_freetype.cpp
 DEVICE_SRC += device/beacon_time_interval.cpp
 
+DEVICE_SRC += device/dev_sys.cpp
+DEVICE_SRC += device/dev_vi.cpp
+DEVICE_SRC += device/dev_vi_os04a10_liner.cpp
+
 #surpport scene
 SCENE_PATH = ../scene_auto
 INC_PATH += -I$(SCENE_PATH)/include
