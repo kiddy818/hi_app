@@ -55,13 +55,17 @@ SRCXX += aiisp/aiisp_bnr.cpp
 SRCXX += aiisp/aiisp_drc.cpp
 
 #device files
-DEVICE_SRC += device/beacon_device.cpp
-DEVICE_SRC += device/beacon_freetype.cpp
-DEVICE_SRC += device/beacon_time_interval.cpp
+#DEVICE_SRC += device/beacon_device.cpp
+#DEVICE_SRC += device/beacon_freetype.cpp
+#DEVICE_SRC += device/beacon_time_interval.cpp
 
 DEVICE_SRC += device/dev_sys.cpp
 DEVICE_SRC += device/dev_vi.cpp
+DEVICE_SRC += device/dev_vi_isp.cpp
 DEVICE_SRC += device/dev_vi_os04a10_liner.cpp
+DEVICE_SRC += device/dev_vi_os04a10_2to1wdr.cpp
+DEVICE_SRC += device/dev_venc.cpp
+DEVICE_SRC += device/dev_chn.cpp
 
 #surpport scene
 SCENE_PATH = ../scene_auto

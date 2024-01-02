@@ -55,7 +55,7 @@ namespace beacon{namespace rtsp{
     {
         if(m_is_start)
         {
-            beacon_encode_request_i_frame(m_chn,m_stream_id); 
+            //beacon_encode_request_i_frame(m_chn,m_stream_id); 
             return true;
         }
 

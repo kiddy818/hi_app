@@ -1,3 +1,4 @@
+#if 0
 #include <util/std.h>
 #include <beacon_device.h>
 #include <app_std.h>
@@ -277,95 +278,6 @@ static void on_stream(int chn,int stream,int type,uint64_t time_stamp,const char
     on_nalu(chn,stream,type,time_stamp,buf,len,userdata);
 }
 
-#define VI_FILE_PATH "/opt/beacon/etc/vi.json"
-static beacon_vin_t g_vi_info[MAX_CHANNEL];
-static void init_vi_info()
-{
-    Json::Value root;
-    for(auto i = 0; i < MAX_CHANNEL; i++)
-    {
-        std::string sns = "sensor" + std::to_string(i + 1);
-
-        if(i < 4)
-        {
-            sprintf(g_vi_info[i].name,"OS04A10");
-            g_vi_info[i].w = 2688;
-            g_vi_info[i].h = 1520;
-            g_vi_info[i].fr = 30;
-            g_vi_info[i].flip = 0;
-        }
-        else
-        {
-            sprintf(g_vi_info[i].name,"IMX290");
-            g_vi_info[i].w = 1920;
-            g_vi_info[i].h = 1080;
-            g_vi_info[i].fr = 30;
-            g_vi_info[i].flip = (i == 5) ? 1 : 0;
-        }
-
-        root[sns]["name"] = g_vi_info[i].name;
-        root[sns]["w"] = g_vi_info[i].w;
-        root[sns]["h"] = g_vi_info[i].h;
-        root[sns]["fr"] = g_vi_info[i].fr;
-        root[sns]["flip"] = g_vi_info[i].flip;
-    }
-
-    std::string str= root.toStyledString();
-    std::ofstream ofs;
-    ofs.open(VI_FILE_PATH);
-    ofs << str;
-    ofs.close();
-}
-
-static int get_vi_info()
-{
-    try
-    {
-        if(access(VI_FILE_PATH,F_OK) < 0)
-        {
-            init_vi_info();
-
-            if(access(VI_FILE_PATH,F_OK) < 0)
-            {
-                return -1;
-            }
-        }
-
-        std::ifstream ifs;
-        ifs.open(VI_FILE_PATH);
-        if(!ifs.is_open())
-        {
-            return -1;
-        }
-        Json::Reader reader;  
-        Json::Value root; 
-        if (!reader.parse(ifs, root, false)) 
-        {
-            return -1;
-        }
-
-        Json::Value node; 
-        for(auto i = 0; i < MAX_CHANNEL; i++)
-        {
-            std::string sns = "sensor" + std::to_string(i + 1);
-            node = root[sns];
-
-            sprintf(g_vi_info[i].name,"%s",node["name"].asCString());
-            g_vi_info[i].w = node["w"].asInt();
-            g_vi_info[i].h = node["h"].asInt();
-            g_vi_info[i].fr = node["fr"].asInt();
-            g_vi_info[i].flip = node["flip"].asInt();
-        }
-
-        ifs.close();
-
-        return 0;
-    }
-    catch(...)
-    {
-        return -1;
-    }
-}
 
 #define SCENE_FILE_PATH "/opt/beacon/scene/scene.json"
 static void init_scene_info()
@@ -665,3 +577,160 @@ int main(int argc,char* argv[])
     }
     return 0;
 }
+
+#endif
+
+#include <app_std.h>
+#include <dev_chn.h>
+#include <json/json.h>
+#include <fstream>
+
+LOG_HANDLE g_app_log;
+LOG_HANDLE g_rtsp_log;
+LOG_HANDLE g_rtmp_log;
+LOG_HANDLE g_dev_log;
+hisilicon::dev::chn* g_chn = NULL;
+
+#define MAX_CHANNEL 1
+#define VI_FILE_PATH "/opt/beacon/etc/vi.json"
+typedef struct
+{
+    char name[32];
+    int w;
+    int h;
+    int fr;
+    int flip;
+}vi_t;
+static vi_t g_vi_info[MAX_CHANNEL];
+static void init_vi_info()
+{
+    Json::Value root;
+    for(auto i = 0; i < MAX_CHANNEL; i++)
+    {
+        std::string sns = "sensor" + std::to_string(i + 1);
+
+        sprintf(g_vi_info[i].name,"OS04A10");
+        g_vi_info[i].w = 2688;
+        g_vi_info[i].h = 1520;
+        g_vi_info[i].fr = 30;
+        g_vi_info[i].flip = 0;
+
+        root[sns]["name"] = g_vi_info[i].name;
+        root[sns]["w"] = g_vi_info[i].w;
+        root[sns]["h"] = g_vi_info[i].h;
+        root[sns]["fr"] = g_vi_info[i].fr;
+        root[sns]["flip"] = g_vi_info[i].flip;
+    }
+
+    std::string str= root.toStyledString();
+    std::ofstream ofs;
+    ofs.open(VI_FILE_PATH);
+    ofs << str;
+    ofs.close();
+}
+
+static int get_vi_info()
+{
+    try
+    {
+        if(access(VI_FILE_PATH,F_OK) < 0)
+        {
+            init_vi_info();
+
+            if(access(VI_FILE_PATH,F_OK) < 0)
+            {
+                return -1;
+            }
+        }
+
+        std::ifstream ifs;
+        ifs.open(VI_FILE_PATH);
+        if(!ifs.is_open())
+        {
+            return -1;
+        }
+        Json::Reader reader;  
+        Json::Value root; 
+        if (!reader.parse(ifs, root, false)) 
+        {
+            return -1;
+        }
+
+        Json::Value node; 
+        for(auto i = 0; i < MAX_CHANNEL; i++)
+        {
+            std::string sns = "sensor" + std::to_string(i + 1);
+            node = root[sns];
+
+            sprintf(g_vi_info[i].name,"%s",node["name"].asCString());
+            g_vi_info[i].w = node["w"].asInt();
+            g_vi_info[i].h = node["h"].asInt();
+            g_vi_info[i].fr = node["fr"].asInt();
+            g_vi_info[i].flip = node["flip"].asInt();
+        }
+
+        ifs.close();
+
+        return 0;
+    }
+    catch(...)
+    {
+        return -1;
+    }
+}
+
+
+static void on_quit(int signal)
+{
+    fprintf(stderr,"on quit\n");
+
+    hisilicon::dev::chn::start_capture(false);
+    if(g_chn)
+    {
+        g_chn->stop();
+        delete g_chn;
+        g_chn = NULL;
+    }
+
+    hisilicon::dev::chn::sys_release();
+    printf("quit ok\n");
+    exit(0);
+}
+
+int main(int argc,char* argv[])
+{
+    signal(SIGINT,on_quit);
+    signal(SIGQUIT,on_quit);
+    signal(SIGTERM,on_quit);
+
+    g_app_log = beacon_start_log("beacon_app",BEACON_LOG_MODE_CONSOLE,BEACON_LOG_DEBUG,NULL,0);
+    APP_WRITE_LOG_INFO("==========================star========================");
+
+    g_rtsp_log = beacon_start_log("beacon_rtsp",BEACON_LOG_MODE_CONSOLE,BEACON_LOG_INFO,NULL,0);
+    g_rtmp_log = beacon_start_log("beacon_rtmp",BEACON_LOG_MODE_CONSOLE,BEACON_LOG_INFO,NULL,0);
+    g_dev_log = beacon_start_log("beacon_dev",BEACON_LOG_MODE_CONSOLE,BEACON_LOG_INFO,NULL,0);
+
+    hisilicon::dev::chn::sys_init();
+
+    get_vi_info();
+    for(auto i = 0; i < MAX_CHANNEL; i++)
+    {
+        printf("sensor%d:\n",i + 1);
+        printf("\tname:%s\n",g_vi_info[i].name);
+        printf("\tw:%d\n",g_vi_info[i].w);
+        printf("\th:%d\n",g_vi_info[i].h);
+        printf("\tfr:%d\n",g_vi_info[i].fr);
+    }
+
+    int chn = 0;
+    g_chn = new hisilicon::dev::chn(g_vi_info[chn].name);
+    g_chn->start(1920,1080,g_vi_info[chn].fr,4000);
+
+    hisilicon::dev::chn::start_capture(true);
+    while(1)
+    {
+        sleep(1);
+    }
+    return 0;
+}
+

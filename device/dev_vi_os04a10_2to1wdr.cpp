@@ -1,7 +1,7 @@
-#include "dev_vi_os04a10_liner.h"
+#include "dev_vi_os04a10_2to1wdr.h"
 #include "dev_log.h"
 
-static combo_dev_attr_t g_mipi_4lane_chn0_sensor_os04a10_12bit_4m_nowdr_attr = {
+static combo_dev_attr_t g_mipi_4lane_chn0_sensor_os04a10_12bit_wdr2to1 = {
     .devno = 0,
     .input_mode = INPUT_MODE_MIPI,
     .data_rate  = MIPI_DATA_RATE_X1,
@@ -13,12 +13,12 @@ static combo_dev_attr_t g_mipi_4lane_chn0_sensor_os04a10_12bit_4m_nowdr_attr = {
     }
 };
 
-static ot_isp_pub_attr g_isp_pub_attr_os04a10_mipi_4m_30fps = {
+static ot_isp_pub_attr g_isp_pub_attr_os04a10_mipi_4m_30fps_wdr2to1 = {
     {0, 0, 2688, 1520},
     {2688, 1520},
     30,
     OT_ISP_BAYER_RGGB,
-    OT_WDR_MODE_NONE,
+    OT_WDR_MODE_2To1_LINE,
     0,
     TD_FALSE,
     TD_FALSE,
@@ -30,22 +30,25 @@ static ot_isp_pub_attr g_isp_pub_attr_os04a10_mipi_4m_30fps = {
 
 namespace hisilicon{namespace dev{
 
-    vi_os04a10_liner::vi_os04a10_liner()
+    vi_os04a10_2to1wdr::vi_os04a10_2to1wdr()
         :vi_isp(2688,/*w*/
                 1520,/*h*/
                 30,/*src frame*/
                 0,/*vi dev*/
                 0,/*mpip dev*/
                 0,/*sns clk src*/
-                0,/*wdr mode*/
+                1,/*wdr mode*/
                 &g_sns_os04a10_obj,/*sns obj*/
                 4/*i2c dev*/)
     {
-        memcpy(&m_mipi_attr,&g_mipi_4lane_chn0_sensor_os04a10_12bit_4m_nowdr_attr,sizeof(combo_dev_attr_t));
-        memcpy(&m_isp_pub_attr,&g_isp_pub_attr_os04a10_mipi_4m_30fps,sizeof(ot_isp_pub_attr));
+        memcpy(&m_mipi_attr,&g_mipi_4lane_chn0_sensor_os04a10_12bit_wdr2to1,sizeof(combo_dev_attr_t));
+        memcpy(&m_isp_pub_attr,&g_isp_pub_attr_os04a10_mipi_4m_30fps_wdr2to1,sizeof(ot_isp_pub_attr));
+
+        //use 2 pipes
+        m_pipes.push_back(1);
     }
 
-    vi_os04a10_liner::~vi_os04a10_liner()
+    vi_os04a10_2to1wdr::~vi_os04a10_2to1wdr()
     {
     }
 

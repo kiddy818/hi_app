@@ -27,6 +27,10 @@
 
 #include <util/std.h>
 #include <string>
+#include <thread>
+#include <vector>
+#include <functional>
+#include <list>
 
 #endif
 

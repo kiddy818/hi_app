@@ -1,21 +1,18 @@
 #ifndef dev_vi_os04a10_liner_include_h
 #define dev_vi_os04a10_liner_include_h
 
-#include "dev_vi.h"
+#include "dev_vi_isp.h"
 
+//to support os04a10 liner 
 namespace hisilicon{namespace dev{
 
     class vi_os04a10_liner
-        :public vi
+        :public vi_isp
     {
         public:
-            vi_os04a10_liner(int w,int h,int src_fr,int mipi_dev,int sns_clk_src,int vi_dev);
+            vi_os04a10_liner();
 
             virtual ~vi_os04a10_liner();
-
-            bool start();
-
-            void stop();
     };
 
 }}//namespace
