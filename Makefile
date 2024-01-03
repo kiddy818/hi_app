@@ -66,6 +66,8 @@ DEVICE_SRC += device/dev_vi_os04a10_liner.cpp
 DEVICE_SRC += device/dev_vi_os04a10_2to1wdr.cpp
 DEVICE_SRC += device/dev_venc.cpp
 DEVICE_SRC += device/dev_chn.cpp
+DEVICE_SRC += device/dev_osd.cpp
+DEVICE_SRC += device/beacon_freetype.cpp
 
 #surpport scene
 SCENE_PATH = ../scene_auto

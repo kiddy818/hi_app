@@ -70,6 +70,11 @@ namespace hisilicon{namespace dev{
             return false;
         }
 
+        m_osd_date_main = std::make_shared<osd_date>(32,32,64,m_venc_main_ptr->venc_chn(),m_venc_main_ptr->venc_chn());
+        m_osd_date_sub = std::make_shared<osd_date>(16,16,32,m_venc_sub_ptr->venc_chn(),m_venc_sub_ptr->venc_chn());
+        m_osd_date_main->start();
+        m_osd_date_sub->start();
+
         m_venc_main_ptr->register_stream_observer(shared_from_this());
         m_venc_sub_ptr->register_stream_observer(shared_from_this());
         m_is_start = true;
@@ -83,6 +88,9 @@ namespace hisilicon{namespace dev{
             return;
         }
         m_is_start = false;
+
+        m_osd_date_main->stop();
+        m_osd_date_sub->stop();
 
         m_venc_main_ptr->unregister_stream_observer(shared_from_this());
         m_venc_sub_ptr->unregister_stream_observer(shared_from_this());
@@ -115,6 +123,7 @@ namespace hisilicon{namespace dev{
             return false;
         }
 
+        osd::init();
         vi::init();
         vi_isp::init_hs_mode(LANE_DIVIDE_MODE_0);
 
@@ -126,6 +135,7 @@ namespace hisilicon{namespace dev{
         venc::release();
         vi::release();
         sys::release();
+        osd::release();
     }
 
     void chn::on_stream_come(beacon::util::stream_head* head, const char* buf, int len)

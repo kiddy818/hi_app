@@ -5,6 +5,7 @@
 #include "dev_vi_os04a10_liner.h"
 #include "dev_vi_os04a10_2to1wdr.h"
 #include "dev_venc.h"
+#include "dev_osd.h"
 #include "dev_log.h"
 #include <stream_observer.h>
 
@@ -59,6 +60,8 @@ namespace hisilicon{namespace dev{
             std::shared_ptr<venc> m_venc_main_ptr;
             std::shared_ptr<venc> m_venc_sub_ptr;
             std::shared_ptr<aiisp> m_aiisp_ptr;
+            std::shared_ptr<osd_date> m_osd_date_main;
+            std::shared_ptr<osd_date> m_osd_date_sub;
             int m_chn;
 
             static ot_scene_param g_scene_param;
