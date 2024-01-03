@@ -182,6 +182,11 @@ namespace hisilicon{namespace dev{
     {
     }
 
+    int vi_isp::wdr_mode()
+    {
+        return m_wdr_mode;
+    }
+
     bool vi_isp::init_hs_mode(lane_divide_mode_t mode)
     {
         td_s32 fd = open(MIPI_DEV_NAME, O_RDWR);
@@ -456,6 +461,34 @@ namespace hisilicon{namespace dev{
         }
 
         ss_mpi_vi_disable_dev(m_vi_dev);
+    }
+
+    bool vi_isp::get_isp_exposure_info(isp_exposure_t* val)
+    {
+        td_s32 ret;
+        ot_vi_pipe vi_pipe= m_pipes[0];
+
+        ot_isp_exp_info info;
+        ret = ss_mpi_isp_query_exposure_info(vi_pipe,&info);
+
+        ot_isp_exposure_attr expo_attr;
+        memset(&expo_attr,0,sizeof(expo_attr));
+        ret = ss_mpi_isp_get_exposure_attr(vi_pipe,&expo_attr);
+        if(ret != TD_SUCCESS)
+        {
+            DEV_WRITE_LOG_ERROR("ss_mpi_isp_get_exposure_attr failed with %#x",ret);
+            return false;
+        }
+
+        val->exp_time = info.exp_time;
+        val->again = info.a_gain>> 10;
+        val->dgain = info.d_gain>> 10;
+        val->ispgain = info.isp_d_gain>> 10;
+        val->iso = info.iso;
+        val->is_max_exposure = info.exposure_is_max;
+        val->is_exposure_stable = abs(info.hist_error) <= expo_attr.auto_attr.tolerance ? 1 : 0;
+
+        return true;
     }
 
 }}//namespace

@@ -16,6 +16,15 @@ namespace hisilicon{namespace dev{
     {
     }
 
+    bool venc::init()
+    {
+        return true;
+    }
+
+    void venc::release()
+    {
+    }
+
     ot_venc_chn venc::venc_chn()
     {
         return m_venc_chn;
@@ -24,6 +33,16 @@ namespace hisilicon{namespace dev{
     int venc::venc_fd()
     {
         return m_venc_fd;
+    }
+
+    int venc::venc_w()
+    {
+        return m_venc_w;
+    }
+
+    int venc::venc_h()
+    {
+        return m_venc_h;
     }
 
     void venc::on_capturing()
@@ -199,8 +218,8 @@ namespace hisilicon{namespace dev{
         }
     }
 
-    venc_h264_cbr::venc_h264_cbr(int w,int h,int src_fr,int venc_fr,ot_venc_chn venc_chn,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn,int bitrate)
-        :venc(w,h,src_fr,venc_fr,venc_chn,vpss_grp,vpss_chn),m_bitrate(bitrate)
+    venc_h264::venc_h264(int w,int h,int src_fr,int venc_fr,ot_venc_chn venc_chn,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn)
+        :venc(w,h,src_fr,venc_fr,venc_chn,vpss_grp,vpss_chn)
     {
         memset(&m_venc_chn_attr,0,sizeof(m_venc_chn_attr));
         m_venc_chn_attr.venc_attr.type = OT_PT_H264;
@@ -213,26 +232,30 @@ namespace hisilicon{namespace dev{
         m_venc_chn_attr.venc_attr.profile = 0;
         m_venc_chn_attr.venc_attr.h264_attr.rcn_ref_share_buf_en = TD_FALSE;
         m_venc_chn_attr.venc_attr.h264_attr.frame_buf_ratio = 70;
-        m_venc_chn_attr.rc_attr.rc_mode = OT_VENC_RC_MODE_H264_CBR;
-        m_venc_chn_attr.rc_attr.h264_cbr.gop = m_venc_fr; /*the interval of IFrame*/
-        m_venc_chn_attr.rc_attr.h264_cbr.stats_time = 1; /* stream rate statics time(s) */
-        m_venc_chn_attr.rc_attr.h264_cbr.src_frame_rate= m_src_fr; /* input (vi) frame rate */
-        m_venc_chn_attr.rc_attr.h264_cbr.dst_frame_rate = m_venc_fr; /* target frame rate */
-        m_venc_chn_attr.rc_attr.h264_cbr.bit_rate = m_bitrate;
         m_venc_chn_attr.gop_attr.gop_mode = OT_VENC_GOP_MODE_NORMAL_P;
         m_venc_chn_attr.gop_attr.normal_p.ip_qp_delta = 2; /* 2 is a number */
     }
 
-    venc_h264_cbr::~venc_h264_cbr()
+    venc_h264::~venc_h264()
     {
     }
 
-    void venc_h264_cbr::process_video_stream(ot_venc_stream* pstream)
+    void venc_h264::process_video_stream(ot_venc_stream* pstream)
     {
         char* es_buf = NULL;
         int es_len = 0;
         int es_type = 0;
         unsigned long long time_stamp = 0;
+
+        beacon::util::stream_head sh;
+
+        memset(&sh,0,sizeof(sh));
+        sh.type = STREAM_NALU_SLICE;    
+        sh.tag = BEACON_TAG;
+        sh.sys_time = time(NULL);  
+        sh.nalu_count = pstream->pack_cnt;         
+        sh.w = m_venc_w;
+        sh.h = m_venc_h;
 
         for(unsigned int i = 0; i < pstream->pack_cnt; i++)
         {
@@ -241,9 +264,30 @@ namespace hisilicon{namespace dev{
             es_type = (pstream->pack[i].data_type.h264_type == 5) ? 1 : 0;
             time_stamp = pstream->pack[i].pts / 1000;
 
-            printf("packet%d,len=%d,%02x,%02x,%02x,%02x,%02x\n",i,es_len,es_buf[0],es_buf[1],es_buf[2],es_buf[3],es_buf[4]);
+            //printf("packet%d,len=%d,%02x,%02x,%02x,%02x,%02x\n",i,es_len,es_buf[0],es_buf[1],es_buf[2],es_buf[3],es_buf[4]);
+
+            sh.nalu[i].data = (char*)es_buf;
+            sh.nalu[i].size = es_len; 
+            sh.nalu[i].timestamp = time_stamp * 90;
             //g_stream_fun(chn,stream,es_type,time_stamp,es_buf,es_len,g_stream_fun_usr);
         }
+
+        post_stream_to_observer(&sh,NULL,0);
+    }
+
+    venc_h264_cbr::venc_h264_cbr(int w,int h,int src_fr,int venc_fr,ot_venc_chn venc_chn,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn,int bitrate)
+        :venc_h264(w,h,src_fr,venc_fr,venc_chn,vpss_grp,vpss_chn),m_bitrate(bitrate)
+    {
+        m_venc_chn_attr.rc_attr.rc_mode = OT_VENC_RC_MODE_H264_CBR;
+        m_venc_chn_attr.rc_attr.h264_cbr.gop = m_venc_fr; /*the interval of IFrame*/
+        m_venc_chn_attr.rc_attr.h264_cbr.stats_time = 1; /* stream rate statics time(s) */
+        m_venc_chn_attr.rc_attr.h264_cbr.src_frame_rate= m_src_fr; /* input (vi) frame rate */
+        m_venc_chn_attr.rc_attr.h264_cbr.dst_frame_rate = m_venc_fr; /* target frame rate */
+        m_venc_chn_attr.rc_attr.h264_cbr.bit_rate = m_bitrate;
+    }
+
+    venc_h264_cbr::~venc_h264_cbr()
+    {
     }
 
 }}//namespace

@@ -32,5 +32,17 @@
 #include <functional>
 #include <list>
 
+typedef struct
+{
+    unsigned int exp_time;
+    int again;
+    int dgain;
+    int ispgain;
+    unsigned int iso;
+    int is_max_exposure;
+    int is_exposure_stable;
+    int reserve[32];
+}isp_exposure_t;
+
 #endif
 

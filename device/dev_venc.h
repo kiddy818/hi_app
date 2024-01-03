@@ -2,6 +2,7 @@
 #define dev_venc_include_h
 
 #include "dev_std.h"
+#include <stream_observer.h>
 
 namespace hisilicon{namespace dev{
 
@@ -10,7 +11,8 @@ namespace hisilicon{namespace dev{
     typedef std::shared_ptr<venc> venc_ptr;
 
     class venc
-        :public std::enable_shared_from_this<venc>
+        :public std::enable_shared_from_this<venc>,
+        public beacon::rtsp::stream_post
     {
         public:
             venc(int w,int h,int src_fr,int venc_fr,ot_venc_chn venc_chn,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn);
@@ -20,10 +22,15 @@ namespace hisilicon{namespace dev{
             void stop();
             ot_venc_chn venc_chn();
             int venc_fd();
+            int venc_w();
+            int venc_h();
             virtual void process_video_stream(ot_venc_stream* pstream) = 0;
             
             static bool start_capture();
             static void stop_capture();
+
+            static bool init();
+            static void release();
 
         protected:
             static void on_capturing();
@@ -44,14 +51,22 @@ namespace hisilicon{namespace dev{
             static std::list<venc_ptr> g_vencs;
     };
 
-    class venc_h264_cbr
+    class venc_h264
         :public venc
     {
         public:
-            venc_h264_cbr(int w,int h,int src_fr,int venc_fr,ot_venc_chn venc_chn,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn,int bitrate);
-            ~venc_h264_cbr();
+            venc_h264(int w,int h,int src_fr,int venc_fr,ot_venc_chn venc_chn,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn);
+            virtual ~venc_h264();
 
             virtual void process_video_stream(ot_venc_stream* pstream);
+    };
+
+    class venc_h264_cbr
+        :public venc_h264
+    {
+        public:
+            venc_h264_cbr(int w,int h,int src_fr,int venc_fr,ot_venc_chn venc_chn,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn,int bitrate);
+            virtual ~venc_h264_cbr();
 
         protected:
             int m_bitrate;

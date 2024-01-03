@@ -66,7 +66,7 @@ namespace hisilicon{namespace dev{
             DEV_WRITE_LOG_ERROR("ss_mpi_sys_set_vi_aiisp_mode failed with error 0x%x",ret);
             return false;
         }
-
+       
         return true;
     }
 

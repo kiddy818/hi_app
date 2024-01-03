@@ -35,6 +35,8 @@ namespace beacon{namespace util{
         unsigned long long time_stamp;
         int tag;
         int sys_time;
+        int w;
+        int h;
 
         int nalu_count;
         nalu_t nalu[MAX_STREAM_NALU_COUNT];

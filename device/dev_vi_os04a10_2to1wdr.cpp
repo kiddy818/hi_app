@@ -45,7 +45,14 @@ namespace hisilicon{namespace dev{
         memcpy(&m_isp_pub_attr,&g_isp_pub_attr_os04a10_mipi_4m_30fps_wdr2to1,sizeof(ot_isp_pub_attr));
 
         //use 2 pipes
+        m_pipes.clear();
+        m_pipes.push_back(0);
         m_pipes.push_back(1);
+        for(int i = 0; i < m_pipes.size(); i++)
+        {
+            m_fusion_grp_attr.pipe_id[i] = m_pipes[i];
+        }
+        m_fusion_grp_attr.wdr_mode = OT_WDR_MODE_2To1_LINE;
     }
 
     vi_os04a10_2to1wdr::~vi_os04a10_2to1wdr()

@@ -14,6 +14,9 @@ namespace hisilicon{namespace dev{
             virtual bool start() = 0;
             virtual void stop() = 0;
 
+            static bool init();
+            static void release();
+
             int w();
             int h();
             int fr();

@@ -49,5 +49,19 @@ namespace hisilicon{namespace dev{
         return m_vi_chn;
     }
 
+    bool vi::init()
+    {
+        return true;
+    }
+
+    void vi::release()
+    {
+    }
+
+    std::vector<ot_vi_pipe> vi::pipes()
+    {
+        return m_pipes;
+    }
+
 }}//namespace
 

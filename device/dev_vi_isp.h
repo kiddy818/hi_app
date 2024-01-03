@@ -26,6 +26,10 @@ namespace hisilicon{namespace dev{
 
             void stop() override;
 
+            int wdr_mode();
+
+            bool get_isp_exposure_info(isp_exposure_t* val);
+
             static bool init_hs_mode(lane_divide_mode_t mode);
 
         protected:
