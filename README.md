@@ -14,6 +14,7 @@
 
 #### 编译方法
 ```
+cd Hi3519DV500_SDK_V2.0.1.0/smp/a55_linux/source/mpp/sample
 git clone https://gitee.com/shumjj/3516dv500_app.git 
 cd 3516dv500_app
 make
