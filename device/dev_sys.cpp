@@ -66,7 +66,14 @@ namespace hisilicon{namespace dev{
             DEV_WRITE_LOG_ERROR("ss_mpi_sys_set_vi_aiisp_mode failed with error 0x%x",ret);
             return false;
         }
-       
+
+        ret = ss_mpi_sys_set_3dnr_pos(OT_3DNR_POS_VPSS);
+        if(ret != TD_SUCCESS)
+       {
+            DEV_WRITE_LOG_ERROR("ss_mpi_sys_set_3dnr_pos failed with error 0x%x",ret);
+            return false;
+        }
+
         return true;
     }
 

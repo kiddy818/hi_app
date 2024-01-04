@@ -19,6 +19,7 @@ extern "C"
 //aiisp
 #include <aiisp_bnr.h>
 #include <aiisp_drc.h>
+#include <aiisp_3dnr.h>
 
 namespace hisilicon{namespace dev{
 

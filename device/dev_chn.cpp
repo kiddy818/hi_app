@@ -237,6 +237,13 @@ namespace hisilicon{namespace dev{
                     break;
                 }
 
+            case 2://3dnr
+                {
+                    aiisp_3dnr::init(model_file,viisp->w(),viisp->h());
+                    m_aiisp_ptr = std::make_shared<aiisp_3dnr>(viisp->pipes()[0]);
+                    break;
+                }
+
             default:
                 {
                     return false;
@@ -262,6 +269,7 @@ namespace hisilicon{namespace dev{
 
         aiisp_bnr::release();
         aiisp_drc::release();
+        aiisp_3dnr::release();
     }
 
     bool chn::get_isp_exposure_info(isp_exposure_t* val)

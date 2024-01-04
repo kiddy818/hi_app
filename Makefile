@@ -57,6 +57,7 @@ SRCXX += rtmp/session_manager.cpp
 SRCXX += aiisp/aiisp.cpp
 SRCXX += aiisp/aiisp_bnr.cpp
 SRCXX += aiisp/aiisp_drc.cpp
+SRCXX += aiisp/aiisp_3dnr.cpp
 
 #device
 DEVICE_SRC += device/dev_sys.cpp
