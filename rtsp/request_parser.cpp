@@ -4,7 +4,7 @@
 #include <boost/lexical_cast.hpp>
 #include <util/std.h>
 
-namespace beacon{namespace rtsp{
+namespace ceanic{namespace rtsp{
 
     request_parser::request_parser()
         : state_(method_start)

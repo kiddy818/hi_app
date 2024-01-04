@@ -23,7 +23,7 @@ extern "C"
 namespace hisilicon{namespace dev{
 
     class chn 
-        :public beacon::rtsp::stream_observer
+        :public ceanic::rtsp::stream_observer
          ,public std:: enable_shared_from_this<chn>
     {
         public:
@@ -41,7 +41,7 @@ namespace hisilicon{namespace dev{
 
             static void start_capture(bool enable);
 
-            void on_stream_come(beacon::util::stream_head* head, const char* buf, int len);
+            void on_stream_come(ceanic::util::stream_head* head, const char* buf, int len);
             void on_stream_error(int errno);
 
             //for scene

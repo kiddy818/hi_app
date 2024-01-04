@@ -4,7 +4,7 @@
 #include <rtsp_session.h>
 #include <rtsp_log.h>
 
-namespace beacon{namespace rtsp{
+namespace ceanic{namespace rtsp{
 
     rtsp_server::rtsp_server(short port)
         :m_listen_s(-1), m_port(port), m_is_run(false)

@@ -71,7 +71,7 @@ namespace hisilicon{namespace dev{
         }
 
         m_osd_date_main = std::make_shared<osd_date>(32,32,64,m_venc_main_ptr->venc_chn(),m_venc_main_ptr->venc_chn());
-        m_osd_date_sub = std::make_shared<osd_date>(16,16,32,m_venc_sub_ptr->venc_chn(),m_venc_sub_ptr->venc_chn());
+        m_osd_date_sub = std::make_shared<osd_date>(16,16,24,m_venc_sub_ptr->venc_chn(),m_venc_sub_ptr->venc_chn());
         m_osd_date_main->start();
         m_osd_date_sub->start();
 
@@ -138,7 +138,7 @@ namespace hisilicon{namespace dev{
         osd::release();
     }
 
-    void chn::on_stream_come(beacon::util::stream_head* head, const char* buf, int len)
+    void chn::on_stream_come(ceanic::util::stream_head* head, const char* buf, int len)
     {
         if(!m_is_start)
         {
@@ -162,8 +162,8 @@ namespace hisilicon{namespace dev{
             stream = 1;
         }
 
-        beacon::rtsp::stream_manager::instance()->process_data(m_chn,stream,head,NULL,0);
-        beacon::rtmp::session_manager::instance()->process_data(m_chn,stream,head,NULL,0);
+        ceanic::rtsp::stream_manager::instance()->process_data(m_chn,stream,head,NULL,0);
+        ceanic::rtmp::session_manager::instance()->process_data(m_chn,stream,head,NULL,0);
     }
 
     void chn::on_stream_error(int errno)

@@ -2,7 +2,7 @@
 #define mjpeg_rtp_serialize_include_h
 #include <rtp_serialize.h>
 
-namespace beacon{namespace rtsp{
+namespace ceanic{namespace rtsp{
 
     /*
        0                   1                   2                   3

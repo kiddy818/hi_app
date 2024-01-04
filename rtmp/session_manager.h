@@ -5,7 +5,7 @@
 #include <rtmp/session.h>
 #include <util/stream_type.h>
 
-namespace beacon{namespace rtmp{
+namespace ceanic{namespace rtmp{
 
     using sess_ptr = std::shared_ptr<timed_session>;
 

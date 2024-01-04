@@ -1,6 +1,6 @@
 #include "rtp_serialize.h"
 
-namespace beacon{namespace rtsp{
+namespace ceanic{namespace rtsp{
 
     rtp_serialize::rtp_serialize(int payload)
         :m_payload(payload)

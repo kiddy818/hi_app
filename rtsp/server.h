@@ -5,7 +5,7 @@
 #include <list>
 #include <session.h>
 
-namespace beacon{namespace rtsp{
+namespace ceanic{namespace rtsp{
 
     class rtsp_server
     {

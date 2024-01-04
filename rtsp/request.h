@@ -5,7 +5,7 @@
 #include <vector>
 #include <string>
 
-namespace beacon{namespace rtsp{
+namespace ceanic{namespace rtsp{
 
     struct header
     {

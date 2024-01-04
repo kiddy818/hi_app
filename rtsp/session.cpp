@@ -1,7 +1,7 @@
 #include "session.h"
 #include <rtsp_log.h>
 
-namespace beacon{namespace rtsp{
+namespace ceanic{namespace rtsp{
 
 #define MAX_EVBUFFER_LEN (1024 * 1024)
     session::session(int s, int timeout)

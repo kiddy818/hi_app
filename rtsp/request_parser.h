@@ -5,7 +5,7 @@
 #include <boost/tuple/tuple.hpp>
 #include <boost/shared_ptr.hpp>
 
-namespace beacon{namespace rtsp{
+namespace ceanic{namespace rtsp{
 
     struct request;
 

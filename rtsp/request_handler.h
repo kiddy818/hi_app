@@ -4,7 +4,7 @@
 #include <string>
 #include <stream_handler.h>
 
-namespace beacon{namespace rtsp{
+namespace ceanic{namespace rtsp{
 
     struct request;
     class session;

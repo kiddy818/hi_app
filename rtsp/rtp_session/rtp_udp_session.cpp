@@ -1,6 +1,6 @@
 #include "rtp_udp_session.h"
 
-namespace beacon{namespace rtsp{
+namespace ceanic{namespace rtsp{
 
     rtp_udp_session::rtp_udp_session(const char* remote_ip, short remote_rtp_port, short remote_rtcp_port, const char* local_ip, short local_rtp_port, short local_rtcp_port)
         :m_remote_ip(remote_ip), m_remote_rtp_port(remote_rtp_port), m_remote_rtcp_port(remote_rtcp_port), m_local_rtp_port(local_rtp_port), m_local_rtcp_port(local_rtcp_port)

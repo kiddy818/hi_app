@@ -1,6 +1,6 @@
 #include <h264_rtp_serialize.h>
 
-namespace beacon{namespace rtsp{
+namespace ceanic{namespace rtsp{
 
     h264_rtp_serialize::h264_rtp_serialize(int payload)
         :rtp_serialize(payload)

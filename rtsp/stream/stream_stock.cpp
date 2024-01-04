@@ -2,9 +2,8 @@
 #include <dlfcn.h>
 #include <map>
 #include <util/std.h>
-#include <beacon_device.h>
 
-namespace beacon{namespace rtsp{
+namespace ceanic{namespace rtsp{
 
     stream_stock::stream_stock(int chn,int stream_id)
         :m_chn(chn),m_stream_id(stream_id)
@@ -55,7 +54,7 @@ namespace beacon{namespace rtsp{
     {
         if(m_is_start)
         {
-            //beacon_encode_request_i_frame(m_chn,m_stream_id); 
+            //ceanic_encode_request_i_frame(m_chn,m_stream_id); 
             return true;
         }
 

@@ -3,7 +3,7 @@
 
 #include "stream_observer.h"
 
-namespace beacon{namespace rtsp{
+namespace ceanic{namespace rtsp{
 
     class stream
         :public stream_post

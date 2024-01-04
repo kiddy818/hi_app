@@ -8,7 +8,7 @@
 #include <mutex>
 #include <thread>
 
-namespace beacon{namespace rtsp{
+namespace ceanic{namespace rtsp{
 
 #define MAX_SESSION_TIMEOUT (60)
     class session

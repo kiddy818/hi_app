@@ -1,7 +1,7 @@
 #include <util/std.h>
 #include <rtmp/session.h>
 
-namespace beacon{namespace rtmp{
+namespace ceanic{namespace rtmp{
 
 #define RTMP_HEAD_SIZE   (sizeof(RTMPPacket)+RTMP_MAX_HEADER_SIZE)
 

@@ -10,7 +10,7 @@
 #include <boost/date_time.hpp>
 #include <rtsp_log.h>
 
-namespace beacon{namespace rtsp{
+namespace ceanic{namespace rtsp{
 
     short rtsp_request_handler::udp_base_port = 5000;
     std::mutex rtsp_request_handler::udp_port_mutex;

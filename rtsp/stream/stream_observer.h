@@ -7,7 +7,7 @@
 #include <mutex>
 #include <thread>
 
-namespace beacon{namespace rtsp{
+namespace ceanic{namespace rtsp{
 
     class stream_observer
     {

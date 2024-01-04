@@ -2,7 +2,7 @@
 #define stream_buf_include_h
 #include <string.h>
 
-namespace beacon{namespace util{
+namespace ceanic{namespace util{
 
     class stream_buf	
     {

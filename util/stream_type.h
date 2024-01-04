@@ -1,7 +1,7 @@
 #ifndef stream_type_include_h
 #define stream_type_include_h
 
-namespace beacon{namespace util{
+namespace ceanic{namespace util{
 
 #define STREAM_P_FRAME 0
 #define STREAM_I_FRAME 1
@@ -48,7 +48,7 @@ namespace beacon{namespace util{
         STREAM_ENCODE_MJPEG = 1,
     };
 
-#define BEACON_TAG 0x5550564e
+#define CEANIC_TAG 0x5550564e
     typedef struct
     {
         unsigned int    media_fourcc;//"BEACON"

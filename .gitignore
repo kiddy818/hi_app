@@ -31,4 +31,4 @@
 *.out
 *.app
 
-beacon_app
+ceanic_app

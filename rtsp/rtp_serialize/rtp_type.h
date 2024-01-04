@@ -1,7 +1,7 @@
 #ifndef rtp_type_include_h
 #define rtp_type_include_h
 
-namespace beacon{namespace rtsp{
+namespace ceanic{namespace rtsp{
 
 #define MAX_PACKET_LEN 1440
 

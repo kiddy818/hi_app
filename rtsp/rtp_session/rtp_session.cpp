@@ -1,6 +1,6 @@
 #include "rtp_session.h"
 
-namespace beacon{namespace rtsp{
+namespace ceanic{namespace rtsp{
 
     rtp_session::rtp_session()
     {

@@ -1,6 +1,6 @@
 #ifndef rtmp_log_include_h
 #define rtmp_log_include_h
-#include "log/beacon_log.h"
+#include "log/ceanic_log.h"
 extern LOG_HANDLE g_rtmp_log;
 #define RTMP_WRITE_LOG_ERROR(info,...)   WRITE_LOG_ERROR(g_rtmp_log,info,##__VA_ARGS__)
 #define RTMP_WRITE_LOG_DEBUG(info,...)   WRITE_LOG_DEBUG(g_rtmp_log,info,##__VA_ARGS__)

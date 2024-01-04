@@ -1,7 +1,7 @@
 #include <mjpeg_rtp_serialize.h>
 #include <assert.h>
 
-namespace beacon{namespace rtsp{
+namespace ceanic{namespace rtsp{
 
     mjpeg_rtp_serialize::mjpeg_rtp_serialize()
         :rtp_serialize(26)

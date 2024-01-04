@@ -1,7 +1,7 @@
-#ifndef beacon_util_include_h
-#define beacon_util_include_h
+#ifndef ceanic_util_include_h
+#define ceanic_util_include_h
 
-#include "log/beacon_log.h"
+#include "log/ceanic_log.h"
 extern LOG_HANDLE g_app_log;
 #define APP_WRITE_LOG_ERROR(info,...)   WRITE_LOG_ERROR(g_app_log,info,##__VA_ARGS__)
 #define APP_WRITE_LOG_DEBUG(info,...)   WRITE_LOG_DEBUG(g_app_log,info,##__VA_ARGS__)

@@ -8,7 +8,7 @@
 #include <thread>
 #include <rtp_session.h>
 
-namespace beacon{namespace rtsp{
+namespace ceanic{namespace rtsp{
 
     class rtp_serialize
     {

@@ -1,6 +1,6 @@
 #include "stream_handler.h"
 
-namespace beacon{namespace rtsp{
+namespace ceanic{namespace rtsp{
 
     stream_handler::stream_handler()
     {

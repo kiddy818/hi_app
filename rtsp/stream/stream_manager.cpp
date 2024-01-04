@@ -3,7 +3,7 @@
 #include <iostream>
 #include <rtsp_log.h>
 
-namespace beacon{namespace rtsp{
+namespace ceanic{namespace rtsp{
 
     stream_manager* stream_manager::g_instance = NULL;
 

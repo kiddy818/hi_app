@@ -1,5 +1,5 @@
-#ifndef beacon_rtmp_session_include_h
-#define beacon_rtmp_session_include_h
+#ifndef ceanic_rtmp_session_include_h
+#define ceanic_rtmp_session_include_h
 
 #include <string>
 #include <thread>
@@ -8,7 +8,7 @@
 #include <librtmp/rtmp.h>
 #include <librtmp/log.h>
 
-namespace beacon{namespace rtmp{
+namespace ceanic{namespace rtmp{
 
     class session
     {

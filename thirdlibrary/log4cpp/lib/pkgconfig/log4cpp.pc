@@ -1,0 +1,10 @@
+prefix=/home/mjj/work/3403/SS928V100_SDK_V2.0.2.2/smp/a55_linux/mpp/sample/thirdlibrary/log4cpp/mybuild_aarch64_v01c01_linux_gnu
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: log4cpp
+Description: C++ library for flexible logging, modeled after Log4j
+Version: 1.1
+Libs: -L${libdir} -llog4cpp  
+Cflags: -I${includedir}  -fPIC

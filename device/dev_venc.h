@@ -12,7 +12,7 @@ namespace hisilicon{namespace dev{
 
     class venc
         :public std::enable_shared_from_this<venc>,
-        public beacon::rtsp::stream_post
+        public ceanic::rtsp::stream_post
     {
         public:
             venc(int w,int h,int src_fr,int venc_fr,ot_venc_chn venc_chn,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn);

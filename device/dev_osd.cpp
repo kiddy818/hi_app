@@ -1,9 +1,9 @@
 #include "dev_osd.h"
 #include "dev_log.h"
-#include "beacon_freetype.h"
+#include "ceanic_freetype.h"
 
 static const char* g_week_stsr[7] = {"星期日","星期一","星期二","星期三","星期四","星期五","星期六"};
-static beacon_freetype g_freetype("/usr/share/fonts/Vera.ttf","/usr/share/fonts/gbsn00lp.ttf");
+static ceanic_freetype g_freetype("/usr/share/fonts/Vera.ttf","/usr/share/fonts/gbsn00lp.ttf");
 
 #ifndef ROUND_DOWN
 #define ROUND_DOWN(size, align) ((size) & ~((align) - 1))
@@ -144,8 +144,8 @@ namespace hisilicon{namespace dev{
         int area_w;
         int area_h;
         g_freetype.get_width(data_str,m_font_size,&area_w);
-        area_w = ROUND_UP(area_w,32);
-        area_h = ROUND_UP(m_font_size,64);
+        area_w = ROUND_UP(area_w + 1,64);
+        area_h = ROUND_UP(m_font_size + 1,64);
         printf("area_w=%d,area_h=%d\n",area_w,area_h);
 
         m_rgn_attr.attr.overlay.size.width = area_w;

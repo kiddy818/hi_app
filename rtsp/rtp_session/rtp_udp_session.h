@@ -3,7 +3,7 @@
 #include "rtp_session.h"
 #include <string>
 
-namespace beacon{namespace rtsp{
+namespace ceanic{namespace rtsp{
 
     class rtp_udp_session
         :public rtp_session

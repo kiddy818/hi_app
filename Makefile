@@ -1,9 +1,9 @@
 include ../Makefile.param
-
+CXX:=$(CROSS)g++
 STRIP=$(CROSS)strip
 CFLAGS += -g -Wall -O2
 
-THIRD_LIBRARY_PATH=../thirdlibrary
+THIRD_LIBRARY_PATH=./thirdlibrary
 INC_PATH += -I./
 INC_PATH += -I./util/
 INC_PATH += -I./json/
@@ -16,17 +16,21 @@ INC_PATH += -I./rtsp/rtp_session/
 INC_PATH += -I./aiisp/
 INC_PATH += -I./device/
 
-INC_PATH += -I$(THIRD_LIBRARY_PATH)/freetype-2.7.1/mybuild_aarch64_v01c01_linux_gnu/include/freetype2
-INC_PATH += -I$(THIRD_LIBRARY_PATH)/boost_1_60_0/mybuild_aarch64_mix210/include/
-INC_PATH += -I$(THIRD_LIBRARY_PATH)/log4cpp/mybuild_aarch64_v01c01_linux_gnu/include/
-INC_PATH += -I$(THIRD_LIBRARY_PATH)/libevent-2.0.18-stable/mybuild_aarch64_v01c01_linux_gnu/include
-INC_PATH += -I$(THIRD_LIBRARY_PATH)/rtmpdump/librtmp/mybuild_aarch64_v01c01_linux_gnu/include/
+INC_PATH += -I$(THIRD_LIBRARY_PATH)/freetype-2.7.1/include/freetype2
+INC_PATH += -I$(THIRD_LIBRARY_PATH)/boost_1_60_0/include/
+INC_PATH += -I$(THIRD_LIBRARY_PATH)/log4cpp/include/
+INC_PATH += -I$(THIRD_LIBRARY_PATH)/libevent-2.0.18-stable/include
+INC_PATH += -I$(THIRD_LIBRARY_PATH)/rtmpdump/include/
 
 LIBPATH += -L./
 LIBPATH += -L./log
 
 SRCXX += main.cpp
 SRCXX += json/jsoncpp.cpp
+
+#log
+SRCXX += log/ceanic_log.cpp
+SRCXX += log/ceanic_log4cpp.cpp
 
 #rtsp server
 SRCXX += rtsp/server.cpp
@@ -54,11 +58,7 @@ SRCXX += aiisp/aiisp.cpp
 SRCXX += aiisp/aiisp_bnr.cpp
 SRCXX += aiisp/aiisp_drc.cpp
 
-#device files
-#DEVICE_SRC += device/beacon_device.cpp
-#DEVICE_SRC += device/beacon_freetype.cpp
-#DEVICE_SRC += device/beacon_time_interval.cpp
-
+#device
 DEVICE_SRC += device/dev_sys.cpp
 DEVICE_SRC += device/dev_vi.cpp
 DEVICE_SRC += device/dev_vi_isp.cpp
@@ -67,7 +67,7 @@ DEVICE_SRC += device/dev_vi_os04a10_2to1wdr.cpp
 DEVICE_SRC += device/dev_venc.cpp
 DEVICE_SRC += device/dev_chn.cpp
 DEVICE_SRC += device/dev_osd.cpp
-DEVICE_SRC += device/beacon_freetype.cpp
+DEVICE_SRC += device/ceanic_freetype.cpp
 
 #surpport scene
 SCENE_PATH = ../scene_auto
@@ -76,11 +76,10 @@ INC_PATH += -I$(SCENE_PATH)/src/sample
 
 LIBS += -Wl,--start-group
 
-LIBS += $(THIRD_LIBRARY_PATH)/rtmpdump/librtmp/mybuild_aarch64_v01c01_linux_gnu/lib/librtmp.a
-LIBS += ./log/libbeacon_log.a
-LIBS += $(THIRD_LIBRARY_PATH)/log4cpp/mybuild_aarch64_v01c01_linux_gnu/lib/liblog4cpp.a
-LIBS += $(THIRD_LIBRARY_PATH)/libevent-2.0.18-stable/mybuild_aarch64_v01c01_linux_gnu/lib/libevent.a
-LIBS += $(THIRD_LIBRARY_PATH)/freetype-2.7.1/mybuild_aarch64_v01c01_linux_gnu/lib/libfreetype.a
+LIBS += $(THIRD_LIBRARY_PATH)/rtmpdump/lib/librtmp.a
+LIBS += $(THIRD_LIBRARY_PATH)/log4cpp/lib/liblog4cpp.a
+LIBS += $(THIRD_LIBRARY_PATH)/libevent-2.0.18-stable/lib/libevent.a
+LIBS += $(THIRD_LIBRARY_PATH)/freetype-2.7.1/lib/libfreetype.a
 LIBS += $(MPI_LIBS) $(SENSOR_LIBS) $(AUDIO_LIBA) $(REL_LIB)/libsecurec.a
 
 LIBS += $(SCENE_PATH)/src/core/ot_scene.o
@@ -95,7 +94,7 @@ SRC += ../common/sample_comm_isp.c
 
 LIBS+= -Wl,--end-group
 
-target = beacon_app
+target = ceanic_app
 
 all: $(target)
 

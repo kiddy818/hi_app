@@ -4,7 +4,7 @@
 #include <util/std.h>
 #include <thread>
 
-namespace beacon{namespace rtsp{
+namespace ceanic{namespace rtsp{
 
 #define MAX_RTCP_TIMEOUT (60)
     class rtp_session

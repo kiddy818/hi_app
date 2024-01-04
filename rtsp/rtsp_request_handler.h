@@ -5,7 +5,7 @@
 #include <stream_manager.h>
 #include <stream_handler.h>
 
-namespace beacon{namespace rtsp{
+namespace ceanic{namespace rtsp{
 
     enum
     {

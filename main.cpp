@@ -13,7 +13,7 @@ LOG_HANDLE g_dev_log;
 std::shared_ptr<hisilicon::dev::chn> g_chn;
 
 #define MAX_CHANNEL 1
-#define VI_FILE_PATH "/opt/beacon/etc/vi.json"
+#define VI_FILE_PATH "/opt/ceanic/etc/vi.json"
 typedef struct
 {
     char name[32];
@@ -107,14 +107,14 @@ typedef struct
     int mode;
 }scene_info_t;
 static scene_info_t g_scene_info;
-#define SCENE_FILE_PATH "/opt/beacon/scene/scene.json"
+#define SCENE_FILE_PATH "/opt/ceanic/scene/scene.json"
 static void init_scene_info()
 {
     Json::Value root;
 
     root["scene"]["enable"] = 1;
     root["scene"]["mode"] = 0;
-    root["scene"]["dir_path"] = "/opt/beacon/scene/param/sensor_os04a10";
+    root["scene"]["dir_path"] = "/opt/ceanic/scene/param/sensor_os04a10";
     std::string str= root.toStyledString();
     std::ofstream ofs;
     ofs.open(SCENE_FILE_PATH);
@@ -171,14 +171,14 @@ typedef struct
     char model_file[255];
 }aiisp_info_t;
 static aiisp_info_t g_aiisp_info;
-#define AIISP_FILE_PATH "/opt/beacon/aiisp/aiisp.json"
+#define AIISP_FILE_PATH "/opt/ceanic/aiisp/aiisp.json"
 static void init_aiisp_info()
 {
     Json::Value root;
 
     root["aiisp"]["enable"] = 1;
     root["aiisp"]["mode"] = 0;
-    root["aiisp"]["model_file"] = "/opt/beacon/aiisp/aibnr/model/aibnr_model_denoise_priority_lite.bin";
+    root["aiisp"]["model_file"] = "/opt/ceanic/aiisp/aibnr/model/aibnr_model_denoise_priority_lite.bin";
     std::string str= root.toStyledString();
     std::ofstream ofs;
     ofs.open(AIISP_FILE_PATH);
@@ -293,14 +293,14 @@ int main(int argc,char* argv[])
 
     int chn = 0;
 
-    g_app_log = beacon_start_log("beacon_app",BEACON_LOG_MODE_CONSOLE,BEACON_LOG_DEBUG,NULL,0);
+    g_app_log = ceanic_start_log("ceanic_app",CEANIC_LOG_MODE_CONSOLE,CEANIC_LOG_DEBUG,NULL,0);
     APP_WRITE_LOG_INFO("==========================star========================");
 
-    g_rtsp_log = beacon_start_log("beacon_rtsp",BEACON_LOG_MODE_CONSOLE,BEACON_LOG_INFO,NULL,0);
-    g_rtmp_log = beacon_start_log("beacon_rtmp",BEACON_LOG_MODE_CONSOLE,BEACON_LOG_INFO,NULL,0);
-    g_dev_log = beacon_start_log("beacon_dev",BEACON_LOG_MODE_CONSOLE,BEACON_LOG_INFO,NULL,0);
+    g_rtsp_log = ceanic_start_log("ceanic_rtsp",CEANIC_LOG_MODE_CONSOLE,CEANIC_LOG_INFO,NULL,0);
+    g_rtmp_log = ceanic_start_log("ceanic_rtmp",CEANIC_LOG_MODE_CONSOLE,CEANIC_LOG_INFO,NULL,0);
+    g_dev_log = ceanic_start_log("ceanic_dev",CEANIC_LOG_MODE_CONSOLE,CEANIC_LOG_INFO,NULL,0);
 
-    beacon::rtsp::rtsp_server rs(554);
+    ceanic::rtsp::rtsp_server rs(554);
     if(!rs.run())
     {
         APP_WRITE_LOG_ERROR("Start rtsp server failed!!!");
@@ -309,7 +309,7 @@ int main(int argc,char* argv[])
 
     //rtmp
     std::string rtmp_url = "rtmp://192.168.0.184/live/" + std::to_string(chn + 1);
-    beacon::rtmp::session_manager::instance()->create_session(chn,0,rtmp_url.c_str(),60);
+    ceanic::rtmp::session_manager::instance()->create_session(chn,0,rtmp_url.c_str(),60);
 
     //chn init
     hisilicon::dev::chn::init();

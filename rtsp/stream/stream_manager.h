@@ -6,7 +6,7 @@
 #include <mutex>
 #include <thread>
 
-namespace beacon{namespace rtsp{
+namespace ceanic{namespace rtsp{
 
     typedef std::shared_ptr<stream_stock> stream_ptr;
 

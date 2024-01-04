@@ -1,5 +1,5 @@
 #include "stream_video_handler.h"
-namespace beacon{namespace rtsp{
+namespace ceanic{namespace rtsp{
 
     stream_video_handler::stream_video_handler(rtp_session_ptr session_ptr, rtp_serialize_ptr serialize_ptr)
         :m_rtp_session(session_ptr), m_rtp_serialize(serialize_ptr)

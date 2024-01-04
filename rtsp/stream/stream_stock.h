@@ -4,7 +4,7 @@
 #include <stream.h>
 #include <util/stream_buf.h>
 
-namespace beacon{namespace rtsp{
+namespace ceanic{namespace rtsp{
 
 #define MAX_STREAM_BUF_LEN (2 * 1024 * 1024)
 

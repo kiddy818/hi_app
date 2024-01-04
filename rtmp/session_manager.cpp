@@ -2,7 +2,7 @@
 #include <rtmp/session_manager.h>
 #include <rtmp/rtmp_log.h>
 
-namespace beacon{namespace rtmp{
+namespace ceanic{namespace rtmp{
 
     session_manager::session_manager()
     {

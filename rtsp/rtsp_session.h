@@ -6,7 +6,7 @@
 #include "request.h"
 #include "request_parser.h"
 
-namespace beacon{namespace rtsp{
+namespace ceanic{namespace rtsp{
 
     class rtsp_session
         :public session

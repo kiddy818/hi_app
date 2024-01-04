@@ -247,11 +247,11 @@ namespace hisilicon{namespace dev{
         int es_type = 0;
         unsigned long long time_stamp = 0;
 
-        beacon::util::stream_head sh;
+        ceanic::util::stream_head sh;
 
         memset(&sh,0,sizeof(sh));
         sh.type = STREAM_NALU_SLICE;    
-        sh.tag = BEACON_TAG;
+        sh.tag = CEANIC_TAG;
         sh.sys_time = time(NULL);  
         sh.nalu_count = pstream->pack_cnt;         
         sh.w = m_venc_w;

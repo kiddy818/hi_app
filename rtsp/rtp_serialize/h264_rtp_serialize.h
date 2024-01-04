@@ -4,7 +4,7 @@
 #include <rtp_serialize.h>
 #include <util/std.h>
 
-namespace beacon{namespace rtsp{
+namespace ceanic{namespace rtsp{
 
       class h264_rtp_serialize
         :public rtp_serialize
