@@ -19,3 +19,12 @@ cd 3516dv500_app
 make
 ```
 
+#### 运行
+1. 需要将版本库中rootfs目录下的opt/ceanic目录复制到板子,假设nfs已经挂载,nfs目录为/mnt 
+```
+cp /mnt/opt/ceanic /opt/ -Rdp
+```
+2. 直接运行编译的程序 
+```
+./ceanic_app
+```
