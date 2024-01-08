@@ -55,7 +55,7 @@ namespace ceanic{namespace rtsp{
     {
         if(m_is_start)
         {
-            return hisilicon::dev::chn::request_i_frame(m_chn / 2);
+            return hisilicon::dev::chn::request_i_frame(m_chn,m_stream_id);
         }
 
         return false;
@@ -68,7 +68,7 @@ namespace ceanic{namespace rtsp{
             return false;
         }
 
-        return hisilicon::dev::chn::get_stream_head(m_chn / 2,mh);
+        return hisilicon::dev::chn::get_stream_head(m_chn,m_stream_id,mh);
     }
 
     void stream_stock::process_data(util::stream_head* head,const char* buf,int len)

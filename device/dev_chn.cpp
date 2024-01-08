@@ -314,23 +314,29 @@ namespace hisilicon{namespace dev{
         return m_is_start;
     }
 
-    bool chn::request_i_frame(int ch)
+    bool chn::request_i_frame(int chn,int stream)
     {
-        std::shared_ptr<dev::chn> chn_ptr = g_chns[ch];
+        std::shared_ptr<dev::chn> chn_ptr = g_chns[chn];
         if(!chn_ptr)
         {
             return false;
         }
 
-        chn_ptr->m_venc_main_ptr->request_i_frame();
-        chn_ptr->m_venc_sub_ptr->request_i_frame();
+        if(stream == 0)
+        {
+            chn_ptr->m_venc_main_ptr->request_i_frame();
+        }
+        else
+        {
+            chn_ptr->m_venc_sub_ptr->request_i_frame();
+        }
         return true;
     }
 
-    bool chn::get_stream_head(int ch,ceanic::util::media_head* mh)
+    bool chn::get_stream_head(int chn,int stream,ceanic::util::media_head* mh)
     {
         using namespace ceanic::util;
-        std::shared_ptr<dev::chn> chn_ptr = g_chns[ch];
+        std::shared_ptr<dev::chn> chn_ptr = g_chns[chn];
         if(!chn_ptr)
         {
             return false;

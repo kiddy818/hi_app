@@ -56,8 +56,8 @@ namespace hisilicon{namespace dev{
             bool aiisp_start(const char* model_file,int mode);
             void aiisp_stop();
 
-            static bool get_stream_head(int ch,ceanic::util::media_head* mh);
-            static bool request_i_frame(int ch);
+            static bool get_stream_head(int chn,int stram,ceanic::util::media_head* mh);
+            static bool request_i_frame(int chn,int stream);
 
         private:
             bool m_is_start;
