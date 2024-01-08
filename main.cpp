@@ -12,7 +12,93 @@ LOG_HANDLE g_rtmp_log;
 LOG_HANDLE g_dev_log;
 std::shared_ptr<hisilicon::dev::chn> g_chn;
 
-#define MAX_CHANNEL 1
+#define VENC_FILE_PATH "/opt/ceanic/etc/venc.json"
+typedef struct
+{
+    char name[32];
+    int w;
+    int h;
+    int fr;
+    int bitrate;
+}venc_t;
+static venc_t g_venc_info[MAX_CHANNEL];
+static void init_venc_info()
+{
+    Json::Value root;
+    for(auto i = 0; i < MAX_CHANNEL; i++)
+    {
+        std::string venc = "venc" + std::to_string(i + 1);
+
+        sprintf(g_venc_info[i].name,"H264");
+        g_venc_info[i].w = 2688;
+        g_venc_info[i].h = 1520;
+        g_venc_info[i].fr = 30;
+        g_venc_info[i].bitrate = 4000;
+
+        root[venc]["name"] = g_venc_info[i].name;
+        root[venc]["w"] = g_venc_info[i].w;
+        root[venc]["h"] = g_venc_info[i].h;
+        root[venc]["fr"] = g_venc_info[i].fr;
+        root[venc]["bitrate"] = g_venc_info[i].bitrate;
+    }
+
+    std::string str= root.toStyledString();
+    std::ofstream ofs;
+    ofs.open(VENC_FILE_PATH);
+    ofs << str;
+    ofs.close();
+}
+
+static int get_venc_info()
+{
+    try
+    {
+        if(access(VENC_FILE_PATH,F_OK) < 0)
+        {
+            init_venc_info();
+
+            if(access(VENC_FILE_PATH,F_OK) < 0)
+            {
+                return -1;
+            }
+        }
+
+        std::ifstream ifs;
+        ifs.open(VENC_FILE_PATH);
+        if(!ifs.is_open())
+        {
+            return -1;
+        }
+        Json::Reader reader;  
+        Json::Value root; 
+        if (!reader.parse(ifs, root, false)) 
+        {
+            return -1;
+        }
+
+        Json::Value node; 
+        for(auto i = 0; i < MAX_CHANNEL; i++)
+        {
+            std::string venc= "venc" + std::to_string(i + 1);
+            node = root[venc];
+
+            sprintf(g_venc_info[i].name,"%s",node["name"].asCString());
+            g_venc_info[i].w = node["w"].asInt();
+            g_venc_info[i].h = node["h"].asInt();
+            g_venc_info[i].fr = node["fr"].asInt();
+            g_venc_info[i].bitrate = node["bitrate"].asInt();
+        }
+
+        ifs.close();
+
+        return 0;
+    }
+    catch(...)
+    {
+        return -1;
+    }
+}
+
 #define VI_FILE_PATH "/opt/ceanic/etc/vi.json"
 typedef struct
 {
@@ -314,6 +400,7 @@ int main(int argc,char* argv[])
     //chn init
     hisilicon::dev::chn::init();
 
+    //vi
     get_vi_info();
     for(auto i = 0; i < MAX_CHANNEL; i++)
     {
@@ -324,10 +411,20 @@ int main(int argc,char* argv[])
         printf("\tfr:%d\n",g_vi_info[i].fr);
     }
 
-    g_chn = std::make_shared<hisilicon::dev::chn>(g_vi_info[chn].name,chn);
-
     //venc
-    g_chn->start(g_vi_info[chn].w,g_vi_info[chn].h,g_vi_info[chn].fr,4000);
+    get_venc_info();
+    for(auto i = 0; i < MAX_CHANNEL; i++)
+    {
+        printf("venc%d:\n",i + 1);
+        printf("\tname:%s\n",g_venc_info[i].name);
+        printf("\tw:%d\n",g_venc_info[i].w);
+        printf("\th:%d\n",g_venc_info[i].h);
+        printf("\tfr:%d\n",g_venc_info[i].fr);
+        printf("\tbitrate:%d\n",g_venc_info[i].bitrate);
+    }
+
+    g_chn = std::make_shared<hisilicon::dev::chn>(g_vi_info[chn].name,g_venc_info[chn].name,chn);
+    g_chn->start(g_venc_info[chn].w,g_venc_info[chn].h,g_venc_info[chn].fr,g_venc_info[chn].bitrate);
     hisilicon::dev::chn::start_capture(true);
 
     //scene

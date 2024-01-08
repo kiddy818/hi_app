@@ -46,6 +46,7 @@ SRCXX += rtsp/rtp_session/rtp_session.cpp
 SRCXX += rtsp/rtp_session/rtp_tcp_session.cpp
 SRCXX += rtsp/rtp_session/rtp_udp_session.cpp
 SRCXX += rtsp/rtp_serialize/h264_rtp_serialize.cpp
+SRCXX += rtsp/rtp_serialize/h265_rtp_serialize.cpp
 SRCXX += rtsp/rtp_serialize/mjpeg_rtp_serialize.cpp
 SRCXX += rtsp/rtp_serialize/rtp_serialize.cpp
 

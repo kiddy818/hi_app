@@ -4,6 +4,7 @@
 #include <request.h>
 #include <stream_video_handler.h>
 #include <h264_rtp_serialize.h>
+#include <h265_rtp_serialize.h>
 #include <mjpeg_rtp_serialize.h>
 #include <rtp_udp_session.h>
 #include <rtp_tcp_session.h>
@@ -265,6 +266,12 @@ namespace ceanic{namespace rtsp{
             sdp_desc += "c=IN IP4 0.0.0.0\r\n";
             sdp_desc += "a=rtpmap:96 H264/90000\r\n";
         }
+        else if (m_mh.vdec == util::STREAM_ENCODE_H265)
+        {
+            sdp_desc += "m=video 0 RTP/AVP 96\r\n";
+            sdp_desc += "c=IN IP4 0.0.0.0\r\n";
+            sdp_desc += "a=rtpmap:96 H265/90000\r\n";
+        }
         else if (m_mh.vdec == util::STREAM_ENCODE_MJPEG)
         {
             sdp_desc += "m=video 0 RTP/AVP 26\r\n";
@@ -438,6 +445,10 @@ namespace ceanic{namespace rtsp{
             if (m_mh.vdec == util::STREAM_ENCODE_H264)
             {
                 rtp_serialize = rtp_serialize_ptr(new h264_rtp_serialize(96));
+            }
+            else if(m_mh.vdec == util::STREAM_ENCODE_H265)
+            {
+                rtp_serialize = rtp_serialize_ptr(new h265_rtp_serialize(96));
             }
             else if (m_mh.vdec == util::STREAM_ENCODE_MJPEG)
             {

@@ -46,6 +46,7 @@ namespace ceanic{namespace util{
     {
         STREAM_ENCODE_H264 = 0,
         STREAM_ENCODE_MJPEG = 1,
+        STREAM_ENCODE_H265 = 2,
     };
 
 #define CEANIC_TAG 0x5550564e

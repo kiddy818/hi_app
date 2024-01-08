@@ -25,6 +25,18 @@ namespace hisilicon{namespace dev{
     {
     }
 
+    bool venc::request_i_frame()
+    {
+        td_s32 ret = ss_mpi_venc_request_idr(m_venc_chn,TD_TRUE);
+        if(ret != TD_SUCCESS)
+        {
+            DEV_WRITE_LOG_ERROR("ss_mpi_venc_request_id faild with%#x!", ret);
+            return false;
+        }
+
+        return true;
+    }
+
     ot_venc_chn venc::venc_chn()
     {
         return m_venc_chn;
@@ -287,6 +299,78 @@ namespace hisilicon{namespace dev{
     }
 
     venc_h264_cbr::~venc_h264_cbr()
+    {
+    }
+
+    venc_h265::venc_h265(int w,int h,int src_fr,int venc_fr,ot_venc_chn venc_chn,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn)
+        :venc(w,h,src_fr,venc_fr,venc_chn,vpss_grp,vpss_chn)
+    {
+        memset(&m_venc_chn_attr,0,sizeof(m_venc_chn_attr));
+        m_venc_chn_attr.venc_attr.type = OT_PT_H265;
+        m_venc_chn_attr.venc_attr.max_pic_width = m_venc_w;
+        m_venc_chn_attr.venc_attr.max_pic_height = m_venc_h;
+        m_venc_chn_attr.venc_attr.pic_width = m_venc_w;/*the picture width*/
+        m_venc_chn_attr.venc_attr.pic_height    = m_venc_h;/*the picture height*/
+        m_venc_chn_attr.venc_attr.buf_size      = m_venc_w * m_venc_h  *3 / 2;/*stream buffer size*/
+        m_venc_chn_attr.venc_attr.is_by_frame      = TD_TRUE;/*get stream mode is slice mode or frame mode?*/
+        m_venc_chn_attr.venc_attr.profile = 0;
+        m_venc_chn_attr.venc_attr.h265_attr.rcn_ref_share_buf_en = TD_FALSE;
+        m_venc_chn_attr.venc_attr.h265_attr.frame_buf_ratio = 70;
+        m_venc_chn_attr.gop_attr.gop_mode = OT_VENC_GOP_MODE_NORMAL_P;
+        m_venc_chn_attr.gop_attr.normal_p.ip_qp_delta = 2; /* 2 is a number */
+    }
+
+    venc_h265::~venc_h265()
+    {
+    }
+
+    void venc_h265::process_video_stream(ot_venc_stream* pstream)
+    {
+        char* es_buf = NULL;
+        int es_len = 0;
+        int es_type = 0;
+        unsigned long long time_stamp = 0;
+
+        ceanic::util::stream_head sh;
+
+        memset(&sh,0,sizeof(sh));
+        sh.type = STREAM_NALU_SLICE;    
+        sh.tag = CEANIC_TAG;
+        sh.sys_time = time(NULL);  
+        sh.nalu_count = pstream->pack_cnt;         
+        sh.w = m_venc_w;
+        sh.h = m_venc_h;
+
+        for(unsigned int i = 0; i < pstream->pack_cnt; i++)
+        {
+            es_buf = (char*)(pstream->pack[i].addr + pstream->pack[i].offset);
+            es_len = pstream->pack[i].len - pstream->pack[i].offset;
+            es_type = (pstream->pack[i].data_type.h264_type == 19) ? 1 : 0;
+            time_stamp = pstream->pack[i].pts / 1000;
+
+            //printf("packet%d,len=%d,%02x,%02x,%02x,%02x,%02x\n",i,es_len,es_buf[0],es_buf[1],es_buf[2],es_buf[3],es_buf[4]);
+
+            sh.nalu[i].data = (char*)es_buf;
+            sh.nalu[i].size = es_len; 
+            sh.nalu[i].timestamp = time_stamp * 90;
+            //g_stream_fun(chn,stream,es_type,time_stamp,es_buf,es_len,g_stream_fun_usr);
+        }
+
+        post_stream_to_observer(&sh,NULL,0);
+    }
+
+    venc_h265_cbr::venc_h265_cbr(int w,int h,int src_fr,int venc_fr,ot_venc_chn venc_chn,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn,int bitrate)
+        :venc_h265(w,h,src_fr,venc_fr,venc_chn,vpss_grp,vpss_chn),m_bitrate(bitrate)
+    {
+        m_venc_chn_attr.rc_attr.rc_mode = OT_VENC_RC_MODE_H265_CBR;
+        m_venc_chn_attr.rc_attr.h265_cbr.gop = m_venc_fr; /*the interval of IFrame*/
+        m_venc_chn_attr.rc_attr.h265_cbr.stats_time = 1; /* stream rate statics time(s) */
+        m_venc_chn_attr.rc_attr.h265_cbr.src_frame_rate= m_src_fr; /* input (vi) frame rate */
+        m_venc_chn_attr.rc_attr.h265_cbr.dst_frame_rate = m_venc_fr; /* target frame rate */
+        m_venc_chn_attr.rc_attr.h265_cbr.bit_rate = m_bitrate;
+    }
+
+    venc_h265_cbr::~venc_h265_cbr()
     {
     }
 

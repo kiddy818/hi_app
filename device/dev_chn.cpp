@@ -8,14 +8,16 @@ namespace hisilicon{namespace dev{
 
     ot_scene_param chn::g_scene_param;
     ot_scene_video_mode chn::g_scene_video_mode;
+    std::shared_ptr<chn> chn::g_chns[MAX_CHANNEL];
 
-    chn::chn(const char* name,int chn_no)
-        :m_is_start(false),m_name(name),m_chn(chn_no)
+    chn::chn(const char* vi_name,const char* venc_mode,int chn_no)
+        :m_is_start(false),m_vi_name(vi_name),m_chn(chn_no),m_venc_mode(venc_mode)
     {
     }
 
     chn::~chn()
     {
+        stop();
     }
 
     bool chn::start(int venc_w,int venc_h,int fr,int bitrate)
@@ -25,17 +27,17 @@ namespace hisilicon{namespace dev{
             return false;
         }
 
-        if(m_name == "OS04A10")
+        if(m_vi_name == "OS04A10")
         {
             m_vi_ptr = std::make_shared<vi_os04a10_liner>();
         }
-        else if(m_name == "OS04A10_WDR")
+        else if(m_vi_name == "OS04A10_WDR")
         {
             m_vi_ptr = std::make_shared<vi_os04a10_2to1wdr>();
         }
         else
         {
-            DEV_WRITE_LOG_ERROR("unsupport sensor name=%s",m_name.c_str());
+            DEV_WRITE_LOG_ERROR("unsupport sensor name=%s",m_vi_name.c_str());
             return false;
         }
 
@@ -54,8 +56,23 @@ namespace hisilicon{namespace dev{
             return false;
         }
 
-        m_venc_main_ptr = std::make_shared<venc_h264_cbr>(venc_w,venc_h,m_vi_ptr->fr(),fr,m_vi_ptr->vi_dev(),m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),bitrate);
-        m_venc_sub_ptr  = std::make_shared<venc_h264_cbr>(704,576,m_vi_ptr->fr(),fr,m_venc_main_ptr->venc_chn() + 1,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),1000);
+        if(m_venc_mode == "H264")
+        {
+            m_venc_main_ptr = std::make_shared<venc_h264_cbr>(venc_w,venc_h,m_vi_ptr->fr(),fr,m_vi_ptr->vi_dev(),m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),bitrate);
+            m_venc_sub_ptr  = std::make_shared<venc_h264_cbr>(704,576,m_vi_ptr->fr(),fr,m_venc_main_ptr->venc_chn() + 1,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),1000);
+
+        }
+        else if(m_venc_mode == "H265")
+        {
+            m_venc_main_ptr = std::make_shared<venc_h265_cbr>(venc_w,venc_h,m_vi_ptr->fr(),fr,m_vi_ptr->vi_dev(),m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),bitrate);
+            m_venc_sub_ptr  = std::make_shared<venc_h265_cbr>(704,576,m_vi_ptr->fr(),fr,m_venc_main_ptr->venc_chn() + 1,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),1000);
+
+        }
+        else
+        {
+            DEV_WRITE_LOG_ERROR("invalid venc mode");
+        }
+
         if(!m_venc_main_ptr->start()
                 || !m_venc_sub_ptr->start())
         {
@@ -77,6 +94,8 @@ namespace hisilicon{namespace dev{
 
         m_venc_main_ptr->register_stream_observer(shared_from_this());
         m_venc_sub_ptr->register_stream_observer(shared_from_this());
+
+        g_chns[m_chn] = shared_from_this();
         m_is_start = true;
         return true;
     }
@@ -99,9 +118,11 @@ namespace hisilicon{namespace dev{
         m_venc_sub_ptr->stop();
         m_vi_ptr->stop();
 
-        m_venc_main_ptr.reset();
-        m_venc_sub_ptr.reset();
-        m_vi_ptr.reset();
+        m_venc_main_ptr = nullptr;
+        m_venc_sub_ptr = nullptr;
+        m_vi_ptr = nullptr;
+
+        g_chns[m_chn] = nullptr;
     }
 
     void chn::start_capture(bool enable)
@@ -293,6 +314,45 @@ namespace hisilicon{namespace dev{
         return m_is_start;
     }
 
+    bool chn::request_i_frame(int ch)
+    {
+        std::shared_ptr<dev::chn> chn_ptr = g_chns[ch];
+        if(!chn_ptr)
+        {
+            return false;
+        }
+
+        chn_ptr->m_venc_main_ptr->request_i_frame();
+        chn_ptr->m_venc_sub_ptr->request_i_frame();
+        return true;
+    }
+
+    bool chn::get_stream_head(int ch,ceanic::util::media_head* mh)
+    {
+        using namespace ceanic::util;
+        std::shared_ptr<dev::chn> chn_ptr = g_chns[ch];
+        if(!chn_ptr)
+        {
+            return false;
+        }
+
+        memset(mh,0,sizeof(media_head));
+        mh->media_fourcc = CEANIC_TAG;
+        mh->ver = 1;
+        if(chn_ptr->m_venc_mode == "H264")
+        {
+            mh->vdec = STREAM_ENCODE_H264;
+        }
+        else if(chn_ptr->m_venc_mode == "H265")
+        {
+            mh->vdec = STREAM_ENCODE_H265;
+        }
+        else
+        {
+            assert(0);
+        }
+        return true;
+    }
 }}//namespace
 
 

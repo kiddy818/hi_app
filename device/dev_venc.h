@@ -25,6 +25,7 @@ namespace hisilicon{namespace dev{
             int venc_w();
             int venc_h();
             virtual void process_video_stream(ot_venc_stream* pstream) = 0;
+            bool request_i_frame();
             
             static bool start_capture();
             static void stop_capture();
@@ -72,6 +73,26 @@ namespace hisilicon{namespace dev{
             int m_bitrate;
     };
 
+    class venc_h265
+        :public venc
+    {
+        public:
+            venc_h265(int w,int h,int src_fr,int venc_fr,ot_venc_chn venc_chn,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn);
+            virtual ~venc_h265();
+
+            virtual void process_video_stream(ot_venc_stream* pstream);
+    };
+
+    class venc_h265_cbr
+        :public venc_h265
+    {
+        public:
+            venc_h265_cbr(int w,int h,int src_fr,int venc_fr,ot_venc_chn venc_chn,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn,int bitrate);
+            virtual ~venc_h265_cbr();
+
+        protected:
+            int m_bitrate;
+    };
 }}//namespace
 
 #endif

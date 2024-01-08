@@ -2,6 +2,7 @@
 #include <dlfcn.h>
 #include <map>
 #include <util/std.h>
+#include <device/dev_chn.h>
 
 namespace ceanic{namespace rtsp{
 
@@ -54,8 +55,7 @@ namespace ceanic{namespace rtsp{
     {
         if(m_is_start)
         {
-            //ceanic_encode_request_i_frame(m_chn,m_stream_id); 
-            return true;
+            return hisilicon::dev::chn::request_i_frame(m_chn / 2);
         }
 
         return false;
@@ -68,8 +68,7 @@ namespace ceanic{namespace rtsp{
             return false;
         }
 
-        *mh = m_media_head;
-        return true;
+        return hisilicon::dev::chn::get_stream_head(m_chn / 2,mh);
     }
 
     void stream_stock::process_data(util::stream_head* head,const char* buf,int len)

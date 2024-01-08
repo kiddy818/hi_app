@@ -21,6 +21,8 @@ extern "C"
 #include <aiisp_drc.h>
 #include <aiisp_3dnr.h>
 
+#define MAX_CHANNEL 1
+
 namespace hisilicon{namespace dev{
 
     class chn 
@@ -28,7 +30,7 @@ namespace hisilicon{namespace dev{
          ,public std:: enable_shared_from_this<chn>
     {
         public:
-            chn(const char* name,int chn_no);
+            chn(const char* vi_name,const char*venc_mode,int chn_no);
             ~chn();
 
             bool start(int venc_w,int venc_h,int fr,int bitrate);
@@ -54,9 +56,12 @@ namespace hisilicon{namespace dev{
             bool aiisp_start(const char* model_file,int mode);
             void aiisp_stop();
 
+            static bool get_stream_head(int ch,ceanic::util::media_head* mh);
+            static bool request_i_frame(int ch);
+
         private:
             bool m_is_start;
-            std::string m_name;
+            std::string m_vi_name;
             std::shared_ptr<vi> m_vi_ptr;
             std::shared_ptr<venc> m_venc_main_ptr;
             std::shared_ptr<venc> m_venc_sub_ptr;
@@ -64,9 +69,11 @@ namespace hisilicon{namespace dev{
             std::shared_ptr<osd_date> m_osd_date_main;
             std::shared_ptr<osd_date> m_osd_date_sub;
             int m_chn;
+            std::string m_venc_mode;
 
             static ot_scene_param g_scene_param;
             static ot_scene_video_mode g_scene_video_mode;
+            static std::shared_ptr<chn> g_chns[MAX_CHANNEL];
     };
 
 }}//namespace
