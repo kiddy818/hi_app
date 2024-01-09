@@ -21,7 +21,6 @@ namespace ceanic{namespace rtmp{
 
     bool session_manager::session_exists(int32_t chn,int32_t stream_id,std::string url)
     {
-        std::unique_lock<std::mutex> lock(m_sess_mu);
         for(auto it = m_sess.begin(); it != m_sess.end(); it++)
         {
             sess_key_ptr key = it->first;
@@ -31,26 +30,6 @@ namespace ceanic{namespace rtmp{
                     && key->stream_id == stream_id
                     && key->url == url)
             {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    bool session_manager::reset_session_tm(int32_t chn,int32_t stream_id,std::string url,uint32_t max_tm)
-    {
-        std::unique_lock<std::mutex> lock(m_sess_mu);
-        for(auto it = m_sess.begin(); it != m_sess.end();it++)
-        {
-            sess_key_ptr key = it->first;
-            sess_ptr sess = it->second;
-
-            if(key->chn == chn 
-                    && key->stream_id == stream_id
-                    && key->url == url)
-            {
-                sess->reset_max_tm(max_tm);
                 return true;
             }
         }
@@ -58,33 +37,29 @@ namespace ceanic{namespace rtmp{
         return false;
     }
 
-    bool session_manager::create_session(int32_t chn,int32_t stream_id,std::string url,uint32_t max_tm)
+    bool session_manager::create_session(int32_t chn,int32_t stream_id,std::string url)
     {
+        std::unique_lock<std::mutex> lock(m_sess_mu);
+
         if(session_exists(chn,stream_id,url))
         {
             return false;
         }
 
-        sess_ptr sess = std::make_shared<timed_session>(url,max_tm);
+        //sess_ptr sess = std::make_shared<timed_session>(url,7200000);
+        sess_ptr sess = std::make_shared<session>(url);
         if(!sess->start())
         {
             return false;
         }
 
-        std::unique_lock<std::mutex> lock(m_sess_mu);
+        sess_key_ptr sess_key = std::make_shared<sess_key_t>();
+        sess_key->chn = chn;
+        sess_key->stream_id = stream_id;
+        sess_key->url = url;
 
-        if(!session_exists(chn,stream_id,url))
-        {
-            sess_key_ptr sess_key = std::make_shared<sess_key_t>();
-            sess_key->chn = chn;
-            sess_key->stream_id = stream_id;
-            sess_key->url = url;
-
-            m_sess.insert(std::make_pair(sess_key,sess));
-            return true;
-        }
-
-        return false;
+        m_sess.insert(std::make_pair(sess_key,sess));
+        return true;
     }
 
     void session_manager::delete_session(int32_t chn,int32_t stream_id,std::string url)
@@ -130,7 +105,7 @@ namespace ceanic{namespace rtmp{
         }
     }
 
-    void session_manager::process_data(int32_t chn,int32_t stream_id,util::stream_head* head,const uint8_t* buf,int32_t len)
+    void session_manager::process_data(int32_t chn,int32_t stream_id,util::stream_head* head)
     {
         std::unique_lock<std::mutex> lock(m_sess_mu);
 
@@ -142,27 +117,25 @@ namespace ceanic{namespace rtmp{
             if(key->chn == chn
                     && key->stream_id == stream_id)
             {
-                auto ret = sess->input_one_nalu(buf,len,head->time_stamp);
-
-                if(ret != timed_session::TIMED_SESSION_SUCCESS)
+                bool send_success = true;
+                for(auto i = 0; i < head->nalu_count; i++)
                 {
-                    if(ret == timed_session::TIMED_SESSION_OUT_OF_TIME)
+                    if(!sess->input_one_nalu((uint8_t*)head->nalu[i].data,head->nalu[i].size,head->nalu[i].timestamp))
                     {
-                        RTMP_WRITE_LOG_INFO("chn:%d,stream:%d,url:%s out of time,auto deleted",key->chn,key->stream_id,key->url.c_str());
+                        send_success = false;
+                        break;
                     }
-                    else
-                    {
-                        RTMP_WRITE_LOG_INFO("chn:%d,stream:%d,url:%s unexcepted error,auto deleted",key->chn,key->stream_id,key->url.c_str());
-                    }
+                }
 
+                if(!send_success)
+                {
                     sess->stop();
                     it = m_sess.erase(it);
-                }
-                else
-                {
-                    it++;
+                    continue;
                 }
             }
+
+            it++;
         }
     }
 

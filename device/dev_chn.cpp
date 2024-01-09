@@ -166,12 +166,6 @@ namespace hisilicon{namespace dev{
             return;
         }
 
-        for(int i = 0; i < head->nalu_count; i++)
-        {
-            head->nalu[i].data += 4;//remove 00 00 00 01
-            head->nalu[i].size -= 4;
-        }
-
         int stream = 0;
         if(head->w == m_venc_main_ptr->venc_w()
                 && head->h == m_venc_main_ptr->venc_h())
@@ -183,8 +177,19 @@ namespace hisilicon{namespace dev{
             stream = 1;
         }
 
+        if(m_venc_mode == "H264")
+        {
+            ceanic::rtmp::session_manager::instance()->process_data(m_chn,stream,head);
+        }
+
+        for(int i = 0; i < head->nalu_count; i++)
+        {
+            head->nalu[i].data += 4;//remove 00 00 00 01
+            head->nalu[i].size -= 4;
+            head->nalu[i].timestamp *= 40;
+        }
+
         ceanic::rtsp::stream_manager::instance()->process_data(m_chn,stream,head,NULL,0);
-        ceanic::rtmp::session_manager::instance()->process_data(m_chn,stream,head,NULL,0);
     }
 
     void chn::on_stream_error(int errno)

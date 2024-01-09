@@ -7,7 +7,7 @@
 
 namespace ceanic{namespace rtmp{
 
-    using sess_ptr = std::shared_ptr<timed_session>;
+    using sess_ptr = std::shared_ptr<session>;
 
     class session_manager
     {
@@ -18,12 +18,11 @@ namespace ceanic{namespace rtmp{
 
             static session_manager* instance();
 
-            bool reset_session_tm(int32_t chn,int32_t stream_id,std::string url,uint32_t max_tm);
-            bool create_session(int32_t chn,int32_t stream_id,std::string url,uint32_t max_tm);
+            bool create_session(int32_t chn,int32_t stream_id,std::string url);
             void delete_session(int32_t chn,int32_t stream_id,std::string url);
             void delete_session(int32_t chn,int32_t stream_id);
 
-            void process_data(int32_t chn,int32_t stream_id,util::stream_head* head,const uint8_t*buf,int32_t len);
+            void process_data(int32_t chn,int32_t stream_id,util::stream_head* head);
 
         private:
             session_manager();

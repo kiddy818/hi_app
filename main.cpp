@@ -12,6 +12,74 @@ LOG_HANDLE g_rtmp_log;
 LOG_HANDLE g_dev_log;
 std::shared_ptr<hisilicon::dev::chn> g_chn;
 
+#define NET_SERVICE_FILE_PATH "/opt/ceanic/etc/net_service.json"
+typedef struct
+{
+    int rtsp_port;
+    int rtmp_enable;
+    char rtmp_main_url[255];
+    char rtmp_sub_url[255];
+}net_service_t;
+static net_service_t g_net_service_info;
+static void init_net_service_info()
+{
+    Json::Value root;
+
+    root["net_service"]["rtsp"]["port"] = 554;
+    root["net_service"]["rtmp"]["enable"] = 0;
+    root["net_service"]["rtmp"]["main_url"] = "rtmp://192.168.10.97/live/stream1" ;
+    root["net_service"]["rtmp"]["sub_url"] = "rtmp://192.168.10.97/live/stream2" ;
+    std::string str= root.toStyledString();
+    std::ofstream ofs;
+    ofs.open(NET_SERVICE_FILE_PATH);
+    ofs << str;
+    ofs.close();
+}
+
+static int get_net_service_info()
+{
+    try
+    {
+        if(access(NET_SERVICE_FILE_PATH,F_OK) < 0)
+        {
+            init_net_service_info();
+
+            if(access(NET_SERVICE_FILE_PATH,F_OK) < 0)
+            {
+                return -1;
+            }
+        }
+
+        std::ifstream ifs;
+        ifs.open(NET_SERVICE_FILE_PATH);
+        if(!ifs.is_open())
+        {
+            return -1;
+        }
+        Json::Reader reader;  
+        Json::Value root; 
+        if (!reader.parse(ifs, root, false)) 
+        {
+            return -1;
+        }
+
+        Json::Value node; 
+        g_net_service_info.rtsp_port= root["net_service"]["rtsp"]["port"].asInt();
+        g_net_service_info.rtmp_enable = root["net_service"]["rtmp"]["enable"].asInt();
+        sprintf(g_net_service_info.rtmp_main_url,"%s",root["net_service"]["rtmp"]["main_url"].asCString());
+        sprintf(g_net_service_info.rtmp_sub_url,"%s",root["net_service"]["rtmp"]["sub_url"].asCString());
+
+        ifs.close();
+
+        return 0;
+    }
+    catch(...)
+    {
+        return -1;
+    }
+}
+
+
 #define VENC_FILE_PATH "/opt/ceanic/etc/venc.json"
 typedef struct
 {
@@ -386,7 +454,13 @@ int main(int argc,char* argv[])
     g_rtmp_log = ceanic_start_log("ceanic_rtmp",CEANIC_LOG_MODE_CONSOLE,CEANIC_LOG_INFO,NULL,0);
     g_dev_log = ceanic_start_log("ceanic_dev",CEANIC_LOG_MODE_CONSOLE,CEANIC_LOG_INFO,NULL,0);
 
-    ceanic::rtsp::rtsp_server rs(554);
+    get_net_service_info();
+    printf("net service info\n");
+    printf("\trtsp port:%d\n",g_net_service_info.rtsp_port);
+    printf("\trtmp enable:%d\n",g_net_service_info.rtmp_enable);
+    printf("\trtmp main url:%s\n",g_net_service_info.rtmp_main_url);
+    printf("\trtmp sub url:%s\n",g_net_service_info.rtmp_sub_url);
+    ceanic::rtsp::rtsp_server rs(g_net_service_info.rtsp_port);
     if(!rs.run())
     {
         APP_WRITE_LOG_ERROR("Start rtsp server failed!!!");
@@ -394,8 +468,11 @@ int main(int argc,char* argv[])
     }
 
     //rtmp
-    std::string rtmp_url = "rtmp://192.168.0.184/live/" + std::to_string(chn + 1);
-    ceanic::rtmp::session_manager::instance()->create_session(chn,0,rtmp_url.c_str(),60);
+    if(g_net_service_info.rtmp_enable)
+    {
+        ceanic::rtmp::session_manager::instance()->create_session(chn,0,g_net_service_info.rtmp_main_url);
+        ceanic::rtmp::session_manager::instance()->create_session(chn,1,g_net_service_info.rtmp_sub_url);
+    }
 
     //chn init
     hisilicon::dev::chn::init();

@@ -280,7 +280,7 @@ namespace hisilicon{namespace dev{
 
             sh.nalu[i].data = (char*)es_buf;
             sh.nalu[i].size = es_len; 
-            sh.nalu[i].timestamp = time_stamp * 90;
+            sh.nalu[i].timestamp = time_stamp;
             //g_stream_fun(chn,stream,es_type,time_stamp,es_buf,es_len,g_stream_fun_usr);
         }
 
@@ -352,7 +352,7 @@ namespace hisilicon{namespace dev{
 
             sh.nalu[i].data = (char*)es_buf;
             sh.nalu[i].size = es_len; 
-            sh.nalu[i].timestamp = time_stamp * 90;
+            sh.nalu[i].timestamp = time_stamp;
             //g_stream_fun(chn,stream,es_type,time_stamp,es_buf,es_len,g_stream_fun_usr);
         }
 

@@ -51,34 +51,6 @@ namespace ceanic{namespace rtmp{
             RTMP* m_rtmp;
     };
 
-    class timed_session
-    {
-        public:
-            timed_session(std::string url,uint32_t max_ms);
-            timed_session(const timed_session& rs) = delete;
-            timed_session& operator= (const timed_session& rs) = delete;
-            ~timed_session();
-
-            bool start();
-            void stop();
-            bool is_start();
-            bool reset_max_tm(uint32_t max_ms);
-
-            enum
-            {
-                TIMED_SESSION_SUCCESS = 0,
-                TIMED_SESSION_OUT_OF_TIME = 1,
-                TIMED_SESSION_OHTERS_ERROR = 2,
-            };
-
-            int input_one_nalu(const uint8_t* data,uint32_t len,uint32_t timestamp);
-
-        private:
-            session m_rs;
-            uint32_t m_max_ms;
-            uint32_t m_init_timestamp;
-    };
-
 }}//namespace
 
 #endif

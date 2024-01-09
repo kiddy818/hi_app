@@ -172,11 +172,17 @@ namespace ceanic{namespace rtmp{
                     break;
                 }
 
+            case 6:
+                {
+                    //do nothing
+                    return true;
+                    break;
+                }
+
             default:
                 {
                     return false;
                 }
-
         }
 
         return true;
@@ -414,84 +420,6 @@ namespace ceanic{namespace rtmp{
         co[6] = ci[1];
         co[7] = ci[0];
         return out + 8;
-    }
-
-    timed_session::timed_session(std::string url,uint32_t max_ms)
-        :m_rs(url),m_max_ms(max_ms),m_init_timestamp(0)
-    {
-    }
-
-    timed_session::~timed_session()
-    {
-        if(m_rs.is_start())
-        {
-            m_rs.stop();
-        }
-    }
-    
-    bool timed_session::start()
-    {
-        return m_rs.start();
-    }
-
-    void timed_session::stop()
-    {
-        m_rs.stop();
-    }
-
-    bool timed_session::is_start()
-    {
-        return m_rs.is_start();
-    }
-
-    int32_t timed_session::input_one_nalu(const uint8_t* data,uint32_t len,uint32_t timestamp)
-    {
-        if(!m_rs.is_start())
-        {
-            return TIMED_SESSION_OHTERS_ERROR;
-        }
-
-        int32_t nalu_type = data[4] & 0x1f;
-        if(nalu_type == 0x1 || nalu_type == 0x5)
-        {
-            uint32_t duration = 0;
-            if(m_init_timestamp == 0)
-            {
-                m_init_timestamp = timestamp;
-            }
-            else
-            {
-                if(m_init_timestamp > timestamp)
-                {
-                    //roll
-                    duration = 0xffff'ffff - m_init_timestamp + timestamp;
-                }
-                else
-                {
-                    duration = timestamp - m_init_timestamp;
-                }
-            }
-
-            if(duration >= m_max_ms)
-            {
-                return TIMED_SESSION_OUT_OF_TIME;
-            }
-        }
-
-        bool ret = m_rs.input_one_nalu(data,len,timestamp);
-
-        return ret ? TIMED_SESSION_SUCCESS : TIMED_SESSION_OHTERS_ERROR;
-    }
-
-    bool timed_session::reset_max_tm(uint32_t max_tm)
-    {
-        if(!m_rs.is_start())
-        {
-            return false;
-        }
-
-        m_init_timestamp = max_tm;
-        return true;
     }
 
 }}//namespace
