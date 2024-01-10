@@ -46,10 +46,14 @@ cp /mnt/opt/ceanic /opt/ -Rdp
 | port             | RTSP 侦听端口,默认554                                                                 |
 
 ##### RTSP URL
-pc端使用vlc连接的url为:   
+url为:   
 rtsp://192.168.10.98/stream1   
 rtsp://192.168.10.98/stream2  
 其中192.168.10.98需要修改为实际的板端地址,stream1为第一路码流，stream2为第二路码流  
+##### VLC连接RTSP
+vlc连接方法:媒体->打开网络串流->输入RTSP URL
+![avatar](doc/rtsp_open.jpg)
+
 
 #### RTMP
 ##### RTMP配置文件说明
@@ -134,3 +138,10 @@ tail ../logs/access.log
 ~/work/nginx-1.21.6/mybuild/sbin$sudo ./nginx -s stop
 ```
 
+##### VLC连接nginx
+1. 先根据[RTMP测试服务器搭建](#####RTMP测试服务器(nginx)搭建(ubuntu20.04))章节搭建好nginx 服务器 
+
+2. 根据[RTMP配置文件说明](#####RTMP配置文件说明)中说明获取到RTMP URL
+
+3. 打开vlc->媒体->打开网络串流->输入RTMP URL
+![avatar](doc/rtmp_open.jpg)
