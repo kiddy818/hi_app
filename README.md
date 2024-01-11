@@ -13,6 +13,9 @@
 
 
 #### 编译方法
+1. 按照/Hi3519DV500_SDK_V2.0.1.0/smp/a55_linux/source/bsp/readme_cn.txt文档编译SDK
+
+2. 按照如下命令，编译app
 ```
 cd Hi3519DV500_SDK_V2.0.1.0/smp/a55_linux/source/mpp/sample
 git clone https://gitee.com/shumjj/3516dv500_app.git 
@@ -20,12 +23,31 @@ cd 3516dv500_app
 make
 ```
 
+#### 目录结构
+```
+├── aiisp                   //海思AI ISP实现
+├── app_std.h               //app头文件
+├── device                  //海思设备相关
+├── doc                     //doc
+├── json                    //json库
+├── log                     //log库
+├── main.cpp
+├── Makefile
+├── README.md
+├── rootfs                  //SDK rootfs修改部分
+├── rtmp                    //rtmp 实现
+├── rtsp                    //rtsp 实现
+├── thirdlibrary            //第三方库
+└── util                    //通用头文件
+```
+
 #### 运行
-1. 需要将版本库中rootfs目录下的opt/ceanic目录复制到板子,假设nfs已经挂载,nfs目录为/mnt 
+1. 需要将版本库中rootfs目录下相关文件复制到板子,假设nfs已经挂载,nfs目录为/mnt 
 ```
 cp /mnt/opt/ceanic /opt/ -Rdp
+cp /mnt/usr/share /usr/ -Rdp
 ```
-2. 直接运行编译的程序 
+2. 复制编译的程序到板子，并手动运行
 ```
 ./ceanic_app
 ```
