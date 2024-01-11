@@ -52,52 +52,116 @@ cp /mnt/usr/share /usr/ -Rdp
 ./ceanic_app
 ```
 
-#### RTSP
-运行程序后,rtsp服务默认开启，默认端口为554，如果需要修改端口，需要修改/opt/ceanic/etc/net_service.json文件 
+#### 配置文件说明
+##### vi.json
+```
+{
+   "sensor1" : {
+      "flip" : 0,
+      "fr" : 30,
+      "h" : 1520,
+      "name" : "OS04A10",
+      "w" : 2688
+   }
+}
+```
+|  类型            | 说明                                                                                  |
+|  ----            | ----                                                                                  |
+| flip             | 保留                                                                                  |
+| fr               | 帧率                                                                                  |
+| h                | sensor视频高                                                                          |
+| name             | sensor类型,当前支持"OS04A10","OS04A10_WDR"                                            |
+| w                | sensor视频宽                                                                          |
+
+##### venc.json
+```
+{
+   "venc1" : {
+      "bitrate" : 4000,
+      "fr" : 30,
+      "h" : 1520,
+      "name" : "H264",
+      "w" : 2688
+   }
+}
+```
+|  类型            | 说明                                                                                  |
+|  ----            | ----                                                                                  |
+| bitrate          | 编码码率(kbps),当前支持CBR                                                            |
+| fr               | 编码帧率                                                                              |
+| h                | 编码视频高                                                                            |
+| name             | 编码类型,当前支持"H264","H265"                                                        |
+| w                | 编码视频宽                                                                            |
+
+
+##### net_service.json
 ```
 {
    "net_service" : {
+      "rtmp" : {
+         "enable" : 1,
+         "main_url" : "rtmp://192.168.10.97/live/stream1",
+         "sub_url" : "rtmp://192.168.10.97/live/stream2"
+      },
       "rtsp" : {
-         "port" : 554   
+         "port" : 554
       }
    }
 }
 ```
 |  类型            | 说明                                                                                  |
 |  ----            | ----                                                                                  |
-| port             | RTSP 侦听端口,默认554                                                                 |
+| rtsp:port        | RTSP 侦听端口,默认554                                                                 |
+| rtmp:enable      | 0:不启用rtmp 1:启用rtmp                                                               |
+| rtmp:main_url    | rtmp 主编码数据url                                                                    |
+| rtmp:sub_url     | rtmp 子编码数据url                                                                    |
 
+##### aiisp.json
+```
+{
+   "aiisp" : {
+      "enable" : 1,
+      "mode" : 0,
+      "model_file" : "/opt/ceanic/aiisp/aibnr/model/aibnr_model_denoise_priority_lite.bin"
+   }
+}
+```
+|  类型            | 说明                                                                                  |
+|  ----            | ----                                                                                  |
+| enable           | 1:启用 0:启用                                                                         |
+| mode             | 0:aibnr 1:aidrc 2:ai3dnr                                                              |
+| model_file       | 模型文件绝对路径，需要和mode中的类型匹配                                              |
+
+##### scene.json
+```
+{
+   "scene" : {
+      "dir_path" : "/opt/ceanic/scene/param/sensor_os04a10",
+      "enable" : 1,
+      "mode" : 0
+   }
+}
+```
+|  类型            | 说明                                                                                  |
+|  ----            | ----                                                                                  |
+| enable           | 1:启用 0:启用                                                                         |
+| dir_path         | scene使用的配置目录路径                                                               |
+| mode             | scene mode序号(见config_scenemode.ini)                                             |
+
+
+#### RTSP
 ##### RTSP URL
 url为:   
 rtsp://192.168.10.98/stream1   
 rtsp://192.168.10.98/stream2  
-其中192.168.10.98需要修改为实际的板端地址,stream1为第一路码流，stream2为第二路码流  
+其中192.168.10.98需要修改为实际的板端地址,stream1为主编码(高清)码流，stream2为子编码(标清)码流  
 ##### VLC连接RTSP
 vlc连接方法:媒体->打开网络串流->输入RTSP URL
 ![avatar](doc/rtsp_open.jpg)
 
 
 #### RTMP
-##### RTMP配置文件说明
 rtmp默认不开启,需要修改/opt/ceanic/etc/net_service.json文件  
-
-```
-{
-   "net_service" : {
-      "rtmp" : {
-         "enable" : 0,
-         "main_url" : "rtmp://192.168.10.97/live/stream1",
-         "sub_url" : "rtmp://192.168.10.97/live/stream2"
-         },
-   }
-}
-```
-|  类型            | 说明                                                                                  |
-|  ----            | ----                                                                                  |
-| enable           | 0:不开启,1:开启                                                                       |
-| main_url         | 第一路rtmp码流的推送地址,例子中的192.168.10.97为rtmp服务器的ip                        |
-| sub_url          | 第二路rtmp码流的推送地址,例子中的192.168.10.97为rtmp服务器的ip                        |
-
 ##### RTMP测试服务器(nginx)搭建(ubuntu20.04)
 1. 按照如下命令编译nginx,需要注意的是运行nginx, -C 后面的参赛需要是全路径
 ```
