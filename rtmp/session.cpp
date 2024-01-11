@@ -106,6 +106,9 @@ namespace ceanic{namespace rtmp{
             return false;
         }
 
+        //if timestamp > 0xffffff,librtmp will print "WARNING: Larger timestamp than 24-bit"
+        timestamp &= 0xffffff;
+
         if(!RTMP_IsConnected(m_rtmp))
         {
             return false;
@@ -173,6 +176,7 @@ namespace ceanic{namespace rtmp{
                 }
 
             case 6:
+            case 9:
                 {
                     //do nothing
                     return true;
