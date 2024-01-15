@@ -67,7 +67,7 @@ namespace hisilicon{namespace dev{
             return false;
         }
 
-        ret = ss_mpi_sys_set_3dnr_pos(OT_3DNR_POS_VPSS);
+        ret = ss_mpi_sys_set_3dnr_pos(OT_3DNR_POS_VI);
         if(ret != TD_SUCCESS)
        {
             DEV_WRITE_LOG_ERROR("ss_mpi_sys_set_3dnr_pos failed with error 0x%x",ret);

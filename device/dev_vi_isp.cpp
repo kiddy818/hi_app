@@ -387,6 +387,18 @@ namespace hisilicon{namespace dev{
 
         start_isp();
 
+        //3dnr
+        ot_3dnr_attr nr_attr;
+        nr_attr.enable = TD_TRUE;
+        nr_attr.nr_type = OT_NR_TYPE_VIDEO_NORM;
+        nr_attr.compress_mode = OT_COMPRESS_MODE_NONE;
+        nr_attr.nr_motion_mode = OT_NR_MOTION_MODE_NORM;
+        ret = ss_mpi_vi_set_pipe_3dnr_attr(m_pipes[0],&nr_attr);
+        if(ret != TD_SUCCESS)
+        {
+            DEV_WRITE_LOG_ERROR("ss_mpi_vi_set_pipe_3dnr_attr failed with %#x!", ret);
+        }
+
         //vi->vpss
         ot_mpp_chn src_chn;
         ot_mpp_chn dest_chn;
