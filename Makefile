@@ -75,6 +75,15 @@ DEVICE_SRC += device/ceanic_freetype.cpp
 SCENE_PATH = ../scene_auto
 INC_PATH += -I$(SCENE_PATH)/include
 INC_PATH += -I$(SCENE_PATH)/src/sample
+INC_PATH += -I$(SCENE_PATH)/../common
+INC_PATH += -I$(SCENE_PATH)/tools/configaccess/include
+SRC += $(SCENE_PATH)/src/core/ot_scene.c
+SRC += $(SCENE_PATH)/src/core/ot_scene_setparam.c
+SRC += $(SCENE_PATH)/src/core/scene_setparam_inner.c
+SRC += $(SCENE_PATH)/src/sample/scene_loadparam.c
+SRC += $(SCENE_PATH)/tools/configaccess/src/ot_confaccess.c
+SRC += ../common/sample_comm_vi.c
+SRC += ../common/sample_comm_isp.c
 
 LIBS += -Wl,--start-group
 
@@ -83,16 +92,6 @@ LIBS += $(THIRD_LIBRARY_PATH)/log4cpp/lib/liblog4cpp.a
 LIBS += $(THIRD_LIBRARY_PATH)/libevent-2.0.18-stable/lib/libevent.a
 LIBS += $(THIRD_LIBRARY_PATH)/freetype-2.7.1/lib/libfreetype.a
 LIBS += $(MPI_LIBS) $(SENSOR_LIBS) $(AUDIO_LIBA) $(REL_LIB)/libsecurec.a
-
-LIBS += $(SCENE_PATH)/src/core/ot_scene.o
-LIBS += $(SCENE_PATH)/src/core/ot_scene_setparam.o
-LIBS += $(SCENE_PATH)/src/core/scene_setparam_inner.o
-LIBS += $(SCENE_PATH)/src/sample/scene_loadparam.o
-LIBS += $(SCENE_PATH)/tools/configaccess/src/ot_confaccess.o
-
-#scene lib call sample_comm_vi/isp functions
-SRC += ../common/sample_comm_vi.c
-SRC += ../common/sample_comm_isp.c
 
 LIBS+= -Wl,--end-group
 
