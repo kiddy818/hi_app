@@ -1,5 +1,4 @@
 #include <rtsp_request_handler.h>
-#include <boost/lexical_cast.hpp>
 #include <session.h>
 #include <request.h>
 #include <stream_video_handler.h>
@@ -8,7 +7,6 @@
 #include <mjpeg_rtp_serialize.h>
 #include <rtp_udp_session.h>
 #include <rtp_tcp_session.h>
-#include <boost/date_time.hpp>
 #include <rtsp_log.h>
 
 namespace ceanic{namespace rtsp{
@@ -183,7 +181,7 @@ namespace ceanic{namespace rtsp{
     {
         std::string str = "RTSP/1.0 200 OK\r\n";
         str += "CSeq: ";
-        str += boost::lexical_cast<std::string>(m_seq);
+        str += std::to_string(m_seq);
         str += "\r\n";
         str += "\r\n";
 
@@ -194,7 +192,7 @@ namespace ceanic{namespace rtsp{
     {
         std::string str = "RTSP/1.0 405 Method Not Allowed\r\n";
         str += "CSeq: ";
-        str += boost::lexical_cast<std::string>(m_seq);
+        str += std::to_string(m_seq);
         str += "\r\n";
         str += "\r\n";
 
@@ -213,7 +211,7 @@ namespace ceanic{namespace rtsp{
         {
             if (strcasecmp(req.headers[i].name.c_str(),"CSeq") == 0)
             {
-                seq =  boost::lexical_cast<int>(req.headers[i].value);
+                seq =  std::atoi(req.headers[i].value.c_str());
                 return true;
             }
         }
@@ -225,7 +223,7 @@ namespace ceanic{namespace rtsp{
     {
         std::string str = "RTSP/1.0 200 OK\r\n";
         str += "CSeq: ";
-        str += boost::lexical_cast<std::string>(m_seq);
+        str += std::to_string(m_seq);
         str += "\r\n";
 
         str += "Public: OPTIONS, DESCRIBE, SETUP, TEARDOWN, PLAY, GET_PARAMETER, SET_PARAMETER\r\n";
@@ -248,14 +246,11 @@ namespace ceanic{namespace rtsp{
             return;
         }
 
-        boost::posix_time::ptime start_t(boost::gregorian::date(1970, 1, 1)); 
-        boost::posix_time::time_duration duration = boost::posix_time::microsec_clock::universal_time() - start_t;
-
         std::string sdp_desc;
         sdp_desc = "v=0\r\n";
 
         //根据rfc2327，加入必须的选项
-        sdp_desc += "o=- " + boost::lexical_cast<std::string>(duration.total_milliseconds()) + std::string(" 1 IN IP4 0.0.0.0\r\n");
+        sdp_desc += "o=- " + std::to_string(std::time(nullptr) * 1000) + std::string(" 1 IN IP4 0.0.0.0\r\n");
         sdp_desc += "s=Streamed by Beacon Simple Rtsp Server\r\n";
         sdp_desc += "t=0 0\r\n";
 
@@ -288,11 +283,11 @@ namespace ceanic{namespace rtsp{
 
         std::string str = "RTSP/1.0 200 OK\r\n";
         str += "CSeq: ";
-        str += boost::lexical_cast<std::string>(m_seq);
+        str += std::to_string(m_seq);
         str += "\r\n";
         str += "Content-Type: application/sdp\r\n";
         str += "Content-Length: ";
-        str += boost::lexical_cast<std::string>(sdp_desc.size());
+        str += std::to_string(sdp_desc.size());
         str += "\r\n";
         str += "\r\n";
 
@@ -378,16 +373,16 @@ namespace ceanic{namespace rtsp{
             transport_str += "unicast;";
 
             transport_str += "client_port=";
-            transport_str += boost::lexical_cast<std::string>(transport.client_port[0]);
+            transport_str += std::to_string(transport.client_port[0]);
             transport_str += "-";
-            transport_str += boost::lexical_cast<std::string>(transport.client_port[1]);
+            transport_str += std::to_string(transport.client_port[1]);
             transport_str += ";";
 
             server_port = rtsp_request_handler::get_udp_port();
             transport_str += "server_port=";
-            transport_str += boost::lexical_cast<std::string>(server_port);
+            transport_str += std::to_string(server_port);
             transport_str += "-";
-            transport_str += boost::lexical_cast<std::string>(server_port + 1);
+            transport_str += std::to_string(server_port + 1);
             transport_str += ";";
         }
         else
@@ -396,9 +391,9 @@ namespace ceanic{namespace rtsp{
             transport_str += "unicast;";
 
             transport_str += "interleaved=";
-            transport_str += boost::lexical_cast<std::string>(interleaved);
+            transport_str += std::to_string(interleaved);
             transport_str += "-";
-            transport_str += boost::lexical_cast<std::string>(interleaved + 1);
+            transport_str += std::to_string(interleaved + 1);
             transport_str += ";";
         }
 
@@ -406,13 +401,13 @@ namespace ceanic{namespace rtsp{
 
         std::string str = "RTSP/1.0 200 OK\r\n";
         str += "CSeq: ";
-        str += boost::lexical_cast<std::string>(m_seq);
+        str += std::to_string(m_seq);
         str += "\r\n";
         str += "Transport: ";
         str += transport_str;
         str += "\r\n";
         str += "Session: ";
-        str += boost::lexical_cast<std::string>(m_session_no);
+        str += std::to_string(m_session_no);
         str += "; timeout=60";
         str += "\r\n";
         str += "\r\n";
@@ -480,12 +475,12 @@ namespace ceanic{namespace rtsp{
 
         std::string str = "RTSP/1.0 200 OK\r\n";
         str += "CSeq: ";
-        str += boost::lexical_cast<std::string>(m_seq);
+        str += std::to_string(m_seq);
         str += "\r\n";
 
         str += "Range: npt=now-\r\n";
         str += "Session: ";
-        str += boost::lexical_cast<std::string>(m_session_no);
+        str += std::to_string(m_session_no);
         str += "\r\n";
         str += "\r\n";
 
@@ -504,7 +499,7 @@ namespace ceanic{namespace rtsp{
     {
         std::string str = "RTSP/1.0 200 SUCCESS\r\n";
         str += "CSeq: ";
-        str += boost::lexical_cast<std::string>(m_seq);
+        str += std::to_string(m_seq);
         str += "\r\n";
         str += "\r\n";
 
@@ -524,7 +519,7 @@ namespace ceanic{namespace rtsp{
         std::string str;
         str += "RTSP/1.0 400 FAILED\r\n";
         str += "CSeq: ";
-        str += boost::lexical_cast<std::string>(m_seq);
+        str += std::to_string(m_seq);
         str += "\r\n";
         str += "\r\n";
 

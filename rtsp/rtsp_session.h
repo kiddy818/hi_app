@@ -16,7 +16,7 @@ namespace ceanic{namespace rtsp{
 
             virtual ~rtsp_session();
 
-            virtual boost::tribool handle_read(const char* data, int len);
+            virtual std::optional<bool> handle_read(const char* data, int len);
 
             void process_rtsp_request();
 

@@ -1,7 +1,6 @@
 #include "request_parser.h"
 #include "request.h"
 #include <string.h>
-#include <boost/lexical_cast.hpp>
 #include <util/std.h>
 
 namespace ceanic{namespace rtsp{
@@ -16,7 +15,7 @@ namespace ceanic{namespace rtsp{
         state_ = method_start;
     }
 
-    boost::tribool request_parser::parse(request& req, const char* buf, int len, int *left)
+    std::optional<bool> request_parser::parse(request& req, const char* buf, int len, int *left)
     {
         if (req.head_flag)
         {
@@ -29,7 +28,7 @@ namespace ceanic{namespace rtsp{
                 *left = len - need_data_len;
 
                 //one protocol ok
-                return true;
+                return std::optional<bool>(true);
             }
             else
             {
@@ -38,7 +37,7 @@ namespace ceanic{namespace rtsp{
                 *left = 0;
 
                 //need more data
-                return boost::indeterminate;
+                return std::nullopt;
             }
         }
         else
@@ -47,8 +46,8 @@ namespace ceanic{namespace rtsp{
             const char* p = buf;
             while (p < buf + len)
             {
-                boost::tribool result = consume(req,*p);
-                if (result)
+                std::optional<bool> result = consume(req,*p);
+                if (result.has_value() && result.value())
                 {
                     //head ok
                     req.head_flag = true;
@@ -60,7 +59,8 @@ namespace ceanic{namespace rtsp{
                         printf(">>>>>>>>>>>>name =%s\n", req.headers[i].name.c_str());
                         if (req.headers[i].name == "Content-Length")
                         {
-                            req.content_len = boost::lexical_cast<int>(req.headers[i].value);
+                            req.content_len = std::atoi(req.headers[i].value.c_str());
+                            //req.content_len = boost::lexical_cast<int>(req.headers[i].value);
                             break;
                         }
                     }
@@ -80,20 +80,23 @@ namespace ceanic{namespace rtsp{
                         memcpy(req.data, p + 1, req.content_len);
                         req.data_len += req.content_len;
                         *left -= req.content_len;
-                        return  true;
+
+                        return std::optional<bool>(true);
                     }
                     else
                     {
                         memcpy(req.data, p + 1,*left);
                         req.data_len += (*left);
                         *left = 0;
-                        return boost::indeterminate;
+
+                        return std::nullopt;
                     }
                 }
-                else if (!result)
+                else if (result.has_value() && !result.value())
                 {
                     //data error
-                    return false;
+                    //
+                    return std::optional<bool>(false);
                 }
 
                 //need more data to parse head
@@ -102,76 +105,76 @@ namespace ceanic{namespace rtsp{
 
             //here need more data
             *left = 0;
-            return boost::indeterminate;
+            return std::nullopt;
         }
     }
 
-    boost::tribool request_parser::consume(request& req, char input)
+    std::optional<bool> request_parser::consume(request& req, char input)
     {
         switch (state_)
         {
             case method_start:
                 if (!is_char(input) || is_ctl(input) || is_tspecial(input))
                 {
-                    return false;
+                    return std::optional<bool>(false);
                 }
                 else
                 {
                     state_ = method;
                     req.method.push_back(input);
-                    return boost::indeterminate;
+                    return std::nullopt;
                 }
             case method:
                 if (input == ' ')
                 {
                     state_ = uri;
-                    return boost::indeterminate;
+                    return std::nullopt;
                 }
                 else if (!is_char(input) || is_ctl(input) || is_tspecial(input))
                 {
-                    return false;
+                    return std::optional<bool>(false);
                 }
                 else
                 {
                     req.method.push_back(input);
-                    return boost::indeterminate;
+                    return std::nullopt;
                 }
             case uri_start:
                 if (is_ctl(input))
                 {
-                    return false;
+                    return std::optional<bool>(false);
                 }
                 else
                 {
                     state_ = uri;
                     req.uri.push_back(input);
-                    return boost::indeterminate;
+                    return std::nullopt;
                 }
             case uri:
                 if (input == ' ')
                 {
                     state_ = http_version_h;
-                    return boost::indeterminate;
+                    return std::nullopt;
                 }
                 else if (is_ctl(input))
                 {
-                    return false;
+                    return std::optional<bool>(false);
                 }
                 else
                 {
                     req.uri.push_back(input);
-                    return boost::indeterminate;
+                    return std::nullopt;
                 }
             case rtsp_version_r:
                 {
                     if (input == 'R')
                     {
                         state_ = rtsp_version_t;
-                        return boost::indeterminate;
+                        return std::nullopt;
                     }
                     else
                     {
-                        return false;
+                        return std::optional<bool>(false);
                     }
                 }
             case rtsp_version_t:
@@ -179,11 +182,11 @@ namespace ceanic{namespace rtsp{
                     if (input == 'T')
                     {
                         state_ = rtsp_version_s;
-                        return boost::indeterminate;
+                        return std::nullopt;
                     }
                     else
                     {
-                        return false;
+                        return std::optional<bool>(false);
                     }
                 }
             case rtsp_version_s:
@@ -191,11 +194,11 @@ namespace ceanic{namespace rtsp{
                     if (input == 'S')
                     {
                         state_ = rtsp_version_p;
-                        return boost::indeterminate;
+                        return std::nullopt;
                     }
                     else
                     {
-                        return false;
+                        return std::optional<bool>(false);
                     }
                 }
             case rtsp_version_p:
@@ -203,57 +206,57 @@ namespace ceanic{namespace rtsp{
                     if (input == 'P')
                     {
                         state_ = version_slash;
-                        return boost::indeterminate;
+                        return std::nullopt;
                     }
                     else
                     {
-                        return false;
+                        return std::optional<bool>(false);
                     }
                 }
             case http_version_h:
                 if (input == 'H')
                 {
                     state_ = http_version_t_1;
-                    return boost::indeterminate;
+                    return std::nullopt;
                 }
                 else if (input == 'R')
                 {
                     state_ = rtsp_version_t;
-                    return boost::indeterminate;
+                    return std::nullopt;
                 }
                 else
                 {
-                    return false;
+                    return std::optional<bool>(false);
                 }
             case http_version_t_1:
                 if (input == 'T')
                 {
                     state_ = http_version_t_2;
-                    return boost::indeterminate;
+                    return std::nullopt;
                 }
                 else
                 {
-                    return false;
+                    return std::optional<bool>(false);
                 }
             case http_version_t_2:
                 if (input == 'T')
                 {
                     state_ = http_version_p;
-                    return boost::indeterminate;
+                    return std::nullopt;
                 }
                 else
                 {
-                    return false;
+                    return std::optional<bool>(false);
                 }
             case http_version_p:
                 if (input == 'P')
                 {
                     state_ = version_slash;
-                    return boost::indeterminate;
+                    return std::nullopt;
                 }
                 else
                 {
-                    return false;
+                    return std::optional<bool>(false);
                 }
             case version_slash:
                 if (input == '/')
@@ -261,170 +264,181 @@ namespace ceanic{namespace rtsp{
                     req.version_major = 0;
                     req.version_minor = 0;
                     state_ = version_major_start;
-                    return boost::indeterminate;
+                    return std::nullopt;
                 }
                 else
                 {
-                    return false;
+                    return std::optional<bool>(false);
                 }
             case version_major_start:
                 if (is_digit(input))
                 {
                     req.version_major = req.version_major * 10 + input - '0';
                     state_ = version_major;
-                    return boost::indeterminate;
+                    return std::nullopt;
                 }
                 else
                 {
-                    return false;
+                    return std::optional<bool>(false);
                 }
             case version_major:
                 if (input == '.')
                 {
                     state_ = version_minor_start;
-                    return boost::indeterminate;
+                    return std::nullopt;
                 }
                 else if (is_digit(input))
                 {
                     req.version_major = req.version_major * 10 + input - '0';
-                    return boost::indeterminate;
+                    return std::nullopt;
                 }
                 else
                 {
-                    return false;
+                    return std::optional<bool>(false);
                 }
             case version_minor_start:
                 if (is_digit(input))
                 {
                     req.version_minor = req.version_minor * 10 + input - '0';
                     state_ = version_minor;
-                    return boost::indeterminate;
+                    return std::nullopt;
                 }
                 else
                 {
-                    return false;
+                    return std::optional<bool>(false);
                 }
             case version_minor:
                 if (input == '\r')
                 {
                     state_ = expecting_newline_1;
-                    return boost::indeterminate;
+                    return std::nullopt;
                 }
                 else if (is_digit(input))
                 {
                     req.version_minor = req.version_minor * 10 + input - '0';
-                    return boost::indeterminate;
+                    return std::nullopt;
                 }
                 else
                 {
-                    return false;
+                    return std::optional<bool>(false);
                 }
             case expecting_newline_1:
                 if (input == '\n')
                 {
                     state_ = header_line_start;
-                    return boost::indeterminate;
+                    return std::nullopt;
                 }
                 else
                 {
-                    return false;
+                    return std::optional<bool>(false);
                 }
             case header_line_start:
                 if (input == '\r')
                 {
                     state_ = expecting_newline_3;
-                    return boost::indeterminate;
+                    return std::nullopt;
                 }
                 else if (!req.headers.empty() && (input == ' ' || input == '\t'))
                 {
                     state_ = header_lws;
-                    return boost::indeterminate;
+                    return std::nullopt;
                 }
                 else if (!is_char(input) || is_ctl(input) || is_tspecial(input))
                 {
-                    return false;
+                    return std::optional<bool>(false);
                 }
                 else
                 {
                     req.headers.push_back(header());
                     req.headers.back().name.push_back(input);
                     state_ = header_name;
-                    return boost::indeterminate;
+                    return std::nullopt;
                 }
             case header_lws:
                 if (input == '\r')
                 {
                     state_ = expecting_newline_2;
-                    return boost::indeterminate;
+                    return std::nullopt;
                 }
                 else if (input == ' ' || input == '\t')
                 {
-                    return boost::indeterminate;
+                    return std::nullopt;
                 }
                 else if (is_ctl(input))
                 {
-                    return false;
+                    return std::optional<bool>(false);
                 }
                 else
                 {
                     state_ = header_value;
                     req.headers.back().value.push_back(input);
-                    return boost::indeterminate;
+                    return std::nullopt;
                 }
             case header_name:
                 if (input == ':')
                 {
                     state_ = space_before_header_value;
-                    return boost::indeterminate;
+                    return std::nullopt;
                 }
                 else if (!is_char(input) || is_ctl(input) || is_tspecial(input))
                 {
-                    return false;
+                    return std::optional<bool>(false);
                 }
                 else
                 {
                     req.headers.back().name.push_back(input);
-                    return boost::indeterminate;
+                    return std::nullopt;
                 }
             case space_before_header_value:
                 if (input == ' ')
                 {
                     state_ = header_value;
-                    return boost::indeterminate;
+                    return std::nullopt;
                 }
                 else
                 {
-                    return false;
+                    return std::optional<bool>(false);
                 }
             case header_value:
                 if (input == '\r')
                 {
                     state_ = expecting_newline_2;
-                    return boost::indeterminate;
+                    return std::nullopt;
                 }
                 else if (is_ctl(input))
                 {
-                    return false;
+                    return std::optional<bool>(false);
                 }
                 else
                 {
                     req.headers.back().value.push_back(input);
-                    return boost::indeterminate;
+                    return std::nullopt;
                 }
             case expecting_newline_2:
                 if (input == '\n')
                 {
                     state_ = header_line_start;
-                    return boost::indeterminate;
+                    return std::nullopt;
                 }
                 else
                 {
-                    return false;
+                    return std::optional<bool>(false);
                 }
             case expecting_newline_3:
-                return (input == '\n');
+                {
+                    if(input == '\n')
+                    {
+                        return std::optional<bool>(true);
+                    }
+                    else
+                    {
+                        return std::optional<bool>(false);
+                    }
+                }
             default:
-                return false;
+                {
+                    return std::optional<bool>(false);
+                }
         }
     }
 

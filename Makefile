@@ -2,6 +2,7 @@ include ../Makefile.param
 CXX:=$(CROSS)g++
 STRIP=$(CROSS)strip
 CFLAGS += -g -Wall -O2
+CXXFLAGS += -std=c++17
 
 THIRD_LIBRARY_PATH=./thirdlibrary
 INC_PATH += -I./
@@ -17,7 +18,7 @@ INC_PATH += -I./aiisp/
 INC_PATH += -I./device/
 
 INC_PATH += -I$(THIRD_LIBRARY_PATH)/freetype-2.7.1/include/freetype2
-INC_PATH += -I$(THIRD_LIBRARY_PATH)/boost_1_60_0/include/
+#INC_PATH += -I$(THIRD_LIBRARY_PATH)/boost_1_60_0/include/
 INC_PATH += -I$(THIRD_LIBRARY_PATH)/log4cpp/include/
 INC_PATH += -I$(THIRD_LIBRARY_PATH)/libevent-2.0.18-stable/include
 INC_PATH += -I$(THIRD_LIBRARY_PATH)/rtmpdump/include/
@@ -108,7 +109,7 @@ $(target):$(PROGXX_OBJ) $(PROG_OBJ) $(DEVICE_OBJ)
 	$(STRIP) $(target)
 
 %.o:%.cpp
-	$(CXX) -c -o  $@ $< $(INC_PATH) $(CFLAGS)
+	$(CXX) -c -o  $@ $< $(INC_PATH) $(CFLAGS) $(CXXFLAGS)
 
 %.o:%.c
 	$(CC) -c -o  $@ $< $(INC_PATH) $(CFLAGS)

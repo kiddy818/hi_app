@@ -82,14 +82,14 @@ namespace ceanic{namespace rtsp{
         m_timeout = MAX_SESSION_TIMEOUT;
     }
 
-    boost::tribool rtsp_session::handle_read(const char* data, int len)
+    std::optional<bool> rtsp_session::handle_read(const char* data, int len)
     {
         int left = len;
-        boost::tribool result;
+        std::optional<bool> result;
         while (left > 0)
         {
             result = m_parser.parse(m_request, data, len,&left);
-            if (result)
+            if (result.has_value() && result.value())
             {
                 //process request
                 process_rtsp_request();
@@ -100,7 +100,7 @@ namespace ceanic{namespace rtsp{
                 data += (len - left);
                 len = left;
             }
-            else if (!result)
+            else if (result.has_value() && !result.value())
             {
                 RtspState state = m_handler.state();
                 if (state == RTSP_STATE_PLAYING)

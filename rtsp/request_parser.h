@@ -1,10 +1,7 @@
 #ifndef request_parser_include_h
 #define request_parser_include_h
 
-#include <boost/logic/tribool.hpp>
-#include <boost/tuple/tuple.hpp>
-#include <boost/shared_ptr.hpp>
-
+#include <optional>
 namespace ceanic{namespace rtsp{
 
     struct request;
@@ -19,11 +16,11 @@ namespace ceanic{namespace rtsp{
             /// Reset to initial parser state.
             void reset();
 
-            boost::tribool  parse(request& req, const char* buf, int len, int* left);
+            std::optional<bool> parse(request& req, const char* buf, int len, int* left);
 
         private:
             /// Handle the next character of input.
-            boost::tribool consume(request& req, char input);
+            std::optional<bool> consume(request& req, char input);
 
             /// Check if a byte is an HTTP character.
             static bool is_char(int c);
@@ -67,8 +64,6 @@ namespace ceanic{namespace rtsp{
                 expecting_newline_3
             } state_;
     };
-
-    typedef boost::shared_ptr<request_parser> parser_ptr;
 
 }}//namespace
 
