@@ -1,19 +1,19 @@
 # 3516dv500_app
 
 #### 介绍
-基于海思Hi3516DV500 SDK 010 版本(Hi3519DV500_SDK_V2.0.1.0)的IPC摄像头demo，支持以下功能: 
+基于海思Hi3516DV500 SDK 010 glibc 版本(Hi3519DV500_SDK_V2.0.1.0)的IPC摄像头demo，支持以下功能: 
 1. H264/H265 rtsp服务 
 2. H264 rtmp服务 
 3. OSD(时间)功能 
-4. AIISP 
-5. 图像自适应 
+4. 海思AIISP 
+5. 海思图像自适应 
 
 当前支持的sensor为: 
 1. OS04A10 
 
 
 #### 编译方法
-1. 按照/Hi3519DV500_SDK_V2.0.1.0/smp/a55_linux/source/bsp/readme_cn.txt文档编译SDK
+1. 按照Hi3519DV500_SDK_V2.0.1.0/smp/a55_linux/source/bsp/readme_cn.txt文档编译SDK
 
 2. 按照如下命令，编译app
 ```
@@ -41,14 +41,13 @@ make
 └── util                    //通用头文件
 ```
 
-#### 运行
-1. 需要将版本库中rootfs目录下相关文件复制到板子,假设nfs已经挂载,nfs目录为/mnt 
+#### 烧录&运行
+1. 烧录版本库中rootfs/rootfs_3516dv500_96M_mjj.ext4（该版本为glibc版本，需要烧录对应的uboot,kernel) 
+2. 运行 
 ```
-cp /mnt/opt/ceanic /opt/ -Rdp
-cp /mnt/usr/share /usr/ -Rdp
-```
-2. 复制编译的程序到板子，并手动运行
-```
+cd /opt/ceanic/ko
+./load3519dv500 -i
+cd /opt/ceanic/bin
 ./ceanic_app
 ```
 
