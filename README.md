@@ -230,3 +230,30 @@ tail ../logs/access.log
 
 3. 打开vlc->媒体->打开网络串流->输入RTMP URL
 ![avatar](doc/rtmp_open.jpg)
+
+#### thirdlibrary
+
+##### freetype-2.7.1交叉编译
+```
+./configure --prefix=`pwd`/mybuild_aarch64_v01c01_linux_gnu --host=aarch64-v01c01-linux-gnu --with-zlib=no
+make && make install
+```
+##### libevent-2.0.18-stable交叉编译
+```
+./configure --prefix=`pwd`/mybuild_aarch64_v01c01_linux_gnu --host=aarch64-v01c01-linux-gnu CFLAGS=-fPIC
+make && make install
+```
+
+##### lob4cpp交叉编译
+```
+./configure --prefix=`pwd`/mybuild_aarch64_v01c01_linux_gnu --host=aarch64-v01c01-linux-gnu CXXFLAGS=-fPIC
+make && make install
+```
+
+##### rtmpdump交叉编译
+```
+make prefix=./mybuild_aarch64_v01c01_linux_gnu SYS=posix CROSS_COMPILE=aarch64-v01c01-linux-gnu- XDEF=-DNO_SSL CRYPTO=
+make && make install
+```
+
+
