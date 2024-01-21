@@ -3,7 +3,7 @@
 #include "ceanic_freetype.h"
 
 static const char* g_week_stsr[7] = {"星期日","星期一","星期二","星期三","星期四","星期五","星期六"};
-static ceanic_freetype g_freetype("/usr/share/fonts/Vera.ttf","/usr/share/fonts/gbsn00lp.ttf");
+static ceanic_freetype g_freetype("/opt/ceanic/fonts/Vera.ttf","/opt/ceanic/fonts/gbsn00lp.ttf");
 
 #ifndef ROUND_DOWN
 #define ROUND_DOWN(size, align) ((size) & ~((align) - 1))

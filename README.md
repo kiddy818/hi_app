@@ -256,4 +256,9 @@ make prefix=./mybuild_aarch64_v01c01_linux_gnu SYS=posix CROSS_COMPILE=aarch64-v
 make && make install
 ```
 
+#### 合作交流
+联系方式:   
+深圳思尼克技术有限公司   
+jiajun.ma@ceanic.com   
+马佳君  
 
