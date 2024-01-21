@@ -86,6 +86,12 @@ SRC += $(SCENE_PATH)/tools/configaccess/src/ot_confaccess.c
 SRC += ../common/sample_comm_vi.c
 SRC += ../common/sample_comm_isp.c
 
+#support rate_auto
+SVC_RATE_PATH = ../svc_rate_auto
+INC_PATH += -I$(SVC_RATE_PATH)/include
+SRC += $(SVC_RATE_PATH)/src/ot_bitrate_auto.c
+SRC += $(SVC_RATE_PATH)/src/bitrate_auto_load_param.c
+
 LIBS += -Wl,--start-group
 
 LIBS += $(THIRD_LIBRARY_PATH)/rtmpdump/lib/librtmp.a

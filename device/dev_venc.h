@@ -72,6 +72,17 @@ namespace hisilicon{namespace dev{
         protected:
             int m_bitrate;
     };
+    
+    class venc_h264_avbr
+        :public venc_h264
+    {
+        public:
+            venc_h264_avbr(int w,int h,int src_fr,int venc_fr,ot_venc_chn venc_chn,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn,int max_bitrate);
+            virtual ~venc_h264_avbr();
+
+        protected:
+            int m_max_bitrate;
+    };
 
     class venc_h265
         :public venc
@@ -93,6 +104,18 @@ namespace hisilicon{namespace dev{
         protected:
             int m_bitrate;
     };
+
+    class venc_h265_avbr
+        :public venc_h265
+    {
+        public:
+            venc_h265_avbr(int w,int h,int src_fr,int venc_fr,ot_venc_chn venc_chn,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn,int max_bitrate);
+            virtual ~venc_h265_avbr();
+
+        protected:
+            int m_max_bitrate;
+    };
+
 }}//namespace
 
 #endif
