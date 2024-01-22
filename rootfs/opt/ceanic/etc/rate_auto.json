@@ -1,0 +1,6 @@
+{
+   "rate_auto" : {
+      "enable" : 1,
+      "file" : "/opt/ceanic/etc/config_rate_auto_base_param.ini"
+   }
+}

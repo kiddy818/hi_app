@@ -9,6 +9,7 @@ namespace hisilicon{namespace dev{
     ot_scene_param chn::g_scene_param;
     ot_scene_video_mode chn::g_scene_video_mode;
     std::shared_ptr<chn> chn::g_chns[MAX_CHANNEL];
+    rate_auto_param chn::g_rate_auto_param;
 
     chn::chn(const char* vi_name,const char* venc_mode,int chn_no)
         :m_is_start(false),m_vi_name(vi_name),m_chn(chn_no),m_venc_mode(venc_mode)
@@ -56,21 +57,32 @@ namespace hisilicon{namespace dev{
             return false;
         }
 
-        if(m_venc_mode == "H264")
+        if(m_venc_mode == "H264_CBR")
         {
-            m_venc_main_ptr = std::make_shared<venc_h264_cbr>(venc_w,venc_h,m_vi_ptr->fr(),fr,m_vi_ptr->vi_dev(),m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),bitrate);
+            m_venc_main_ptr = std::make_shared<venc_h264_cbr>(venc_w,venc_h,m_vi_ptr->fr(),fr,0,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),bitrate);
             m_venc_sub_ptr  = std::make_shared<venc_h264_cbr>(704,576,m_vi_ptr->fr(),fr,m_venc_main_ptr->venc_chn() + 1,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),1000);
-
         }
-        else if(m_venc_mode == "H265")
+        else if(m_venc_mode == "H264_AVBR")
         {
-            m_venc_main_ptr = std::make_shared<venc_h265_cbr>(venc_w,venc_h,m_vi_ptr->fr(),fr,m_vi_ptr->vi_dev(),m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),bitrate);
+            m_venc_main_ptr = std::make_shared<venc_h264_avbr>(venc_w,venc_h,m_vi_ptr->fr(),fr,0,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),bitrate);
+            m_venc_sub_ptr  = std::make_shared<venc_h264_avbr>(704,576,m_vi_ptr->fr(),fr,m_venc_main_ptr->venc_chn() + 1,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),1000);
+        }
+        else if(m_venc_mode == "H265_CBR")
+        {
+            m_venc_main_ptr = std::make_shared<venc_h265_cbr>(venc_w,venc_h,m_vi_ptr->fr(),fr,0,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),bitrate);
             m_venc_sub_ptr  = std::make_shared<venc_h265_cbr>(704,576,m_vi_ptr->fr(),fr,m_venc_main_ptr->venc_chn() + 1,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),1000);
-
+        }
+        else if(m_venc_mode == "H265_AVBR")
+        {
+            m_venc_main_ptr = std::make_shared<venc_h265_avbr>(venc_w,venc_h,m_vi_ptr->fr(),fr,0,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),bitrate);
+            m_venc_sub_ptr  = std::make_shared<venc_h265_avbr>(704,576,m_vi_ptr->fr(),fr,m_venc_main_ptr->venc_chn() + 1,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),1000);
         }
         else
         {
             DEV_WRITE_LOG_ERROR("invalid venc mode");
+            m_vi_ptr->stop();
+            m_vi_ptr = nullptr;
+            return false;
         }
 
         if(!m_venc_main_ptr->start()
@@ -79,11 +91,11 @@ namespace hisilicon{namespace dev{
             DEV_WRITE_LOG_ERROR("venc start failed");
             m_venc_main_ptr->stop();
             m_venc_sub_ptr->stop();
-            m_venc_main_ptr.reset();
-            m_venc_sub_ptr.reset();
+            m_venc_main_ptr = nullptr;
+            m_venc_sub_ptr = nullptr;
 
             m_vi_ptr->stop();
-            m_vi_ptr.reset();
+            m_vi_ptr = nullptr;
             return false;
         }
 
@@ -177,7 +189,7 @@ namespace hisilicon{namespace dev{
             stream = 1;
         }
 
-        if(m_venc_mode == "H264")
+        if(strstr(m_venc_mode.c_str(),"H264") != NULL)
         {
             ceanic::rtmp::session_manager::instance()->process_data(m_chn,stream,head);
         }
@@ -186,7 +198,7 @@ namespace hisilicon{namespace dev{
         {
             head->nalu[i].data += 4;//remove 00 00 00 01
             head->nalu[i].size -= 4;
-            head->nalu[i].timestamp *= 40;
+            head->nalu[i].timestamp *= 90;
         }
 
         ceanic::rtsp::stream_manager::instance()->process_data(m_chn,stream,head,NULL,0);
@@ -350,11 +362,11 @@ namespace hisilicon{namespace dev{
         memset(mh,0,sizeof(media_head));
         mh->media_fourcc = CEANIC_TAG;
         mh->ver = 1;
-        if(chn_ptr->m_venc_mode == "H264")
+        if(strstr(chn_ptr->m_venc_mode.c_str(),"H264") != NULL)
         {
             mh->vdec = STREAM_ENCODE_H264;
         }
-        else if(chn_ptr->m_venc_mode == "H265")
+        else if(strstr(chn_ptr->m_venc_mode.c_str(),"H265") != NULL)
         {
             mh->vdec = STREAM_ENCODE_H265;
         }
@@ -363,6 +375,34 @@ namespace hisilicon{namespace dev{
             assert(0);
         }
         return true;
+    }
+
+    bool chn::rate_auto_init(const char* file)
+    {
+        td_s32 ret = ot_rate_auto_load_param((td_char*)file,&g_rate_auto_param);
+        if(ret != TD_SUCCESS)
+        {
+            DEV_WRITE_LOG_ERROR("ot_rate_auto_load_param failed with 0x%x",ret);
+            return false;
+        }
+
+        ret = ot_rate_auto_init(&g_rate_auto_param);
+        if(ret != TD_SUCCESS)
+        {
+            DEV_WRITE_LOG_ERROR("ot_rate_auto_load_init failed with 0x%x",ret);
+            return false;
+        }
+
+        return true;
+    }
+
+    void chn::rate_auto_release()
+    {
+        td_s32 ret = ot_rate_auto_deinit();
+        if (ret != TD_SUCCESS) 
+        {
+            DEV_WRITE_LOG_ERROR("ot_rate_auto_load_deinit failed with 0x%x",ret);
+        }
     }
 }}//namespace
 

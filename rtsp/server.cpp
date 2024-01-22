@@ -3,6 +3,7 @@
 #include <iostream>
 #include <rtsp_session.h>
 #include <rtsp_log.h>
+#include <functional>
 
 namespace ceanic{namespace rtsp{
 

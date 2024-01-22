@@ -16,6 +16,12 @@ extern "C"
 #include <scene_loadparam.h>
 }
 
+//for svc rate auto
+extern "C"
+{
+#include <ot_bitrate_auto.h>
+}
+
 //aiisp
 #include <aiisp_bnr.h>
 #include <aiisp_drc.h>
@@ -52,6 +58,11 @@ namespace hisilicon{namespace dev{
             static bool scene_set_mode(int mode);
             static void scene_release();
 
+            //for svc rate auto
+            //use venc_chn=0(../svc_rate_auto/src/ot_bitrate_auto.c)
+            static bool rate_auto_init(const char* file);
+            static void rate_auto_release();
+
             //for aiisp
             bool aiisp_start(const char* model_file,int mode);
             void aiisp_stop();
@@ -74,6 +85,8 @@ namespace hisilicon{namespace dev{
             static ot_scene_param g_scene_param;
             static ot_scene_video_mode g_scene_video_mode;
             static std::shared_ptr<chn> g_chns[MAX_CHANNEL];
+
+            static rate_auto_param g_rate_auto_param;
     };
 
 }}//namespace

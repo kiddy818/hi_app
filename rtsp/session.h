@@ -4,9 +4,9 @@
 #include <iostream>
 #include <util/std.h>
 #include <event.h>
-#include <boost/logic/tribool.hpp>
 #include <mutex>
 #include <thread>
+#include <optional>
 
 namespace ceanic{namespace rtsp{
 
@@ -28,7 +28,7 @@ namespace ceanic{namespace rtsp{
 
             std::string& ip();
 
-            virtual boost::tribool handle_read(const char* data, int len) = 0;
+            virtual std::optional<bool> handle_read(const char* data, int len) = 0;
 
             virtual void handle_reset(); 
 

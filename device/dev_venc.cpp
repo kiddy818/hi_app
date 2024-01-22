@@ -276,7 +276,7 @@ namespace hisilicon{namespace dev{
             es_type = (pstream->pack[i].data_type.h264_type == 5) ? 1 : 0;
             time_stamp = pstream->pack[i].pts / 1000;
 
-            //printf("packet%d,len=%d,%02x,%02x,%02x,%02x,%02x\n",i,es_len,es_buf[0],es_buf[1],es_buf[2],es_buf[3],es_buf[4]);
+            //printf("packet%d,len=%d,%02x,%02x,%02x,%02x,%02x,t=%d\n",i,es_len,es_buf[0],es_buf[1],es_buf[2],es_buf[3],es_buf[4],time_stamp);
 
             sh.nalu[i].data = (char*)es_buf;
             sh.nalu[i].size = es_len; 
@@ -299,6 +299,21 @@ namespace hisilicon{namespace dev{
     }
 
     venc_h264_cbr::~venc_h264_cbr()
+    {
+    }
+
+    venc_h264_avbr::venc_h264_avbr(int w,int h,int src_fr,int venc_fr,ot_venc_chn venc_chn,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn,int max_bitrate)
+        :venc_h264(w,h,src_fr,venc_fr,venc_chn,vpss_grp,vpss_chn),m_max_bitrate(max_bitrate)
+    {
+        m_venc_chn_attr.rc_attr.rc_mode = OT_VENC_RC_MODE_H264_AVBR;
+        m_venc_chn_attr.rc_attr.h264_avbr.gop = m_venc_fr; /*the interval of IFrame*/
+        m_venc_chn_attr.rc_attr.h264_avbr.stats_time = 1; /* stream rate statics time(s) */
+        m_venc_chn_attr.rc_attr.h264_avbr.src_frame_rate= m_src_fr; /* input (vi) frame rate */
+        m_venc_chn_attr.rc_attr.h264_avbr.dst_frame_rate = m_venc_fr; /* target frame rate */
+        m_venc_chn_attr.rc_attr.h264_avbr.max_bit_rate = m_max_bitrate;
+    }
+
+    venc_h264_avbr::~venc_h264_avbr()
     {
     }
 
@@ -371,6 +386,21 @@ namespace hisilicon{namespace dev{
     }
 
     venc_h265_cbr::~venc_h265_cbr()
+    {
+    }
+
+    venc_h265_avbr::venc_h265_avbr(int w,int h,int src_fr,int venc_fr,ot_venc_chn venc_chn,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn,int max_bitrate)
+        :venc_h265(w,h,src_fr,venc_fr,venc_chn,vpss_grp,vpss_chn),m_max_bitrate(max_bitrate)
+    {
+        m_venc_chn_attr.rc_attr.rc_mode = OT_VENC_RC_MODE_H265_AVBR;
+        m_venc_chn_attr.rc_attr.h265_avbr.gop = m_venc_fr; /*the interval of IFrame*/
+        m_venc_chn_attr.rc_attr.h265_avbr.stats_time = 1; /* stream rate statics time(s) */
+        m_venc_chn_attr.rc_attr.h265_avbr.src_frame_rate= m_src_fr; /* input (vi) frame rate */
+        m_venc_chn_attr.rc_attr.h265_avbr.dst_frame_rate = m_venc_fr; /* target frame rate */
+        m_venc_chn_attr.rc_attr.h265_avbr.max_bit_rate = m_max_bitrate;
+    }
+
+    venc_h265_avbr::~venc_h265_avbr()
     {
     }
 

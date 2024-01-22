@@ -7,6 +7,7 @@
 3. OSD(时间)功能 
 4. 海思AIISP 
 5. 海思图像自适应 
+6. 海思编码自适应 
 
 当前支持的sensor为: 
 1. OS04A10 
@@ -79,17 +80,17 @@ cd /opt/ceanic/bin
       "bitrate" : 4000,
       "fr" : 30,
       "h" : 1520,
-      "name" : "H264",
+      "name" : "H264_CBR",
       "w" : 2688
    }
 }
 ```
 |  类型            | 说明                                                                                  |
 |  ----            | ----                                                                                  |
-| bitrate          | 编码码率(kbps),当前支持CBR                                                            |
+| bitrate          | 编码码率(kbps),当前支持CBR(平均码率),AVBR(最大码率)                                   |
 | fr               | 编码帧率                                                                              |
 | h                | 编码视频高                                                                            |
-| name             | 编码类型,当前支持"H264","H265"                                                        |
+| name             | 编码类型,当前支持"H264_CBR","H264_AVBR","H265_CBR","H265_AVBR"                        |
 | w                | 编码视频宽                                                                            |
 
 
@@ -145,7 +146,21 @@ cd /opt/ceanic/bin
 |  ----            | ----                                                                                  |
 | enable           | 1:启用 0:启用                                                                         |
 | dir_path         | scene使用的配置目录路径                                                               |
-| mode             | scene mode序号(见config_scenemode.ini)                                             |
+| mode             | scene mode序号(见config_scenemode.ini)                                                |
+
+##### rate_auto.json
+```
+{
+   "rate_auto" : {
+      "file" : "/opt/ceanic/etc/config_rate_auto_base_param.ini",
+      "enable" : 1,
+   }
+}
+```
+|  类型            | 说明                                                                                  |
+|  ----            | ----                                                                                  |
+| enable           | 1:启用 0:启用,只有AVBR编码才有效                                                      |
+| file             | 编码自适应使用的文件路径                                                              |
 
 
 #### RTSP
@@ -230,3 +245,35 @@ tail ../logs/access.log
 
 3. 打开vlc->媒体->打开网络串流->输入RTMP URL
 ![avatar](doc/rtmp_open.jpg)
+
+#### thirdlibrary
+
+##### freetype-2.7.1交叉编译
+```
+./configure --prefix=`pwd`/mybuild_aarch64_v01c01_linux_gnu --host=aarch64-v01c01-linux-gnu --with-zlib=no
+make && make install
+```
+##### libevent-2.0.18-stable交叉编译
+```
+./configure --prefix=`pwd`/mybuild_aarch64_v01c01_linux_gnu --host=aarch64-v01c01-linux-gnu CFLAGS=-fPIC
+make && make install
+```
+
+##### lob4cpp交叉编译
+```
+./configure --prefix=`pwd`/mybuild_aarch64_v01c01_linux_gnu --host=aarch64-v01c01-linux-gnu CXXFLAGS=-fPIC
+make && make install
+```
+
+##### rtmpdump交叉编译
+```
+make prefix=./mybuild_aarch64_v01c01_linux_gnu SYS=posix CROSS_COMPILE=aarch64-v01c01-linux-gnu- XDEF=-DNO_SSL CRYPTO=
+make && make install
+```
+
+#### 合作交流
+联系方式:   
+深圳思尼克技术有限公司   
+jiajun.ma@ceanic.com   
+马佳君  
+

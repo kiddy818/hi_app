@@ -97,7 +97,7 @@ static void init_venc_info()
     {
         std::string venc = "venc" + std::to_string(i + 1);
 
-        sprintf(g_venc_info[i].name,"H264");
+        sprintf(g_venc_info[i].name,"H264_CBR");
         g_venc_info[i].w = 2688;
         g_venc_info[i].h = 1520;
         g_venc_info[i].fr = 30;
@@ -382,6 +382,67 @@ static int get_aiisp_info()
     }
 }
 
+typedef struct
+{
+    int enable;
+    char file[255];
+}rate_auto_info_t;
+static rate_auto_info_t g_rate_auto_info;
+#define RATE_AUTO_FILE_PATH "/opt/ceanic/etc/rate_auto.json"
+static void init_rate_auto_info()
+{
+    Json::Value root;
+
+    root["rate_auto"]["enable"] = 1;
+    root["rate_auto"]["file"] = "/opt/ceanic/etc/config_rate_auto_base_param.ini";
+    std::string str= root.toStyledString();
+    std::ofstream ofs;
+    ofs.open(RATE_AUTO_FILE_PATH);
+    ofs << str;
+    ofs.close();
+}
+
+static int get_rate_auto_info()
+{
+    try
+    {
+        if(access(RATE_AUTO_FILE_PATH,F_OK) < 0)
+        {
+            init_rate_auto_info();
+
+            if(access(RATE_AUTO_FILE_PATH,F_OK) < 0)
+            {
+                return -1;
+            }
+        }
+
+        std::ifstream ifs;
+        ifs.open(RATE_AUTO_FILE_PATH);
+        if(!ifs.is_open())
+        {
+            return -1;
+        }
+        Json::Reader reader;  
+        Json::Value root; 
+        if (!reader.parse(ifs, root, false)) 
+        {
+            return -1;
+        }
+
+        Json::Value node; 
+        g_rate_auto_info.enable = root["rate_auto"]["enable"].asInt();
+        sprintf(g_rate_auto_info.file,"%s",root["rate_auto"]["file"].asCString());
+
+        ifs.close();
+
+        return 0;
+    }
+    catch(...)
+    {
+        return -1;
+    }
+}
+
 std::thread g_thread_1s;
 static void thread_1s()
 {
@@ -416,6 +477,11 @@ static void thread_1s()
 static void on_quit(int signal)
 {
     fprintf(stderr,"on quit\n");
+
+    if(g_rate_auto_info.enable)
+    {
+        hisilicon::dev::chn::rate_auto_release();
+    }
 
     if(g_aiisp_info.enable)
     {
@@ -525,6 +591,18 @@ int main(int argc,char* argv[])
     if(g_aiisp_info.enable)
     {
         g_chn->aiisp_start(g_aiisp_info.model_file,g_aiisp_info.mode);
+    }
+
+    //rate auto
+    get_rate_auto_info();
+    printf("rate auto info\n");
+    printf("\tenable:%d\n",g_rate_auto_info.enable);
+    printf("\tfile:%s\n",g_rate_auto_info.file);
+    if(g_rate_auto_info.enable
+            && strstr(g_venc_info[chn].name,"AVBR") != NULL)
+    {
+        //only avbr support rate auto
+        hisilicon::dev::chn::rate_auto_init(g_rate_auto_info.file);
     }
 
     g_thread_1s = std::thread(thread_1s);

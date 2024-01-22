@@ -2,6 +2,7 @@ include ../Makefile.param
 CXX:=$(CROSS)g++
 STRIP=$(CROSS)strip
 CFLAGS += -g -Wall -O2
+CXXFLAGS += -std=c++17
 
 THIRD_LIBRARY_PATH=./thirdlibrary
 INC_PATH += -I./
@@ -17,7 +18,7 @@ INC_PATH += -I./aiisp/
 INC_PATH += -I./device/
 
 INC_PATH += -I$(THIRD_LIBRARY_PATH)/freetype-2.7.1/include/freetype2
-INC_PATH += -I$(THIRD_LIBRARY_PATH)/boost_1_60_0/include/
+#INC_PATH += -I$(THIRD_LIBRARY_PATH)/boost_1_60_0/include/
 INC_PATH += -I$(THIRD_LIBRARY_PATH)/log4cpp/include/
 INC_PATH += -I$(THIRD_LIBRARY_PATH)/libevent-2.0.18-stable/include
 INC_PATH += -I$(THIRD_LIBRARY_PATH)/rtmpdump/include/
@@ -85,6 +86,12 @@ SRC += $(SCENE_PATH)/tools/configaccess/src/ot_confaccess.c
 SRC += ../common/sample_comm_vi.c
 SRC += ../common/sample_comm_isp.c
 
+#support rate_auto
+SVC_RATE_PATH = ../svc_rate_auto
+INC_PATH += -I$(SVC_RATE_PATH)/include
+SRC += $(SVC_RATE_PATH)/src/ot_bitrate_auto.c
+SRC += $(SVC_RATE_PATH)/src/bitrate_auto_load_param.c
+
 LIBS += -Wl,--start-group
 
 LIBS += $(THIRD_LIBRARY_PATH)/rtmpdump/lib/librtmp.a
@@ -108,7 +115,7 @@ $(target):$(PROGXX_OBJ) $(PROG_OBJ) $(DEVICE_OBJ)
 	$(STRIP) $(target)
 
 %.o:%.cpp
-	$(CXX) -c -o  $@ $< $(INC_PATH) $(CFLAGS)
+	$(CXX) -c -o  $@ $< $(INC_PATH) $(CFLAGS) $(CXXFLAGS)
 
 %.o:%.c
 	$(CC) -c -o  $@ $< $(INC_PATH) $(CFLAGS)
