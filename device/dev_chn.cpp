@@ -62,7 +62,7 @@ namespace hisilicon{namespace dev{
             m_venc_main_ptr = std::make_shared<venc_h264_cbr>(venc_w,venc_h,m_vi_ptr->fr(),fr,0,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),bitrate);
             m_venc_sub_ptr  = std::make_shared<venc_h264_cbr>(704,576,m_vi_ptr->fr(),fr,m_venc_main_ptr->venc_chn() + 1,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),1000);
         }
-        if(m_venc_mode == "H264_AVBR")
+        else if(m_venc_mode == "H264_AVBR")
         {
             m_venc_main_ptr = std::make_shared<venc_h264_avbr>(venc_w,venc_h,m_vi_ptr->fr(),fr,0,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),bitrate);
             m_venc_sub_ptr  = std::make_shared<venc_h264_avbr>(704,576,m_vi_ptr->fr(),fr,m_venc_main_ptr->venc_chn() + 1,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),1000);
@@ -198,7 +198,7 @@ namespace hisilicon{namespace dev{
         {
             head->nalu[i].data += 4;//remove 00 00 00 01
             head->nalu[i].size -= 4;
-            head->nalu[i].timestamp *= 40;
+            head->nalu[i].timestamp *= 90;
         }
 
         ceanic::rtsp::stream_manager::instance()->process_data(m_chn,stream,head,NULL,0);
@@ -366,7 +366,7 @@ namespace hisilicon{namespace dev{
         {
             mh->vdec = STREAM_ENCODE_H264;
         }
-        if(strstr(chn_ptr->m_venc_mode.c_str(),"H265") != NULL)
+        else if(strstr(chn_ptr->m_venc_mode.c_str(),"H265") != NULL)
         {
             mh->vdec = STREAM_ENCODE_H265;
         }

@@ -276,7 +276,7 @@ namespace hisilicon{namespace dev{
             es_type = (pstream->pack[i].data_type.h264_type == 5) ? 1 : 0;
             time_stamp = pstream->pack[i].pts / 1000;
 
-            //printf("packet%d,len=%d,%02x,%02x,%02x,%02x,%02x\n",i,es_len,es_buf[0],es_buf[1],es_buf[2],es_buf[3],es_buf[4]);
+            //printf("packet%d,len=%d,%02x,%02x,%02x,%02x,%02x,t=%d\n",i,es_len,es_buf[0],es_buf[1],es_buf[2],es_buf[3],es_buf[4],time_stamp);
 
             sh.nalu[i].data = (char*)es_buf;
             sh.nalu[i].size = es_len; 
