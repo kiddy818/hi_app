@@ -271,6 +271,33 @@ make prefix=./mybuild_aarch64_v01c01_linux_gnu SYS=posix CROSS_COMPILE=aarch64-v
 make && make install
 ```
 
+##### mp4v2交叉编译 
+1. 从gitee上下载版本
+```
+git clone https://gitee.com/mirrors/mp4v2.git
+```
+2. 从git版本库中checkout到最新的release版本
+```
+git tag
+git checkout Release-ThirdParty-MP4v2-5.0.1
+```
+
+3. 更新autoaux下的config.guess,config.sub(因为316dv500使用的是aarch64_xxx的编译器，mp4v2很久没更新，无法正确识别此交叉编译链)
+```
+//ubuntu下安装最新的libtool
+sudo apt-get install libtool
+
+//将libtool下下的config.guess,config.sub替换调mp4v2下的同名文件
+cp /usr/share/libtool/build-aux/config.guess autoaux/
+cp /usr/share/libtool/build-aux/config.sub autoaux/
+```
+
+4. 编译并安装
+```
+./configure --host=aarch64-v01c01-linux-gnu --prefix=`pwd`/mybuild --disable-option-checking --disable-debug --disable-optimize --disable-fvisibility --disable-gch --disable-largefile --disable-util --disable-dependency-tracking --disable-libtool-lock
+make && make install
+```
+
 #### 合作交流
 联系方式:   
 深圳思尼克技术有限公司   

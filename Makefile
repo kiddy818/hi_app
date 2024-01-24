@@ -1,7 +1,7 @@
 include ../Makefile.param
 CXX:=$(CROSS)g++
 STRIP=$(CROSS)strip
-CFLAGS += -g -Wall -O2
+CFLAGS += -Wall -O2
 CXXFLAGS += -std=c++17
 
 THIRD_LIBRARY_PATH=./thirdlibrary
@@ -92,13 +92,19 @@ INC_PATH += -I$(SVC_RATE_PATH)/include
 SRC += $(SVC_RATE_PATH)/src/ot_bitrate_auto.c
 SRC += $(SVC_RATE_PATH)/src/bitrate_auto_load_param.c
 
+#support stream_save
+INC_PATH += -I../thirdlibrary/mp4v2/include
+INC_PATH += -I./stream_save/
+SRCXX += stream_save/h264_mp4_save.cpp
+
 LIBS += -Wl,--start-group
 
 LIBS += $(THIRD_LIBRARY_PATH)/rtmpdump/lib/librtmp.a
 LIBS += $(THIRD_LIBRARY_PATH)/log4cpp/lib/liblog4cpp.a
 LIBS += $(THIRD_LIBRARY_PATH)/libevent-2.0.18-stable/lib/libevent.a
 LIBS += $(THIRD_LIBRARY_PATH)/freetype-2.7.1/lib/libfreetype.a
-LIBS += $(MPI_LIBS) $(SENSOR_LIBS) $(AUDIO_LIBA) $(REL_LIB)/libsecurec.a
+LIBS += $(THIRD_LIBRARY_PATH)/mp4v2/lib/libmp4v2.a
+LIBS += $(MPI_LIBS) $(REL_LIB)/libsecurec.a
 
 LIBS+= -Wl,--end-group
 

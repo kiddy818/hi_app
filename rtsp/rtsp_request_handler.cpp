@@ -251,7 +251,7 @@ namespace ceanic{namespace rtsp{
 
         //根据rfc2327，加入必须的选项
         sdp_desc += "o=- " + std::to_string(std::time(nullptr) * 1000) + std::string(" 1 IN IP4 0.0.0.0\r\n");
-        sdp_desc += "s=Streamed by Beacon Simple Rtsp Server\r\n";
+        sdp_desc += "s=Streamed by Ceanic Simple Rtsp Server\r\n";
         sdp_desc += "t=0 0\r\n";
 
         sdp_desc += "a=range:npt= 0-\r\n";

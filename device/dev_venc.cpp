@@ -257,6 +257,7 @@ namespace hisilicon{namespace dev{
         char* es_buf = NULL;
         int es_len = 0;
         int es_type = 0;
+        int nalu_cnt = 0;
         unsigned long long time_stamp = 0;
 
         ceanic::util::stream_head sh;
@@ -265,7 +266,6 @@ namespace hisilicon{namespace dev{
         sh.type = STREAM_NALU_SLICE;    
         sh.tag = CEANIC_TAG;
         sh.sys_time = time(NULL);  
-        sh.nalu_count = pstream->pack_cnt;         
         sh.w = m_venc_w;
         sh.h = m_venc_h;
 
@@ -273,14 +273,24 @@ namespace hisilicon{namespace dev{
         {
             es_buf = (char*)(pstream->pack[i].addr + pstream->pack[i].offset);
             es_len = pstream->pack[i].len - pstream->pack[i].offset;
-            es_type = (pstream->pack[i].data_type.h264_type == 5) ? 1 : 0;
+            //es_type = (pstream->pack[i].data_type.h264_type == 5) ? 1 : 0;
+            es_type = es_buf[4] & 0x1f;
             time_stamp = pstream->pack[i].pts / 1000;
 
             //printf("packet%d,len=%d,%02x,%02x,%02x,%02x,%02x,t=%d\n",i,es_len,es_buf[0],es_buf[1],es_buf[2],es_buf[3],es_buf[4],time_stamp);
 
-            sh.nalu[i].data = (char*)es_buf;
-            sh.nalu[i].size = es_len; 
-            sh.nalu[i].timestamp = time_stamp;
+            if(es_type == 0x7 /*sps*/
+                    || es_type == 0x8 /*pps*/
+                    || es_type == 0x1 /*p*/
+                    || es_type == 0x5 /*i*/)
+            {
+                sh.nalu[nalu_cnt].data = (char*)es_buf;
+                sh.nalu[nalu_cnt].size = es_len; 
+                sh.nalu[nalu_cnt].timestamp = time_stamp;
+
+                nalu_cnt++;
+            }
+            sh.nalu_count = nalu_cnt;
             //g_stream_fun(chn,stream,es_type,time_stamp,es_buf,es_len,g_stream_fun_usr);
         }
 
