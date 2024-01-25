@@ -443,6 +443,67 @@ static int get_rate_auto_info()
     }
 }
 
+typedef struct
+{
+    int enable;
+    char file[255];
+}mp4_save_info_t;
+static mp4_save_info_t g_mp4_save_info;
+#define MP4_SAVE_INFO_PATH "/opt/ceanic/etc/mp4_save_info.json"
+static void init_mp4_save_info()
+{
+    Json::Value root;
+
+    root["mp4_save"]["enable"] = 0;
+    root["mp4_save"]["file"] = "/mnt/test.mp4";
+    std::string str= root.toStyledString();
+    std::ofstream ofs;
+    ofs.open(MP4_SAVE_INFO_PATH);
+    ofs << str;
+    ofs.close();
+}
+
+static int get_mp4_save_info()
+{
+    try
+    {
+        if(access(MP4_SAVE_INFO_PATH,F_OK) < 0)
+        {
+            init_mp4_save_info();
+
+            if(access(MP4_SAVE_INFO_PATH,F_OK) < 0)
+            {
+                return -1;
+            }
+        }
+
+        std::ifstream ifs;
+        ifs.open(MP4_SAVE_INFO_PATH);
+        if(!ifs.is_open())
+        {
+            return -1;
+        }
+        Json::Reader reader;  
+        Json::Value root; 
+        if (!reader.parse(ifs, root, false)) 
+        {
+            return -1;
+        }
+
+        Json::Value node; 
+        g_mp4_save_info.enable = root["mp4_save"]["enable"].asInt();
+        sprintf(g_mp4_save_info.file,"%s",root["mp4_save"]["file"].asCString());
+
+        ifs.close();
+
+        return 0;
+    }
+    catch(...)
+    {
+        return -1;
+    }
+}
+
 std::thread g_thread_1s;
 static void thread_1s()
 {
@@ -477,6 +538,11 @@ static void thread_1s()
 static void on_quit(int signal)
 {
     fprintf(stderr,"on quit\n");
+
+    if(g_mp4_save_info.enable)
+    {
+        g_chn->stop_save();
+    }
 
     if(g_rate_auto_info.enable)
     {
@@ -603,6 +669,16 @@ int main(int argc,char* argv[])
     {
         //only avbr support rate auto
         hisilicon::dev::chn::rate_auto_init(g_rate_auto_info.file);
+    }
+
+    //mp4 save
+    get_mp4_save_info();
+    printf("mp4 save info\n");
+    printf("\tenable:%d\n",g_mp4_save_info.enable);
+    printf("\tfile:%s\n",g_mp4_save_info.file);
+    if(g_mp4_save_info.enable)
+    {
+        g_chn->start_save(g_mp4_save_info.file);
     }
 
     g_thread_1s = std::thread(thread_1s);

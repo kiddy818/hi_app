@@ -8,6 +8,7 @@
 4. 海思AIISP 
 5. 海思图像自适应 
 6. 海思编码自适应 
+7. Mp4文件保存(当前支持h264)
 
 当前支持的sensor为: 
 1. OS04A10 
@@ -162,6 +163,20 @@ cd /opt/ceanic/bin
 | enable           | 1:启用 0:启用,只有AVBR编码才有效                                                      |
 | file             | 编码自适应使用的文件路径                                                              |
 
+##### mp4_save.json
+```
+{
+   "mp4_save" : {
+      "file" : "/mnt/test.mp4",
+      "enable" : 0,
+   }
+}
+```
+|  类型            | 说明                                                                                  |
+|  ----            | ----                                                                                  |
+| enable           | 1:启用 0:启用                                                                         |
+| file             | mp4保存路径                                                                           |
+
 
 #### RTSP
 ##### RTSP URL
@@ -294,7 +309,7 @@ cp /usr/share/libtool/build-aux/config.sub autoaux/
 
 4. 编译并安装
 ```
-./configure --host=aarch64-v01c01-linux-gnu --prefix=`pwd`/mybuild --disable-option-checking --disable-debug --disable-optimize --disable-fvisibility --disable-gch --disable-largefile --disable-util --disable-dependency-tracking --disable-libtool-lock
+./configure --host=aarch64-v01c01-linux-gnu --prefix=`pwd`/mybuild --disable-option-checking --disable-debug --disable-optimize --disable-fvisibility --disable-gch --disable-largefile --disable-util --disable-dependency-tracking --disable-libtool-lock CFLAGS=-fPIC CPPFLAGS=-fPIC
 make && make install
 ```
 

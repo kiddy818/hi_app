@@ -137,6 +137,39 @@ namespace hisilicon{namespace dev{
         g_chns[m_chn] = nullptr;
     }
 
+    bool chn::start_save(const char* file)
+    {
+        if(!m_is_start)
+        {
+            return false;
+        }
+
+        if(strstr(m_venc_mode.c_str(),"H264") != NULL)
+        {
+            m_save = std::make_shared<ceanic::stream_save::h264_mp4_save>(file,m_venc_main_ptr->venc_w(),m_venc_main_ptr->venc_h(),m_venc_main_ptr->venc_fr());
+        }
+        else if(strstr(m_venc_mode.c_str(),"H265") != NULL)
+        {
+            //TODO
+            return false;
+        }
+        else
+        {
+            return false;
+        }
+
+        return m_save->open();
+    }
+
+    void chn::stop_save()
+    {
+        if(m_save)
+        {
+            m_save->close();
+            m_save = nullptr;
+        }
+    }
+
     void chn::start_capture(bool enable)
     {
         if(enable)
@@ -192,6 +225,12 @@ namespace hisilicon{namespace dev{
         if(strstr(m_venc_mode.c_str(),"H264") != NULL)
         {
             ceanic::rtmp::session_manager::instance()->process_data(m_chn,stream,head);
+        }
+
+        if(stream == 0
+                && m_save)
+        {
+            m_save->input_data(head,NULL,0);
         }
 
         for(int i = 0; i < head->nalu_count; i++)

@@ -27,6 +27,9 @@ extern "C"
 #include <aiisp_drc.h>
 #include <aiisp_3dnr.h>
 
+//mp4
+#include <h264_mp4_save.h>
+
 #define MAX_CHANNEL 1
 
 namespace hisilicon{namespace dev{
@@ -44,6 +47,9 @@ namespace hisilicon{namespace dev{
             bool is_start();
 
             bool get_isp_exposure_info(isp_exposure_t* val);
+
+            bool start_save(const char* file);
+            void stop_save();
 
             static bool init();
             static void release();
@@ -81,6 +87,7 @@ namespace hisilicon{namespace dev{
             std::shared_ptr<osd_date> m_osd_date_sub;
             int m_chn;
             std::string m_venc_mode;
+            std::shared_ptr<ceanic::stream_save::stream_save> m_save;
 
             static ot_scene_param g_scene_param;
             static ot_scene_video_mode g_scene_video_mode;

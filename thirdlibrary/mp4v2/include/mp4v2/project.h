@@ -24,7 +24,7 @@
 #define MP4V2_PROJECT_repo_rev        0
 #define MP4V2_PROJECT_repo_date       "unknown"
 #define MP4V2_PROJECT_repo_type       "developer"
-#define MP4V2_PROJECT_build           "Tue Jan 23 13:58:21 CST 2024"
+#define MP4V2_PROJECT_build           "Thu Jan 25 12:45:38 CST 2024"
 
 /*****************************************************************************/
 

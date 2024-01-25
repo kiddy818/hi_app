@@ -24,6 +24,7 @@ namespace hisilicon{namespace dev{
             int venc_fd();
             int venc_w();
             int venc_h();
+            int venc_fr();
             virtual void process_video_stream(ot_venc_stream* pstream) = 0;
             bool request_i_frame();
             

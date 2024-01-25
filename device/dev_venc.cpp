@@ -57,6 +57,11 @@ namespace hisilicon{namespace dev{
         return m_venc_h;
     }
 
+    int venc::venc_fr()
+    {
+        return m_venc_fr;
+    }
+
     void venc::on_capturing()
     {
         fd_set read_fds;
