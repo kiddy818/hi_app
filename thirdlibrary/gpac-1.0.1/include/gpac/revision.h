@@ -1,0 +1,1 @@
+#define GPAC_GIT_REVISION	"0-gd8538e8ae-HEAD"

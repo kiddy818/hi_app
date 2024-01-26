@@ -93,9 +93,11 @@ SRC += $(SVC_RATE_PATH)/src/ot_bitrate_auto.c
 SRC += $(SVC_RATE_PATH)/src/bitrate_auto_load_param.c
 
 #support stream_save
-INC_PATH += -I../thirdlibrary/mp4v2/include
+INC_PATH += -I$(THIRD_LIBRARY_PATH)/mp4v2/include
+INC_PATH += -I$(THIRD_LIBRARY_PATH)/gpac-1.0.1/include
 INC_PATH += -I./stream_save/
 SRCXX += stream_save/h264_mp4_save.cpp
+SRCXX += stream_save/MP4Writer.cpp
 
 LIBS += -Wl,--start-group
 
@@ -104,6 +106,8 @@ LIBS += $(THIRD_LIBRARY_PATH)/log4cpp/lib/liblog4cpp.a
 LIBS += $(THIRD_LIBRARY_PATH)/libevent-2.0.18-stable/lib/libevent.a
 LIBS += $(THIRD_LIBRARY_PATH)/freetype-2.7.1/lib/libfreetype.a
 LIBS += $(THIRD_LIBRARY_PATH)/mp4v2/lib/libmp4v2.a
+LIBS += $(THIRD_LIBRARY_PATH)/gpac-1.0.1/lib/libgpac_static.a
+LIBS += $(THIRD_LIBRARY_PATH)/gpac-1.0.1/lib/libz.a
 LIBS += $(MPI_LIBS) $(REL_LIB)/libsecurec.a
 
 LIBS+= -Wl,--end-group

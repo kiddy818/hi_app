@@ -313,6 +313,34 @@ cp /usr/share/libtool/build-aux/config.sub autoaux/
 make && make install
 ```
 
+##### gpac交叉编译 
+zlib版本必须和gpac的版本匹配，当前实验下来,zlib-1.2.11和gpac v1.0.1是匹配的,其他版本未知
+
+1. zlib编译
+```
+export CC=aarch64-v01c01-linux-gnu-gcc 
+export CFLAGS="-fPIC"
+./configure --prefix=`pwd`/mybuild_aarch64_v01c01_linux_gnu
+make && make install
+```
+2. 下载gpac
+```
+git clone https://github.com/gpac/gpac.git
+cd gpac
+git tag
+git checkout v1.0.1
+
+//--extra-cflags和--extra-ldflags的路径需要和zlib的路径相匹配
+./configure --prefix=`pwd`/mybuild_aarch64_v01c01_linux_gnu --cross-prefix=aarch64-v01c01-linux-gnu- --extra-cflags=-I/home/mjj/work/3519dv500/010/Hi3519DV500_SDK_V2.0.1.0/smp/a55_linux/source/mpp/sample/thirdlibrary/zlib-1.2.11/mybuild_aarch64_v01c01_linux_gnu/include --extra-cflags=-fPIC --extra-ldflags=-L/home/mjj/work/3519dv500/010/Hi3519DV500_SDK_V2.0.1.0/smp/a55_linux/source/mpp/sample/thirdlibrary/zlib-1.2.11/mybuild_aarch64_v01c01_linux_gnu/lib  --disable-x11-shm
+
+//将zlib编译好的库复制到bin/gcc目录,否则编译时会有如下错误:/opt/linux/x86-arm/aarch64-v01c01-linux-gnu-gcc/bin/../lib/gcc/aarch64-linux-gnu/10.3.0/../../../../aarch64-linux-gnu/bin/ld: ../../bin/gcc/libgpac.so: undefined reference to `inflateReset'  
+
+cp ../zlib-1.2.11/mybuild_aarch64_v01c01_linux_gnu/lib/libz.* bin/gcc/ -Rdp
+make && make install
+```
+
+
+
 #### 合作交流
 联系方式:   
 深圳思尼克技术有限公司   
