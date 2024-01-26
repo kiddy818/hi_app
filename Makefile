@@ -97,6 +97,7 @@ INC_PATH += -I$(THIRD_LIBRARY_PATH)/mp4v2/include
 INC_PATH += -I$(THIRD_LIBRARY_PATH)/gpac-1.0.1/include
 INC_PATH += -I./stream_save/
 SRCXX += stream_save/h264_mp4_save.cpp
+SRCXX += stream_save/h265_mp4_save.cpp
 SRCXX += stream_save/MP4Writer.cpp
 
 LIBS += -Wl,--start-group

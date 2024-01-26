@@ -29,6 +29,7 @@ extern "C"
 
 //mp4
 #include <h264_mp4_save.h>
+#include <h265_mp4_save.h>
 
 #define MAX_CHANNEL 1
 

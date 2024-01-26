@@ -150,8 +150,7 @@ namespace hisilicon{namespace dev{
         }
         else if(strstr(m_venc_mode.c_str(),"H265") != NULL)
         {
-            //TODO
-            return false;
+            m_save = std::make_shared<ceanic::stream_save::h265_mp4_save>(file);
         }
         else
         {
