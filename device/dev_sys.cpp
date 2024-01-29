@@ -25,7 +25,7 @@ namespace hisilicon{namespace dev{
         }
 
         ot_vb_supplement_cfg vb_supplement_cfg = {0};
-        vb_supplement_cfg.supplement_cfg = OT_VB_SUPPLEMENT_BNR_MOT_MASK;
+        vb_supplement_cfg.supplement_cfg = OT_VB_SUPPLEMENT_BNR_MOT_MASK | OT_VB_SUPPLEMENT_JPEG_MASK;
         ret = ss_mpi_vb_set_supplement_cfg(&vb_supplement_cfg);
         if (ret != TD_SUCCESS)
         {

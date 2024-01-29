@@ -311,6 +311,11 @@ namespace hisilicon{namespace dev{
     {
         td_s32 ret;
 
+        if(m_is_start)
+        {
+            return false;
+        }
+
         if(!start_mipi()
                 || !reset_sns())
         {
@@ -342,6 +347,16 @@ namespace hisilicon{namespace dev{
                 DEV_WRITE_LOG_ERROR("ss_mpi_vi_bind failed with %#x!", ret);
                 return false;
             }
+        }
+
+        //snap
+        m_snap = std::make_shared<snap>();
+        m_snap->set_pipe(2);
+        ret = ss_mpi_vi_bind(m_vi_dev,m_snap->get_pipe());
+        if(ret != TD_SUCCESS)
+        {
+            DEV_WRITE_LOG_ERROR("ss_mpi_vi_bind snap pipe failed with %#x!", ret);
+            return false;
         }
 
         //set fusion grp
@@ -442,11 +457,18 @@ namespace hisilicon{namespace dev{
             return false;
         }
 
+        m_is_start = true;
         return true;
     }
 
     void vi_isp::stop()
     {
+        if(m_snap)
+        {
+            m_snap->stop();
+            m_snap = nullptr;
+        }
+
         stop_isp();
         stop_mipi();
 
@@ -473,6 +495,7 @@ namespace hisilicon{namespace dev{
         }
 
         ss_mpi_vi_disable_dev(m_vi_dev);
+        m_is_start = false;
     }
 
     bool vi_isp::get_isp_exposure_info(isp_exposure_t* val)
@@ -501,6 +524,21 @@ namespace hisilicon{namespace dev{
         val->is_exposure_stable = abs(info.hist_error) <= expo_attr.auto_attr.tolerance ? 1 : 0;
 
         return true;
+    }
+
+    bool vi_isp::trigger(const char* path)
+    {
+        if(!m_is_start)
+        {
+            return false;
+        }
+
+        if(!m_snap->is_start())
+        {
+            m_snap->start(m_vi_pipe_attr,m_vi_chn_attr,m_vpss_grp_attr,m_vpss_chn_attr);
+        }
+
+        return m_snap->trigger(path);
     }
 
 }}//namespace

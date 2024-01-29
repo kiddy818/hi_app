@@ -2,6 +2,7 @@
 #define dev_vi_isp_include_h
 
 #include "dev_vi.h"
+#include "dev_snap.h"
 
 //to support rgb raw sensor
 namespace hisilicon{namespace dev{
@@ -25,6 +26,8 @@ namespace hisilicon{namespace dev{
             bool start() override;
 
             void stop() override;
+
+            bool trigger(const char* path) override;
 
             int wdr_mode();
 
@@ -57,6 +60,8 @@ namespace hisilicon{namespace dev{
             ot_isp_pub_attr m_isp_pub_attr;
             ot_vpss_grp_attr m_vpss_grp_attr;
             ot_vpss_chn_attr m_vpss_chn_attr;
+            
+            std::shared_ptr<snap> m_snap;
     };
 
 }}//namespace

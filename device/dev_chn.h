@@ -52,6 +52,8 @@ namespace hisilicon{namespace dev{
             bool start_save(const char* file);
             void stop_save();
 
+            bool trigger_jpg(const char* file);
+
             static bool init();
             static void release();
 

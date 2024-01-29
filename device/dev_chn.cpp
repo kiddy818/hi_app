@@ -442,6 +442,17 @@ namespace hisilicon{namespace dev{
             DEV_WRITE_LOG_ERROR("ot_rate_auto_load_deinit failed with 0x%x",ret);
         }
     }
+
+    bool chn::trigger_jpg(const char* file)
+    {
+        if(!m_is_start)
+        {
+            return false;
+        }
+
+        return m_vi_ptr->trigger(file);
+    }
+
 }}//namespace
 
 

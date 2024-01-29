@@ -13,6 +13,7 @@ namespace hisilicon{namespace dev{
 
             virtual bool start() = 0;
             virtual void stop() = 0;
+            virtual bool trigger(const char* path) = 0;
 
             static bool init();
             static void release();

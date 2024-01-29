@@ -70,6 +70,7 @@ DEVICE_SRC += device/dev_vi_os04a10_2to1wdr.cpp
 DEVICE_SRC += device/dev_venc.cpp
 DEVICE_SRC += device/dev_chn.cpp
 DEVICE_SRC += device/dev_osd.cpp
+DEVICE_SRC += device/dev_snap.cpp
 DEVICE_SRC += device/ceanic_freetype.cpp
 
 #surpport scene
@@ -109,7 +110,7 @@ LIBS += $(THIRD_LIBRARY_PATH)/freetype-2.7.1/lib/libfreetype.a
 LIBS += $(THIRD_LIBRARY_PATH)/mp4v2/lib/libmp4v2.a
 LIBS += $(THIRD_LIBRARY_PATH)/gpac-1.0.1/lib/libgpac_static.a
 LIBS += $(THIRD_LIBRARY_PATH)/gpac-1.0.1/lib/libz.a
-LIBS += $(MPI_LIBS) $(REL_LIB)/libsecurec.a
+LIBS += $(MPI_LIBS) $(REL_LIB)/libsecurec.a $(REL_LIB)/libss_mpi_snap.a
 
 LIBS+= -Wl,--end-group
 
