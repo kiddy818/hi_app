@@ -9,9 +9,10 @@
 5. 海思图像自适应 
 6. 海思编码自适应 
 7. Mp4文件保存(h264使用mp4v2,h265使用gpac)
+8. 抓拍JPG(sensor liner mode下支持)
 
 当前支持的sensor为: 
-1. OS04A10 
+1. OS04A10,OS04A10_WDR
 
 
 #### 编译方法
@@ -176,6 +177,24 @@ cd /opt/ceanic/bin
 |  ----            | ----                                                                                  |
 | enable           | 1:启用 0:启用                                                                         |
 | file             | mp4保存路径                                                                           |
+
+##### jpg_save.json
+```
+{
+   "jpg_save" : {
+      "enable" : 0,
+      "quality" : 90,
+      "interval" : 60,
+      "dir_path" : "/mnt/",
+   }
+}
+```
+|  类型            | 说明                                                                                  |
+|  ----            | ----                                                                                  |
+| enable           | 1:启用 0:启用                                                                         |
+| quality          | JPG图像质量[1,99]                                                                     |
+| interval         | 抓拍间隔(秒)                                                                          |
+| dir_path         | 保存目录路径                                                                          |
 
 
 #### RTSP

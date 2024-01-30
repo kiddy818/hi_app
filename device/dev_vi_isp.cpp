@@ -1,5 +1,6 @@
 #include "dev_vi_isp.h"
 #include "dev_log.h"
+#include "dev_snap.h"
 
 #define MIPI_DEV_NAME "/dev/ot_mipi_rx"
 
@@ -349,14 +350,16 @@ namespace hisilicon{namespace dev{
             }
         }
 
-        //snap
-        m_snap = std::make_shared<snap>();
-        m_snap->set_pipe(2);
-        ret = ss_mpi_vi_bind(m_vi_dev,m_snap->get_pipe());
-        if(ret != TD_SUCCESS)
+        if(m_pipes.size() < 2)//wdr use 2 pipes,not support snap
         {
-            DEV_WRITE_LOG_ERROR("ss_mpi_vi_bind snap pipe failed with %#x!", ret);
-            return false;
+            //here,only liner mode(which use 1 pipe),can support snap trigger
+            //snap pipe
+            ret = ss_mpi_vi_bind(m_vi_dev,snap::get_pipe());
+            if(ret != TD_SUCCESS)
+            {
+                DEV_WRITE_LOG_ERROR("ss_mpi_vi_bind snap pipe failed with %#x!", ret);
+                return false;
+            }
         }
 
         //set fusion grp
@@ -463,12 +466,6 @@ namespace hisilicon{namespace dev{
 
     void vi_isp::stop()
     {
-        if(m_snap)
-        {
-            m_snap->stop();
-            m_snap = nullptr;
-        }
-
         stop_isp();
         stop_mipi();
 
@@ -526,19 +523,34 @@ namespace hisilicon{namespace dev{
         return true;
     }
 
-    bool vi_isp::trigger(const char* path)
+    ot_vi_pipe_attr vi_isp::vi_pipe_attr()
     {
-        if(!m_is_start)
-        {
-            return false;
-        }
+        return m_vi_pipe_attr;
+    }
 
-        if(!m_snap->is_start())
-        {
-            m_snap->start(m_vi_pipe_attr,m_vi_chn_attr,m_vpss_grp_attr,m_vpss_chn_attr);
-        }
+    ot_vi_chn_attr vi_isp::vi_chn_attr()
+    {
+        return m_vi_chn_attr;
+    }
 
-        return m_snap->trigger(path);
+    ot_isp_pub_attr vi_isp::isp_pub_attr()
+    {
+        return m_isp_pub_attr;
+    }
+
+    ot_vpss_grp_attr vi_isp::vpss_grp_attr()
+    {
+        return m_vpss_grp_attr;
+    }
+
+    ot_vpss_chn_attr vi_isp::vpss_chn_attr()
+    {
+        return m_vpss_chn_attr;
+    }
+
+    ot_isp_sns_obj* vi_isp::sns_obj()
+    {
+        return m_sns_obj;
     }
 
 }}//namespace

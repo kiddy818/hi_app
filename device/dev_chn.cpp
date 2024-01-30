@@ -120,6 +120,11 @@ namespace hisilicon{namespace dev{
         }
         m_is_start = false;
 
+        if(m_snap)
+        {
+            m_snap->stop();
+        }
+
         m_osd_date_main->stop();
         m_osd_date_sub->stop();
 
@@ -443,14 +448,41 @@ namespace hisilicon{namespace dev{
         }
     }
 
-    bool chn::trigger_jpg(const char* file)
+    bool chn::trigger_jpg(const char* file,int quality)
     {
         if(!m_is_start)
         {
             return false;
         }
 
-        return m_vi_ptr->trigger(file);
+        if(quality <1)
+        {
+            quality = 1;
+        }
+
+        if(quality > 99)
+        {
+            quality = 99;
+        }
+
+        if(strstr(m_vi_name.c_str(),"WDR") != NULL)
+        {
+            //not support wdr
+            return false;
+        }
+
+        if(!m_snap)
+        {
+            m_snap = std::make_shared<snap>(m_vi_ptr);
+
+            if(!m_snap->start())
+            {
+                m_snap = nullptr;
+                return false;
+            }
+        }
+
+        return m_snap->trigger(file,quality);
     }
 
 }}//namespace

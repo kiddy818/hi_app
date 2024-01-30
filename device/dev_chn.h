@@ -31,6 +31,8 @@ extern "C"
 #include <h264_mp4_save.h>
 #include <h265_mp4_save.h>
 
+#include "dev_snap.h"
+
 #define MAX_CHANNEL 1
 
 namespace hisilicon{namespace dev{
@@ -52,7 +54,7 @@ namespace hisilicon{namespace dev{
             bool start_save(const char* file);
             void stop_save();
 
-            bool trigger_jpg(const char* file);
+            bool trigger_jpg(const char* file,int quality);
 
             static bool init();
             static void release();
@@ -91,6 +93,7 @@ namespace hisilicon{namespace dev{
             int m_chn;
             std::string m_venc_mode;
             std::shared_ptr<ceanic::stream_save::stream_save> m_save;
+            std::shared_ptr<snap> m_snap;
 
             static ot_scene_param g_scene_param;
             static ot_scene_video_mode g_scene_video_mode;

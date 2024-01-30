@@ -504,12 +504,81 @@ static int get_mp4_save_info()
     }
 }
 
-std::thread g_thread_1s;
+typedef struct
+{
+    int enable;
+    int quality;
+    int interval;
+    char dir_path[255];
+}jpg_save_info_t;
+static jpg_save_info_t g_jpg_save_info;
+#define JPG_SAVE_INFO_PATH "/opt/ceanic/etc/jpg_save_info.json"
+static void init_jpg_save_info()
+{
+    Json::Value root;
+
+    root["jpg_save"]["enable"] = 0;
+    root["jpg_save"]["quality"] = 90;
+    root["jpg_save"]["interval"] = 60;
+    root["jpg_save"]["dir_path"] = "/mnt/";
+    std::string str= root.toStyledString();
+    std::ofstream ofs;
+    ofs.open(JPG_SAVE_INFO_PATH);
+    ofs << str;
+    ofs.close();
+}
+
+static int get_jpg_save_info()
+{
+    try
+    {
+        if(access(JPG_SAVE_INFO_PATH,F_OK) < 0)
+        {
+            init_jpg_save_info();
+
+            if(access(JPG_SAVE_INFO_PATH,F_OK) < 0)
+            {
+                return -1;
+            }
+        }
+
+        std::ifstream ifs;
+        ifs.open(JPG_SAVE_INFO_PATH);
+        if(!ifs.is_open())
+        {
+            return -1;
+        }
+        Json::Reader reader;  
+        Json::Value root; 
+        if (!reader.parse(ifs, root, false)) 
+        {
+            return -1;
+        }
+
+        Json::Value node; 
+        g_jpg_save_info.enable = root["jpg_save"]["enable"].asInt();
+        g_jpg_save_info.quality = root["jpg_save"]["quality"].asInt();
+        g_jpg_save_info.interval = root["jpg_save"]["interval"].asInt();
+        sprintf(g_jpg_save_info.dir_path,"%s",root["jpg_save"]["dir_path"].asCString());
+
+        ifs.close();
+
+        return 0;
+    }
+    catch(...)
+    {
+        return -1;
+    }
+}
+
+static std::thread g_thread_1s;
+static bool g_thread_run = false;
 static void thread_1s()
 {
     time_t cur_tm = time(NULL);
     time_t last_tm = cur_tm;
-    while(g_chn->is_start())
+    while(g_thread_run 
+            && g_chn && g_chn->is_start())
     {
         cur_tm = time(NULL);
         if(last_tm == cur_tm)
@@ -532,12 +601,25 @@ static void thread_1s()
                     v.is_max_exposure,
                     v.is_exposure_stable);
         }
+
+        if(g_jpg_save_info.enable 
+                && cur_tm % g_jpg_save_info.interval == 0)
+        {
+            char snap_file[255];
+            sprintf(snap_file,"%s/snap%d.jpg",g_jpg_save_info.dir_path,cur_tm);
+            g_chn->trigger_jpg(snap_file,g_jpg_save_info.quality);
+        }
     }
+
+    APP_WRITE_LOG_DEBUG("thread_1s exit");
 }
 
 static void on_quit(int signal)
 {
     fprintf(stderr,"on quit\n");
+
+    g_thread_run = false;
+    g_thread_1s.join();
 
     if(g_mp4_save_info.enable)
     {
@@ -565,7 +647,6 @@ static void on_quit(int signal)
         g_chn->stop();
     }
 
-    g_thread_1s.join();
     hisilicon::dev::chn::release();
     printf("quit ok\n");
     exit(0);
@@ -681,6 +762,15 @@ int main(int argc,char* argv[])
         g_chn->start_save(g_mp4_save_info.file);
     }
 
+    //jpg save
+    get_jpg_save_info();
+    printf("jpg save info\n");
+    printf("\tenable:%d\n",g_jpg_save_info.enable);
+    printf("\tquality:%d\n",g_jpg_save_info.quality);
+    printf("\tinterval:%d\n",g_jpg_save_info.interval);
+    printf("\tdir_path:%s\n",g_jpg_save_info.dir_path);
+
+    g_thread_run = true;
     g_thread_1s = std::thread(thread_1s);
     while(1)
     {

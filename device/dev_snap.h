@@ -2,26 +2,28 @@
 #define dev_snap_include_h
 
 #include "dev_std.h"
+#include "dev_vi.h"
+#include "dev_vi_isp.h"
 
 namespace hisilicon{namespace dev{
 
     class snap 
     {
         public:
-            snap();
+            snap(std::shared_ptr<vi> vi_ptr);
             virtual ~snap();
 
-            bool start(ot_vi_pipe_attr vi_pipe_attr,ot_vi_chn_attr vi_chn_attr,ot_vpss_grp_attr vpss_grp_attr,ot_vpss_chn_attr vpss_chn_attr);
+            bool start();
             void stop();
 
             bool is_start();
 
-            bool trigger(const char* path);
+            bool trigger(const char* path,int quality);
 
-            ot_vi_pipe get_pipe();
-            void set_pipe(ot_vi_pipe pipe);
+            static ot_vi_pipe get_pipe();
 
         private:
+            std::shared_ptr<vi> m_vi_ptr;
             ot_vi_pipe m_pipe;
             ot_vpss_grp m_vpss_grp;
             ot_venc_chn m_venc_chn;
