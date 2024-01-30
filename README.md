@@ -9,7 +9,7 @@
 5. 海思图像自适应 
 6. 海思编码自适应 
 7. Mp4文件保存(h264使用mp4v2,h265使用gpac)
-8. 抓拍JPG(sensor liner mode下支持)
+8. 抓拍JPG
 
 当前支持的sensor为: 
 1. OS04A10,OS04A10_WDR
