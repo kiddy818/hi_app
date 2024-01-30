@@ -3,10 +3,9 @@
 
 namespace hisilicon{namespace dev{
 
-    snap::snap(std::shared_ptr<vi> vi_ptr)
-        :m_vi_ptr(vi_ptr)
+    snap::snap(std::shared_ptr<vi> vi_ptr,ot_venc_chn venc_chn)
+        :m_vi_ptr(vi_ptr),m_venc_chn(venc_chn)
     {
-        m_venc_chn = 0x2;
         m_bstart = false;
 
         m_venc_chn_attr.venc_attr.type = OT_PT_JPEG;

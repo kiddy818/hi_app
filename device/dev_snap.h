@@ -10,7 +10,7 @@ namespace hisilicon{namespace dev{
     class snap 
     {
         public:
-            snap(std::shared_ptr<vi> vi_ptr);
+            snap(std::shared_ptr<vi> vi_ptr,ot_venc_chn venc_chn);
             virtual ~snap();
 
             bool start();

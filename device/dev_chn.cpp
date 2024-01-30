@@ -467,7 +467,7 @@ namespace hisilicon{namespace dev{
 
         if(!m_snap)
         {
-            m_snap = std::make_shared<snap>(m_vi_ptr);
+            m_snap = std::make_shared<snap>(m_vi_ptr,m_venc_sub_ptr->venc_chn() + 1);
 
             if(!m_snap->start())
             {
