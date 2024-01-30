@@ -18,7 +18,7 @@ namespace hisilicon{namespace dev{
 
             bool is_start();
 
-            bool trigger(const char* path,int quality);
+            bool trigger(const char* path,int quality,const char* str_info);
 
         private:
             std::shared_ptr<vi> m_vi_ptr;

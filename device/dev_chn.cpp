@@ -448,7 +448,7 @@ namespace hisilicon{namespace dev{
         }
     }
 
-    bool chn::trigger_jpg(const char* file,int quality)
+    bool chn::trigger_jpg(const char* file,int quality,const char* str_info)
     {
         if(!m_is_start)
         {
@@ -476,7 +476,7 @@ namespace hisilicon{namespace dev{
             }
         }
 
-        return m_snap->trigger(file,quality);
+        return m_snap->trigger(file,quality,str_info);
     }
 
 }}//namespace

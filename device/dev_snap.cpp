@@ -1,5 +1,10 @@
 #include "dev_snap.h"
 #include "dev_log.h"
+#include "dev_osd.h"
+#include "ceanic_freetype.h"
+
+extern const char* g_week_stsr[7];
+extern ceanic_freetype  g_freetype;
 
 namespace hisilicon{namespace dev{
 
@@ -72,7 +77,7 @@ namespace hisilicon{namespace dev{
         m_bstart = false;
     }
 
-    bool snap::trigger(const char* path,int quality)
+    bool snap::trigger(const char* path,int quality,const char* str_info)
     {
         td_s32 ret;
         td_u32 i;
@@ -111,11 +116,26 @@ namespace hisilicon{namespace dev{
             return false;
         }
 
+        time_t cur_tm = time(NULL);
+        struct tm cur;
+        localtime_r(&cur_tm,&cur);
+        char data_str[255];
+        sprintf(data_str,"%s %04d-%02d-%02d %02d:%02d:%02d",g_week_stsr[cur.tm_wday],cur.tm_year + 1900,cur.tm_mon + 1,cur.tm_mday,cur.tm_hour,cur.tm_min,cur.tm_sec);
+
+        std::shared_ptr<osd_name> osd1 = std::make_shared<osd_name>(10,10,64,m_venc_chn * 2/*rgn handle*/,m_venc_chn,data_str);
+        osd1->start();
+        std::shared_ptr<osd_name> osd2;
+        if(str_info)
+        {
+            osd2 = std::make_shared<osd_name>(10,96,64,m_venc_chn * 2 + 1/*rgn handle*/,m_venc_chn,str_info);
+            osd2->start();
+        }
+
         ret = ss_mpi_venc_send_frame(m_venc_chn,&frame_info,1000);
         ss_mpi_vpss_release_grp_frame(m_vi_ptr->vpss_grp(),&frame_info);
         if(ret != TD_SUCCESS)
         {
-            DEV_WRITE_LOG_ERROR("ss_mpi_vpss_get_frame failed with %#x", ret);
+            DEV_WRITE_LOG_ERROR("ss_mpi_venc_send_frame failed with %#x", ret);
             return false;
         }
 

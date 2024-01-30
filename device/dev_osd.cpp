@@ -2,8 +2,8 @@
 #include "dev_log.h"
 #include "ceanic_freetype.h"
 
-static const char* g_week_stsr[7] = {"星期日","星期一","星期二","星期三","星期四","星期五","星期六"};
-static ceanic_freetype g_freetype("/opt/ceanic/fonts/Vera.ttf","/opt/ceanic/fonts/gbsn00lp.ttf");
+const char* g_week_stsr[7] = {"星期日","星期一","星期二","星期三","星期四","星期五","星期六"};
+ceanic_freetype g_freetype("/opt/ceanic/fonts/Vera.ttf","/opt/ceanic/fonts/gbsn00lp.ttf");
 
 #ifndef ROUND_DOWN
 #define ROUND_DOWN(size, align) ((size) & ~((align) - 1))
@@ -56,6 +56,7 @@ namespace hisilicon{namespace dev{
 
     osd::~osd()
     {
+        stop();
     }
 
     bool osd::init()
@@ -238,6 +239,66 @@ namespace hisilicon{namespace dev{
         osd::stop();
 
         m_thd.join();
+    }
+
+    osd_name::osd_name(int x,int y,int font_size,ot_rgn_handle rgn_h,ot_venc_chn venc_h,const char* name)
+        :osd(x,y,font_size,rgn_h,venc_h),m_name(name)
+    {
+    }
+
+    osd_name::~osd_name()
+    {
+        stop();
+    }
+
+    bool osd_name::start()
+    {
+        td_s32 ret;
+        int area_w;
+        int area_h;
+        g_freetype.get_width(m_name.c_str(),m_font_size,&area_w);
+        area_w = ROUND_UP(area_w + 1,64);
+        area_h = ROUND_UP(m_font_size + 1,64);
+        printf("area_w=%d,area_h=%d\n",area_w,area_h);
+
+        m_rgn_attr.attr.overlay.size.width = area_w;
+        m_rgn_attr.attr.overlay.size.height = area_h;
+
+        if(!osd::start())
+        {
+            return false;
+        }
+
+        ot_rgn_canvas_info canvas_info;
+        ret = ss_mpi_rgn_get_canvas_info(m_rgn_h, &canvas_info);
+        if (ret != TD_SUCCESS)
+        {
+            DEV_WRITE_LOG_ERROR("ss_mpi_rgn_get_canvas_info failed with error 0x%x", ret);
+            return false;
+        }
+
+        g_freetype.show_string(
+                m_name.c_str(),
+                m_rgn_attr.attr.overlay.size.width,
+                m_rgn_attr.attr.overlay.size.height,
+                m_font_size,
+                1,
+                (unsigned char*)canvas_info.virt_addr,
+                canvas_info.size.width * canvas_info.size.height * 2);
+
+        ret = ss_mpi_rgn_update_canvas(m_rgn_h);
+        if (ret != TD_SUCCESS)
+        {
+            DEV_WRITE_LOG_ERROR("ss_mpi_rgn_update_canvas failed with error 0x%x", ret);
+            return false;
+        }
+
+        return true;
+    }
+
+    void osd_name::stop()
+    {
+        osd::stop();
     }
 
 }}//namespace

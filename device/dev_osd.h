@@ -46,6 +46,20 @@ namespace hisilicon{namespace dev{
             char m_last_date_str[64];
     };
 
+    class osd_name
+        :public osd
+    {
+        public:
+            osd_name(int x,int y,int font_size,ot_rgn_handle rgn_h,ot_venc_chn venc_h,const char* name);
+            virtual ~osd_name();
+
+            virtual bool start() override;
+            virtual void stop() override;
+
+        protected:
+            std::string m_name;
+    };
+
 }}//namespace
 
 #endif

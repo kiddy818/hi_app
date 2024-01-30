@@ -607,7 +607,7 @@ static void thread_1s()
         {
             char snap_file[255];
             sprintf(snap_file,"%s/snap%d.jpg",g_jpg_save_info.dir_path,cur_tm);
-            g_chn->trigger_jpg(snap_file,g_jpg_save_info.quality);
+            g_chn->trigger_jpg(snap_file,g_jpg_save_info.quality,"抓拍测试");
         }
     }
 
