@@ -20,16 +20,11 @@ namespace hisilicon{namespace dev{
 
             bool trigger(const char* path,int quality);
 
-            static ot_vi_pipe get_pipe();
-
         private:
             std::shared_ptr<vi> m_vi_ptr;
-            ot_vi_pipe m_pipe;
-            ot_vpss_grp m_vpss_grp;
             ot_venc_chn m_venc_chn;
             ot_venc_chn_attr m_venc_chn_attr;
             bool m_bstart;
-            ot_snap_attr m_snap_attr;
     };
 
 }}//namespace

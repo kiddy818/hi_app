@@ -465,12 +465,6 @@ namespace hisilicon{namespace dev{
             quality = 99;
         }
 
-        if(strstr(m_vi_name.c_str(),"WDR") != NULL)
-        {
-            //not support wdr
-            return false;
-        }
-
         if(!m_snap)
         {
             m_snap = std::make_shared<snap>(m_vi_ptr);

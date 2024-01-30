@@ -6,8 +6,6 @@ namespace hisilicon{namespace dev{
     snap::snap(std::shared_ptr<vi> vi_ptr)
         :m_vi_ptr(vi_ptr)
     {
-        m_pipe = get_pipe();
-        m_vpss_grp = 0x1;
         m_venc_chn = 0x2;
         m_bstart = false;
 
@@ -22,13 +20,6 @@ namespace hisilicon{namespace dev{
         m_venc_chn_attr.venc_attr.jpeg_attr.dcf_en = TD_TRUE;
         m_venc_chn_attr.venc_attr.jpeg_attr.mpf_cfg.large_thumbnail_num = 0; 
         m_venc_chn_attr.venc_attr.jpeg_attr.recv_mode = OT_VENC_PIC_RECV_SINGLE;
-
-        memset(&m_snap_attr,0,sizeof(m_snap_attr));
-        m_snap_attr.snap_type = OT_SNAP_TYPE_NORM;
-        m_snap_attr.load_ccm_en = TD_TRUE;
-        m_snap_attr.norm_attr.frame_cnt = 1;
-        m_snap_attr.norm_attr.repeat_send_times = 1;
-        m_snap_attr.norm_attr.zsl_en = TD_FALSE;
     }
 
     snap::~snap()
@@ -36,16 +27,9 @@ namespace hisilicon{namespace dev{
         assert(!m_bstart);
     }
 
-    ot_vi_pipe snap::get_pipe()
-    {
-        return 1;
-    }
-
     bool snap::start()
     {
         td_s32 ret;
-        ot_vi_chn vi_chn = 0;
-        ot_vpss_chn vpss_chn = 0;
 
         std::shared_ptr<vi_isp> viisp = std::dynamic_pointer_cast<vi_isp>(m_vi_ptr);
         if(!viisp)
@@ -54,102 +38,6 @@ namespace hisilicon{namespace dev{
         }
 
         ot_vi_pipe_attr vi_pipe_attr = viisp->vi_pipe_attr();
-        ot_vi_chn_attr vi_chn_attr = viisp->vi_chn_attr();
-        ot_isp_pub_attr isp_pub_attr = viisp->isp_pub_attr();
-        ot_vpss_grp_attr vpss_grp_attr = viisp->vpss_grp_attr();
-        ot_vpss_chn_attr vpss_chn_attr = viisp->vpss_chn_attr();
-        ot_isp_sns_obj* sns_obj = viisp->sns_obj();
-
-        ret = ss_mpi_vi_create_pipe(m_pipe,&vi_pipe_attr);
-        if(ret != TD_SUCCESS)
-        {
-            DEV_WRITE_LOG_ERROR("ss_mpi_vi_create_pipe failed with %#x!", ret);
-            return false;
-        }
-
-#if 0
-        ret = ss_mpi_vi_start_pipe(m_pipe);
-        if(ret != TD_SUCCESS)
-        {
-            DEV_WRITE_LOG_ERROR("ss_mpi_vi_start_pipe failed with %#x!", ret);
-            return false;
-        }
-#endif
-
-        ret = ss_mpi_vi_set_chn_attr(m_pipe,vi_chn,&vi_chn_attr);
-        if(ret != TD_SUCCESS)
-        {
-            DEV_WRITE_LOG_ERROR("ss_mpi_vi_set_chn_attr failed with %#x!", ret);
-            return false;
-        }
-
-        ret = ss_mpi_vi_enable_chn(m_pipe, vi_chn);
-        if(ret != TD_SUCCESS)
-        {
-            DEV_WRITE_LOG_ERROR("ss_mpi_vi_enable_chn failed with %#x!", ret);
-            return false;
-        }
-
-        ot_isp_3a_alg_lib ae_lib;
-        ot_isp_3a_alg_lib awb_lib;
-
-        ae_lib.id  = m_pipe;
-        awb_lib.id = m_pipe;
-        strncpy_s(ae_lib.lib_name, sizeof(ae_lib.lib_name), OT_AE_LIB_NAME, sizeof(OT_AE_LIB_NAME));
-        strncpy_s(awb_lib.lib_name, sizeof(awb_lib.lib_name), OT_AWB_LIB_NAME, sizeof(OT_AWB_LIB_NAME));
-        sns_obj->pfn_register_callback(m_pipe, &ae_lib, &awb_lib);
-        ot_isp_sns_commbus sns_bus_info;
-        sns_bus_info.i2c_dev = -1;
-        sns_obj->pfn_set_bus_info(m_pipe, sns_bus_info);
-        ss_mpi_ae_register(m_pipe, &ae_lib);
-        ss_mpi_awb_register(m_pipe, &awb_lib);
-
-        ss_mpi_isp_mem_init(m_pipe);
-        ss_mpi_isp_set_pub_attr(m_pipe, &isp_pub_attr);
-        ss_mpi_isp_init(m_pipe);
-
-        //vi->vpss
-        ot_mpp_chn src_chn;
-        ot_mpp_chn dest_chn;
-        src_chn.mod_id = OT_ID_VI;
-        src_chn.dev_id = m_pipe;
-        src_chn.chn_id = vi_chn;
-        dest_chn.mod_id = OT_ID_VPSS;
-        dest_chn.dev_id = m_vpss_grp;
-        dest_chn.chn_id = vpss_chn;
-        ret = ss_mpi_sys_bind(&src_chn, &dest_chn);
-        if(ret != TD_SUCCESS)
-        {
-            DEV_WRITE_LOG_ERROR("ss_mpi_sys_bind failed with %#x", ret);
-            return false;
-        }
-
-        //start vpss
-        ret = ss_mpi_vpss_create_grp(m_vpss_grp,&vpss_grp_attr);
-        if (ret != TD_SUCCESS)
-        {
-            DEV_WRITE_LOG_ERROR("ss_mpi_vpss_create_grp failed with %#x", ret);
-            return false;
-        }
-        ret = ss_mpi_vpss_start_grp(m_vpss_grp);
-        if (ret != TD_SUCCESS)
-        {
-            DEV_WRITE_LOG_ERROR("ss_mpi_vpss_start_grp failed with %#x", ret);
-            return false;
-        }
-
-        ret = ss_mpi_vpss_set_chn_attr(m_vpss_grp, vpss_chn, &vpss_chn_attr);
-        if (ret != TD_SUCCESS) 
-        {
-            DEV_WRITE_LOG_ERROR("ss_mpi_vpss_set_chn_attr failed with %#x", ret);
-            return false;
-        }
-        ret = ss_mpi_vpss_enable_chn(m_vpss_grp, vpss_chn);
-        if (ret != TD_SUCCESS) 
-        {
-            DEV_WRITE_LOG_ERROR("ss_mpi_vpss_enable_chn_attr failed with %#x", ret);
-            return false;
-        }
 
         m_venc_chn_attr.venc_attr.max_pic_width = vi_pipe_attr.size.width;
         m_venc_chn_attr.venc_attr.max_pic_height = vi_pipe_attr.size.height;
@@ -163,27 +51,6 @@ namespace hisilicon{namespace dev{
             return false;
         }
 
-        ret = ss_mpi_venc_set_jpeg_enc_mode(m_venc_chn, OT_VENC_JPEG_ENC_SNAP);
-        if(ret != TD_SUCCESS) 
-        {
-            DEV_WRITE_LOG_ERROR("ss_mpi_venc_set_jpeg_enc_mode failed with %#x", ret);
-            return false;
-        }
-
-        //vpss->venc
-        src_chn.mod_id = OT_ID_VPSS;
-        src_chn.dev_id = m_vpss_grp;
-        src_chn.chn_id = vpss_chn;
-        dest_chn.mod_id = OT_ID_VENC;
-        dest_chn.dev_id = 0;
-        dest_chn.chn_id = m_venc_chn;
-        ret = ss_mpi_sys_bind(&src_chn, &dest_chn);
-        if(ret != TD_SUCCESS)
-        {
-            DEV_WRITE_LOG_ERROR("ss_mpi_sys_bind failed with %#x", ret);
-            return false;
-        }
-
         ot_venc_start_param start_param;
         start_param.recv_pic_num = -1;
         ret = ss_mpi_venc_start_chn(m_venc_chn, &start_param); 
@@ -193,70 +60,15 @@ namespace hisilicon{namespace dev{
             return false;
         }
 
-        ret = ss_mpi_snap_set_pipe_attr(m_pipe, &m_snap_attr);
-        if(ret != TD_SUCCESS) 
-        {
-            DEV_WRITE_LOG_ERROR("ss_mpi_snap_set_pipe_attr failed with %#x", ret);
-            return false;
-        }
-
-
         m_bstart = true;
         return true;
     }
 
     void snap::stop()
     {
-        ot_isp_3a_alg_lib ae_lib;
-        ot_isp_3a_alg_lib awb_lib;
-
-        ae_lib.id  = m_pipe;
-        awb_lib.id = m_pipe;
-        strncpy_s(ae_lib.lib_name, sizeof(ae_lib.lib_name), OT_AE_LIB_NAME, sizeof(OT_AE_LIB_NAME));
-        strncpy_s(awb_lib.lib_name, sizeof(awb_lib.lib_name), OT_AWB_LIB_NAME, sizeof(OT_AWB_LIB_NAME));
-
-        ss_mpi_snap_disable_pipe(m_pipe);
-
-        ss_mpi_isp_exit(m_pipe);
-        ss_mpi_awb_unregister(m_pipe, &awb_lib);
-        ss_mpi_ae_unregister(m_pipe, &ae_lib);
-        std::shared_ptr<vi_isp> viisp = std::dynamic_pointer_cast<vi_isp>(m_vi_ptr);
-        if(viisp
-                && viisp->sns_obj())
-        {
-            viisp->sns_obj()->pfn_un_register_callback(m_pipe, &ae_lib, &awb_lib);
-        }
-
-        //unbind vpss->venc
-        ot_vpss_chn vpss_chn = 0;
-        ot_vi_chn vi_chn = 0;
-
-        ot_mpp_chn src_chn;
-        ot_mpp_chn dest_chn;
-        src_chn.mod_id = OT_ID_VPSS;
-        src_chn.dev_id = m_vpss_grp;
-        src_chn.chn_id = vpss_chn;
-        dest_chn.mod_id = OT_ID_VENC;
-        dest_chn.dev_id = 0;
-        dest_chn.chn_id = m_venc_chn;
-        ss_mpi_sys_unbind(&src_chn, &dest_chn);
-
         //stop venc
         ss_mpi_venc_stop_chn(m_venc_chn);
         ss_mpi_venc_destroy_chn(m_venc_chn);
-
-        //unbind vi->vpss
-        src_chn.mod_id = OT_ID_VI;
-        src_chn.dev_id = m_pipe;
-        src_chn.chn_id = vi_chn;
-        dest_chn.mod_id = OT_ID_VPSS;
-        dest_chn.dev_id = m_vpss_grp;
-        dest_chn.chn_id = vpss_chn;
-        ss_mpi_sys_unbind(&src_chn, &dest_chn);
-
-        ss_mpi_vi_disable_chn(m_pipe, 0);
-        ss_mpi_vi_stop_pipe(m_pipe);
-        ss_mpi_vi_destroy_pipe(m_pipe);
 
         m_bstart = false;
     }
@@ -291,18 +103,20 @@ namespace hisilicon{namespace dev{
             DEV_WRITE_LOG_ERROR("ss_mpi_venc_set_jpg_param failed with %#x", ret);
             return false;
         }
-        ss_mpi_snap_disable_pipe(m_pipe);
-        ret = ss_mpi_snap_enable_pipe(m_pipe);
-        if(ret != TD_SUCCESS) 
+
+        ot_video_frame_info frame_info;
+        ret = ss_mpi_vpss_get_grp_frame(m_vi_ptr->vpss_grp(),&frame_info,1000);
+        if(ret != TD_SUCCESS)
         {
-            DEV_WRITE_LOG_ERROR("ss_mpi_snap_enable_pipe failed with %#x", ret);
+            DEV_WRITE_LOG_ERROR("ss_mpi_vpss_get_frame failed with %#x", ret);
             return false;
         }
 
-        ret = ss_mpi_snap_trigger_pipe(m_pipe);
+        ret = ss_mpi_venc_send_frame(m_venc_chn,&frame_info,1000);
+        ss_mpi_vpss_release_grp_frame(m_vi_ptr->vpss_grp(),&frame_info);
         if(ret != TD_SUCCESS)
         {
-            DEV_WRITE_LOG_ERROR("ss_mpi_snap_trigger_pipe failed with %#x", ret);
+            DEV_WRITE_LOG_ERROR("ss_mpi_vpss_get_frame failed with %#x", ret);
             return false;
         }
 
@@ -372,7 +186,6 @@ namespace hisilicon{namespace dev{
         fclose(f);
         ss_mpi_venc_release_stream(m_venc_chn, &stream);
         free(stream.pack);
-        ss_mpi_snap_disable_pipe(m_pipe);
         return true;
     }
 

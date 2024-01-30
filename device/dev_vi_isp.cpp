@@ -350,18 +350,6 @@ namespace hisilicon{namespace dev{
             }
         }
 
-        if(m_pipes.size() < 2)//wdr use 2 pipes,not support snap
-        {
-            //here,only liner mode(which use 1 pipe),can support snap trigger
-            //snap pipe
-            ret = ss_mpi_vi_bind(m_vi_dev,snap::get_pipe());
-            if(ret != TD_SUCCESS)
-            {
-                DEV_WRITE_LOG_ERROR("ss_mpi_vi_bind snap pipe failed with %#x!", ret);
-                return false;
-            }
-        }
-
         //set fusion grp
         ot_vi_grp fusion_grp = 0;
         ret = ss_mpi_vi_set_wdr_fusion_grp_attr(fusion_grp, &m_fusion_grp_attr);
