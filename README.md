@@ -1,7 +1,7 @@
 # 3516dv500_app
 
 #### 介绍
-基于海思Hi3516DV500 SDK 010 glibc 版本(Hi3519DV500_SDK_V2.0.1.0)的IPC摄像头demo，支持以下功能: 
+基于海思Hi3516DV500 SDK 011 glibc 版本(Hi3519DV500_SDK_V2.0.1.1)的IPC摄像头demo，支持以下功能: 
 1. H264/H265 rtsp服务 
 2. H264 rtmp服务 
 3. OSD(时间)功能 

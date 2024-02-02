@@ -83,8 +83,9 @@ SRC += $(SCENE_PATH)/src/core/ot_scene.c
 SRC += $(SCENE_PATH)/src/core/ot_scene_setparam.c
 SRC += $(SCENE_PATH)/src/core/scene_setparam_inner.c
 SRC += $(SCENE_PATH)/src/sample/scene_loadparam.c
-SRC += $(SCENE_PATH)/tools/configaccess/src/ot_confaccess.c
+#SRC += $(SCENE_PATH)/tools/configaccess/src/ot_confaccess.c
 SRC += ../common/sample_comm_vi.c
+SRC += ../common/ot_confaccess.c
 SRC += ../common/sample_comm_isp.c
 
 #support rate_auto
@@ -139,5 +140,5 @@ clean:
 	-rm $(target) $(PROG_OBJ) $(PROGXX_OBJ) $(DEVICE_OBJ)
 
 install:
-	cp $(target) /home/mjj/work/nfs/3516dv500/
+	cp $(target) /home/mjj/work/nfs/3516dv500/011/
 
