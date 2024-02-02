@@ -71,6 +71,8 @@ DEVICE_SRC += device/dev_venc.cpp
 DEVICE_SRC += device/dev_chn.cpp
 DEVICE_SRC += device/dev_osd.cpp
 DEVICE_SRC += device/dev_snap.cpp
+DEVICE_SRC += device/dev_svp.cpp
+DEVICE_SRC += device/dev_svp_yolov5.cpp
 DEVICE_SRC += device/ceanic_freetype.cpp
 
 #surpport scene
