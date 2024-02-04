@@ -5,27 +5,11 @@ namespace hisilicon{namespace dev{
     
     #define SAMPLE_SVP_NPU_EXTRA_INPUT_NUM   2
     #define SAMPLE_SVP_NPU_H_DIM_IDX 2
+    #define SAMPLE_SVP_NPU_MAX_MEM_SIZE      0xFFFFFFFF
 
     yolov5::yolov5(std::shared_ptr<vi> vi_ptr,const char* model_path)
         :m_is_start(false),m_model_path(model_path),m_vi_ptr(vi_ptr)
     {
-        //init vpss grp attr
-        memset(&m_vpss_grp_attr,0,sizeof(m_vpss_grp_attr));
-        m_vpss_grp_attr.ie_en                     = TD_FALSE;
-        m_vpss_grp_attr.dci_en                    = TD_FALSE;
-        m_vpss_grp_attr.buf_share_en              = TD_FALSE;
-        m_vpss_grp_attr.mcf_en                    = TD_FALSE;
-        m_vpss_grp_attr.max_width                 = 0;
-        m_vpss_grp_attr.max_height                = 0;
-        m_vpss_grp_attr.max_dei_width             = 0;
-        m_vpss_grp_attr.max_dei_height            = 0;
-        m_vpss_grp_attr.dynamic_range             = OT_DYNAMIC_RANGE_SDR8;
-        m_vpss_grp_attr.pixel_format              = OT_PIXEL_FORMAT_YVU_SEMIPLANAR_420;
-        m_vpss_grp_attr.dei_mode                  = OT_VPSS_DEI_MODE_OFF;
-        m_vpss_grp_attr.buf_share_chn             = OT_VPSS_CHN0;
-        m_vpss_grp_attr.frame_rate.src_frame_rate = -1;
-        m_vpss_grp_attr.frame_rate.dst_frame_rate = -1;
-
         //init vpss chn attr
         memset(&m_vpss_chn_attr,0,sizeof(m_vpss_chn_attr));
         m_vpss_chn_attr.mirror_en                 = TD_FALSE;
@@ -49,84 +33,381 @@ namespace hisilicon{namespace dev{
         stop();
     }
 
-    bool yolov5::create_vpss_grp_chn()
+    bool yolov5::create_svp_output()
     {
         td_s32 ret;
+        int i;
+        svp_acl_data_buffer *output_data = TD_NULL;
 
-        ot_mpp_chn src_chn;
-        ot_mpp_chn dest_chn;
-        src_chn.mod_id = OT_ID_VI;
-        src_chn.dev_id = m_vi_ptr->pipes()[0];
-        src_chn.chn_id = m_vi_ptr->vi_chn();
-        dest_chn.mod_id = OT_ID_VPSS;
-        dest_chn.dev_id = m_vpss_grp;
-        dest_chn.chn_id = m_vpss_chn;
-        ret = ss_mpi_sys_bind(&src_chn, &dest_chn);
-        if(ret != TD_SUCCESS)
+        svp_acl_mdl_dataset* output_dataset = svp_acl_mdl_create_dataset();
+        if(output_dataset == NULL)
         {
-            DEV_WRITE_LOG_ERROR("ss_mpi_sys_bind failed with %#x", ret);
+            DEV_WRITE_LOG_ERROR("svp_acl_mdl_create_dataset failed ");
             return false;
         }
 
-        //start vpss
-        ret = ss_mpi_vpss_create_grp(m_vpss_grp,&m_vpss_grp_attr);
-        if (ret != TD_SUCCESS)
+        for (i = 0; i < m_output_num; i++)
         {
-            DEV_WRITE_LOG_ERROR("ss_mpi_vpss_create_grp failed with %#x", ret);
-            goto failed3;
-        }
-        ret = ss_mpi_vpss_start_grp(m_vpss_grp);
-        if (ret != TD_SUCCESS)
-        {
-            DEV_WRITE_LOG_ERROR("ss_mpi_vpss_start_grp failed with %#x", ret);
-            goto failed2;
+            output_data = create_svp_output_buffer(i);
+            if(output_data == NULL)
+            {
+                svp_acl_mdl_destroy_dataset(output_dataset);
+                return false;
+            }
+
+            ret = svp_acl_mdl_add_dataset_buffer(output_dataset, output_data);
+            if(ret != SVP_ACL_SUCCESS)
+            {
+                DEV_WRITE_LOG_ERROR("svp_acl_mdl_add_dataset_buffer failed with 0x%x",ret);
+                svp_acl_mdl_destroy_dataset(output_dataset);
+                return false;
+            }
         }
 
+        m_task_info.output_dataset = output_dataset;
+        return true;
+    }
+
+    void yolov5::destroy_svp_output_buffer(int index)
+    {
+        td_s32 ret;
+        td_void *data = TD_NULL;
+        svp_acl_data_buffer *data_buffer = TD_NULL;
+        td_ulong class_id;
+
+        data_buffer = svp_acl_mdl_get_dataset_buffer(m_task_info.output_dataset,index);
+        if(data_buffer)
+        {
+            ret = svp_acl_mdl_get_output_class_id_by_index(m_model_desc,index,&class_id);
+            if(ret == SVP_ACL_SUCCESS)
+            {
+                data = svp_acl_get_data_buffer_addr(data_buffer);
+                if(class_id == 0)
+                {
+                    svp_acl_rt_free(data);
+                }
+                else
+                {
+                    svp_acl_rt_free_sec(data);
+                }
+            }
+            svp_acl_destroy_data_buffer(data_buffer);
+        }
+    }
+
+    void yolov5::destroy_svp_output()
+    {
+        int i;
+        size_t output_num;
+
+        if(m_task_info.output_dataset)
+        {
+            output_num = svp_acl_mdl_get_dataset_num_buffers(m_task_info.output_dataset);
+            for (i = 0; i < output_num; i++)
+            {
+                destroy_svp_output_buffer(i);
+            }
+
+            svp_acl_mdl_destroy_dataset(m_task_info.output_dataset);
+            m_task_info.output_dataset = NULL;
+        }
+    }
+
+    void yolov5::destroy_svp_input()
+    {
+        int i;
+        size_t input_num;
+
+        if(m_task_info.input_dataset)
+        {
+            input_num = svp_acl_mdl_get_dataset_num_buffers(m_task_info.input_dataset);
+            for (i = 0; i < input_num; i++)
+            {
+                destroy_svp_input_buffer(i);
+            }
+
+            m_task_info.task_buf_ptr = NULL;
+            m_task_info.task_buf_size = 0;
+            m_task_info.task_buf_stride = 0;
+            m_task_info.work_buf_ptr = NULL;
+            m_task_info.work_buf_size = 0;
+            m_task_info.work_buf_stride = 0;
+
+            svp_acl_mdl_destroy_dataset(m_task_info.input_dataset);
+            m_task_info.input_dataset = NULL;
+        }
+    }
+
+    void yolov5::destroy_svp_input_buffer(int index)
+    {
+        td_s32 ret;
+        td_void *data = TD_NULL;
+        svp_acl_data_buffer *data_buffer = TD_NULL;
+        td_ulong class_id;
+
+        data_buffer = svp_acl_mdl_get_dataset_buffer(m_task_info.input_dataset,index);
+        if(data_buffer)
+        {
+            ret = svp_acl_mdl_get_input_class_id_by_index(m_model_desc,index,&class_id);
+            if(ret == SVP_ACL_SUCCESS)
+            {
+                data = svp_acl_get_data_buffer_addr(data_buffer);
+                if(class_id == 0)
+                {
+                    svp_acl_rt_free(data);
+                }
+                else
+                {
+                    svp_acl_rt_free_sec(data);
+                }
+            }
+            svp_acl_destroy_data_buffer(data_buffer);
+        }
+    }
+
+    svp_acl_data_buffer* yolov5::create_svp_output_buffer(int index)
+    {
+        td_s32 ret;
+        td_ulong class_id;
+        svp_acl_data_buffer *output_data = TD_NULL;
+        td_void *output_buffer = TD_NULL;
+        size_t buffer_size, stride;
+
+        stride = svp_acl_mdl_get_output_default_stride(m_model_desc,index);
+        buffer_size = svp_acl_mdl_get_output_size_by_index(m_model_desc,index);
+        ret = svp_acl_mdl_get_output_class_id_by_index(m_model_desc,index,&class_id);
+        if(stride == 0
+                || (buffer_size == 0 || buffer_size > SAMPLE_SVP_NPU_MAX_MEM_SIZE)
+                || ret != SVP_ACL_SUCCESS)
+        {
+            DEV_WRITE_LOG_ERROR("svp_acl_mdl_get_output_info failed with 0x%x",ret);
+            return NULL;
+        }
+
+        if(class_id != 0)
+        {
+            ret = svp_acl_rt_malloc_sec(&output_buffer, buffer_size, class_id);
+        }
+        else
+        {
+            ret = svp_acl_rt_malloc(&output_buffer, buffer_size, SVP_ACL_MEM_MALLOC_NORMAL_ONLY); 
+            if(ret == SVP_ACL_SUCCESS)
+            {
+                memset(output_buffer,0,buffer_size);
+            }
+        }
+        if(ret != SVP_ACL_SUCCESS)
+        {
+            DEV_WRITE_LOG_ERROR("svp_acl_mdl_rt_malloc failed with 0x%x",ret);
+            return NULL;
+        }
+
+        output_data = svp_acl_create_data_buffer(output_buffer, buffer_size, stride);
+        if(output_data == NULL)
+        {
+            DEV_WRITE_LOG_ERROR("svp_acl_create_data_buffer failed");
+            if(class_id != 0)
+            {
+                svp_acl_rt_free_sec(output_buffer);
+            }
+            else
+            {
+                svp_acl_rt_free(output_buffer);
+            }
+            return NULL;
+        }
+
+        return output_data;
+    }
+
+    svp_acl_data_buffer* yolov5::create_svp_input_buffer(int index)
+    {
+        td_s32 ret;
+        td_ulong class_id;
+        svp_acl_data_buffer *input_data = TD_NULL;
+        td_void *input_buffer = TD_NULL;
+        size_t buffer_size, stride;
+
+        stride = svp_acl_mdl_get_input_default_stride(m_model_desc,index);
+        buffer_size = svp_acl_mdl_get_input_size_by_index(m_model_desc,index);
+        ret = svp_acl_mdl_get_input_class_id_by_index(m_model_desc,index,&class_id);
+        if(stride == 0
+                || (buffer_size == 0 || buffer_size > SAMPLE_SVP_NPU_MAX_MEM_SIZE)
+                || ret != SVP_ACL_SUCCESS)
+        {
+            DEV_WRITE_LOG_ERROR("svp_acl_mdl_get_input_info failed with 0x%x",ret);
+            return NULL;
+        }
+
+        if(class_id != 0)
+        {
+            ret = svp_acl_rt_malloc_sec(&input_buffer, buffer_size, class_id);
+        }
+        else
+        {
+            ret = svp_acl_rt_malloc(&input_buffer, buffer_size, SVP_ACL_MEM_MALLOC_NORMAL_ONLY); 
+            if(ret == SVP_ACL_SUCCESS)
+            {
+                memset(input_buffer,0,buffer_size);
+            }
+        }
+        if(ret != SVP_ACL_SUCCESS)
+        {
+            DEV_WRITE_LOG_ERROR("svp_acl_mdl_rt_malloc failed with 0x%x",ret);
+            return NULL;
+        }
+
+        input_data = svp_acl_create_data_buffer(input_buffer, buffer_size, stride);
+        if(input_data == NULL)
+        {
+            DEV_WRITE_LOG_ERROR("svp_acl_create_data_buffer failed");
+            if(class_id != 0)
+            {
+                svp_acl_rt_free_sec(input_buffer);
+            }
+            else
+            {
+                svp_acl_rt_free(input_buffer);
+            }
+            return NULL;
+        }
+
+        if(index == m_input_num - SAMPLE_SVP_NPU_EXTRA_INPUT_NUM)
+        {
+            m_task_info.task_buf_ptr = input_buffer;
+            m_task_info.task_buf_size = buffer_size;
+            m_task_info.task_buf_stride = stride;
+        }else if(index == m_input_num - 1)
+        {
+            m_task_info.work_buf_ptr = input_buffer;
+            m_task_info.work_buf_size = buffer_size;
+            m_task_info.work_buf_stride = stride;
+        }
+
+        return input_data;
+    }
+
+    bool yolov5::create_svp_input()
+    {
+        td_s32 ret;
+        int i;
+        svp_acl_data_buffer *input_data = TD_NULL;
+
+        svp_acl_mdl_dataset* input_dataset = svp_acl_mdl_create_dataset();
+        if(input_dataset == TD_NULL)
+        {
+            DEV_WRITE_LOG_ERROR("svp_acl_mdl_create_dataset failed ");
+            return false;
+        }
+
+        for(i = 0; i < m_input_num - SAMPLE_SVP_NPU_EXTRA_INPUT_NUM; i++)
+        {
+            input_data = create_svp_input_buffer(i);
+            if(input_data == NULL)
+            {
+                svp_acl_mdl_destroy_dataset(input_dataset);
+                return false;
+            }
+
+            ret = svp_acl_mdl_add_dataset_buffer(input_dataset, input_data);
+            if(ret != SVP_ACL_SUCCESS)
+            {
+                DEV_WRITE_LOG_ERROR("svp_acl_mdl_add_dataset_buffer failed with error 0x%x",ret);
+                svp_acl_mdl_destroy_dataset(input_dataset);
+                return false;
+            }
+        }
+
+        //taskbuf
+        input_data =  create_svp_input_buffer(m_input_num - SAMPLE_SVP_NPU_EXTRA_INPUT_NUM);
+        assert(input_data != NULL);
+        svp_acl_mdl_add_dataset_buffer(input_dataset,input_data);
+
+        //workbuf
+        input_data = create_svp_input_buffer(m_input_num - 1);
+        assert(input_data != NULL);
+        svp_acl_mdl_add_dataset_buffer(input_dataset,input_data);
+
+        m_task_info.input_dataset = input_dataset;
+        return true;
+    }
+
+    bool yolov5::create_vpss_grp_chn()
+    {
+        td_s32 ret;
+        
         ret = ss_mpi_vpss_set_chn_attr(m_vpss_grp, m_vpss_chn, &m_vpss_chn_attr);
         if (ret != TD_SUCCESS) 
         {
             DEV_WRITE_LOG_ERROR("ss_mpi_vpss_set_chn_attr failed with %#x", ret);
-            goto failed1;
+            return false;
         }
         ret = ss_mpi_vpss_enable_chn(m_vpss_grp, m_vpss_chn);
         if (ret != TD_SUCCESS) 
         {
             DEV_WRITE_LOG_ERROR("ss_mpi_vpss_enable_chn_attr failed with %#x", ret);
-            goto failed1;
+            return false;
         }
 
         return true;
-failed1:
-        ss_mpi_vpss_stop_grp(m_vpss_grp);
-failed2:
-        ss_mpi_vpss_destroy_grp(m_vpss_grp);
-failed3:
-        ss_mpi_sys_unbind(&src_chn,&dest_chn);
-        return false;
     }
 
     void yolov5::destroy_vpss_grp_chn()
     {
-        ot_mpp_chn src_chn;
-        ot_mpp_chn dest_chn;
-        src_chn.mod_id = OT_ID_VI;
-        src_chn.dev_id = m_vi_ptr->pipes()[0];
-        src_chn.chn_id = m_vi_ptr->vi_chn();
-        dest_chn.mod_id = OT_ID_VPSS;
-        dest_chn.dev_id = m_vpss_grp;
-        dest_chn.chn_id = m_vpss_chn;
+        ss_mpi_vpss_disable_chn(m_vpss_grp, m_vpss_chn);
+    }
 
-        ss_mpi_vpss_enable_chn(m_vpss_grp, m_vpss_chn);
-        ss_mpi_vpss_stop_grp(m_vpss_grp);
-        ss_mpi_vpss_destroy_grp(m_vpss_grp);
-        ss_mpi_sys_unbind(&src_chn,&dest_chn);
+    bool yolov5::set_svp_threshold()
+    {
+        td_u32 n;
+        svp_acl_error ret;
+        size_t idx, size;
+        svp_acl_data_buffer *data_buffer = TD_NULL;
+        td_float *data = TD_NULL;
+
+        ret = svp_acl_mdl_get_input_index_by_name(m_model_desc,"rpn_data",&idx);
+        if(ret != SVP_ACL_SUCCESS)
+        {
+            DEV_WRITE_LOG_ERROR("svp_acl_mdl_get_input_index_by_name failed with %#x", ret);
+            return false;
+        }
+
+        data_buffer = svp_acl_mdl_get_dataset_buffer(m_task_info.input_dataset, idx);
+        if(data_buffer == TD_NULL)
+        {
+            DEV_WRITE_LOG_ERROR("svp_acl_mdl_get_dataset_buffer failed");
+            return false;
+        }
+
+        size = svp_acl_get_data_buffer_size(data_buffer);
+        if(size  < 4 * sizeof(td_float))
+        {
+            DEV_WRITE_LOG_ERROR("svp_acl_mdl_get_data_buffer_size size:%f", size);
+            return false;
+        }
+
+        data = (td_float *)svp_acl_get_data_buffer_addr(data_buffer);
+        if(data == NULL)
+        {
+            DEV_WRITE_LOG_ERROR("svp_acl_mdl_get_data_buffer_addr");
+            return false;
+        }
+
+        //got from sample
+        n = 0;
+        data[n++] = 0.45;//nms_threshold
+        data[n++] = 0.5;//score_threshold
+        data[n++] = 1.0;//min_height
+        data[n++] = 1.0;//min_width
+
+        return true;
     }
 
     bool yolov5::start()
     {
         svp_acl_error ret;
         svp_acl_mdl_io_dims dims = {0};
-
+        
         if(m_is_start)
         {
             return false;
@@ -224,20 +505,30 @@ failed3:
         m_pic_size.height = dims.dims[dims.dim_count - SAMPLE_SVP_NPU_H_DIM_IDX]; // NCHW
         m_pic_size.width = dims.dims[dims.dim_count - 1]; // NCHW
 
-        m_vpss_grp_attr.max_width = m_pic_size.width;
-        m_vpss_grp_attr.max_height = m_pic_size.height;
         m_vpss_chn_attr.width = m_pic_size.width;
         m_vpss_chn_attr.height = m_pic_size.height;
-        m_vpss_grp = m_vi_ptr->vpss_grp() + 1;
-        m_vpss_chn = 0;
+        m_vpss_grp = m_vi_ptr->vpss_grp();
+        m_vpss_chn = 1;
 
         if(!create_vpss_grp_chn())
         {
             goto end0;
         }
 
+        if(!create_svp_input()
+                || !create_svp_output()
+                || !set_svp_threshold())
+        {
+            goto end3;
+        }
+
         m_is_start = true;
         return true;
+end3:
+        destroy_svp_input();
+        destroy_svp_output();
+end2:
+        destroy_vpss_grp_chn();
 end0:
         svp_acl_mdl_destroy_desc(m_model_desc);
         m_model_desc = NULL;
@@ -258,6 +549,9 @@ end1:
         }
 
         destroy_vpss_grp_chn();
+
+        destroy_svp_output();
+        destroy_svp_input();
 
         svp_acl_mdl_unload(m_model_id);
         svp_acl_mdl_destroy_desc(m_model_desc);

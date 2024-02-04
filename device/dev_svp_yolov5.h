@@ -7,6 +7,18 @@
 
 namespace hisilicon{namespace dev{
 
+    typedef struct
+    {
+        svp_acl_mdl_dataset *input_dataset;
+        svp_acl_mdl_dataset *output_dataset;
+        td_void *task_buf_ptr;
+        size_t task_buf_size;
+        size_t task_buf_stride;
+        td_void *work_buf_ptr;
+        size_t work_buf_size;
+        size_t work_buf_stride;
+    }svp_npu_task_info_t;
+
     class yolov5 
     {
         public:
@@ -20,6 +32,18 @@ namespace hisilicon{namespace dev{
             bool create_vpss_grp_chn();
             void destroy_vpss_grp_chn();
 
+            bool create_svp_input();
+            svp_acl_data_buffer* create_svp_input_buffer(int index);
+            void destroy_svp_input();
+            void destroy_svp_input_buffer(int index);
+
+            bool create_svp_output();
+            svp_acl_data_buffer* create_svp_output_buffer(int index);
+            void destroy_svp_output();
+            void destroy_svp_output_buffer(int index);
+
+            bool set_svp_threshold();
+
         private:
             bool m_is_start;
             std::string m_model_path;
@@ -32,10 +56,11 @@ namespace hisilicon{namespace dev{
             size_t m_dynamic_batch_idx;
             ot_size m_pic_size;
             std::shared_ptr<vi> m_vi_ptr;
-            ot_vpss_grp_attr m_vpss_grp_attr;
             ot_vpss_chn_attr m_vpss_chn_attr;
             ot_vpss_grp m_vpss_grp;
             ot_vpss_chn m_vpss_chn;
+
+            svp_npu_task_info_t m_task_info;
     };
 
 }}//namespace
