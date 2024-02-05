@@ -16,11 +16,11 @@
 
 
 #### 编译方法
-1. 按照Hi3519DV500_SDK_V2.0.1.0/smp/a55_linux/source/bsp/readme_cn.txt文档编译SDK
+1. 按照Hi3519DV500_SDK_V2.0.1.1/smp/a55_linux/source/bsp/readme_cn.txt文档编译SDK
 
 2. 按照如下命令，编译app
 ```
-cd Hi3519DV500_SDK_V2.0.1.0/smp/a55_linux/source/mpp/sample
+cd Hi3519DV500_SDK_V2.0.1.1/smp/a55_linux/source/mpp/sample
 git clone https://gitee.com/shumjj/3516dv500_app.git 
 cd 3516dv500_app
 make

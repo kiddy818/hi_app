@@ -25,6 +25,7 @@
 #include "ot_sns_ctrl.h"
 #include "ss_mpi_isp.h"
 #include "ss_mpi_snap.h"
+#include "ss_mpi_sys_mem.h"
 
 #include <util/std.h>
 #include <string>

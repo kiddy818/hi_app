@@ -19,6 +19,19 @@ namespace hisilicon{namespace dev{
         size_t work_buf_stride;
     }svp_npu_task_info_t;
 
+#define SVP_RECT_POINT_NUM 4
+    typedef struct
+    {
+        ot_point point[SVP_RECT_POINT_NUM];
+    }svp_npu_rect_t;
+
+#define SVP_RECT_NUM 64
+    typedef struct
+    {
+        td_u16 num;
+        svp_npu_rect_t rect[SVP_RECT_NUM];
+    }svp_npu_rect_info_t;
+
     class yolov5 
     {
         public:
@@ -43,6 +56,13 @@ namespace hisilicon{namespace dev{
             void destroy_svp_output_buffer(int index);
 
             bool set_svp_threshold();
+            bool create_vb_pool();
+            void destroy_vb_pool();
+
+            bool get_svp_roi_num(td_u16* pnum);
+            bool get_svp_rio(svp_npu_rect_info_t* rect_info);
+
+            void on_process();
 
         private:
             bool m_is_start;
@@ -61,6 +81,11 @@ namespace hisilicon{namespace dev{
             ot_vpss_chn m_vpss_chn;
 
             svp_npu_task_info_t m_task_info;
+            ot_vb_pool m_vb_poolid;
+            ot_vb_pool_info m_vb_pool_info;
+            td_void *m_vb_virt_addr;
+
+            std::thread m_thread;
     };
 
 }}//namespace

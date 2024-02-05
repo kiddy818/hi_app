@@ -2,13 +2,20 @@
 #include "dev_log.h"
 
 namespace hisilicon{namespace dev{
-    
-    #define SAMPLE_SVP_NPU_EXTRA_INPUT_NUM   2
-    #define SAMPLE_SVP_NPU_H_DIM_IDX 2
-    #define SAMPLE_SVP_NPU_MAX_MEM_SIZE      0xFFFFFFFF
+
+#define SAMPLE_SVP_NPU_EXTRA_INPUT_NUM   2
+#define SAMPLE_SVP_NPU_H_DIM_IDX 2
+#define SAMPLE_SVP_NPU_MAX_MEM_SIZE      0xFFFFFFFF
+#define SAMPLE_SVP_NPU_RECT_LEFT_TOP     0
+#define SAMPLE_SVP_NPU_RECT_RIGHT_TOP    1
+#define SAMPLE_SVP_NPU_RECT_RIGHT_BOTTOM 2
+#define SAMPLE_SVP_NPU_RECT_LEFT_BOTTOM  3
+
 
     yolov5::yolov5(std::shared_ptr<vi> vi_ptr,const char* model_path)
-        :m_is_start(false),m_model_path(model_path),m_vi_ptr(vi_ptr)
+        :m_is_start(false),m_model_path(model_path),m_vi_ptr(vi_ptr),m_vb_poolid(OT_VB_INVALID_POOL_ID)
+         ,m_vpss_grp(0),m_vpss_chn(0),m_model_mem_size(0),m_model_mem_ptr(NULL),m_model_id(0),m_model_desc(NULL)
+         ,m_input_num(0),m_output_num(0),m_dynamic_batch_idx(0)
     {
         //init vpss chn attr
         memset(&m_vpss_chn_attr,0,sizeof(m_vpss_chn_attr));
@@ -31,6 +38,45 @@ namespace hisilicon{namespace dev{
     yolov5::~yolov5()
     {
         stop();
+    }
+
+    void yolov5::destroy_vb_pool()
+    {
+        if(m_vb_poolid != OT_VB_INVALID_POOL_ID)
+        {
+            ss_mpi_sys_munmap(m_vb_virt_addr,m_vb_pool_info.pool_size);
+            ss_mpi_vb_destroy_pool(m_vb_poolid);
+            m_vb_poolid = OT_VB_INVALID_POOL_ID;
+        }
+    }
+
+    bool yolov5::create_vb_pool()
+    {
+        assert(m_pic_size.width > 0 && m_pic_size.height > 0);
+        ot_vb_pool_cfg vb_pool_cfg = { 0 };
+        ot_pic_buf_attr pic_buf_attr = {0};
+        td_u64 blk_size;
+
+        pic_buf_attr.width = m_pic_size.width;
+        pic_buf_attr.height = m_pic_size.height;
+        pic_buf_attr.compress_mode = OT_COMPRESS_MODE_NONE;
+        pic_buf_attr.align = OT_DEFAULT_ALIGN;
+        pic_buf_attr.bit_width = OT_DATA_BIT_WIDTH_8;
+        pic_buf_attr.pixel_format = OT_PIXEL_FORMAT_YVU_SEMIPLANAR_422;
+        pic_buf_attr.video_format = OT_VIDEO_FORMAT_LINEAR;
+        blk_size = ot_common_get_pic_buf_size(&pic_buf_attr);
+        vb_pool_cfg.blk_size = blk_size;
+        vb_pool_cfg.blk_cnt = 16;
+        m_vb_poolid = ss_mpi_vb_create_pool(&vb_pool_cfg);
+        if(m_vb_poolid == OT_VB_INVALID_POOL_ID)
+        {
+            DEV_WRITE_LOG_ERROR("ss_mpi_vb_create_pool failed");
+            return false;
+        }
+
+        ss_mpi_vb_get_pool_info(m_vb_poolid, &m_vb_pool_info);
+        m_vb_virt_addr = ss_mpi_sys_mmap(m_vb_pool_info.pool_phy_addr,m_vb_pool_info.pool_size);
+        return true;
     }
 
     bool yolov5::create_svp_output()
@@ -335,17 +381,40 @@ namespace hisilicon{namespace dev{
     bool yolov5::create_vpss_grp_chn()
     {
         td_s32 ret;
+
+        if(!create_vb_pool())
+        {
+            return false;
+        }
         
+        ret = ss_mpi_vpss_set_chn_vb_src(m_vpss_grp,m_vpss_chn,OT_VB_SRC_USER);
+        if (ret != TD_SUCCESS) 
+        {
+            DEV_WRITE_LOG_ERROR("ss_mpi_vpss_set_chn_vb_src failed with %#x", ret);
+            destroy_vb_pool();
+            return false;
+        }
+
+        ret = ss_mpi_vpss_attach_chn_vb_pool(m_vpss_grp,m_vpss_chn,m_vb_poolid);
+        if (ret != TD_SUCCESS) 
+        {
+            DEV_WRITE_LOG_ERROR("ss_mpi_vpss_attach_chn_vb_pool failed with %#x", ret);
+            destroy_vb_pool();
+            return false;
+        }
+
         ret = ss_mpi_vpss_set_chn_attr(m_vpss_grp, m_vpss_chn, &m_vpss_chn_attr);
         if (ret != TD_SUCCESS) 
         {
             DEV_WRITE_LOG_ERROR("ss_mpi_vpss_set_chn_attr failed with %#x", ret);
+            destroy_vb_pool();
             return false;
         }
         ret = ss_mpi_vpss_enable_chn(m_vpss_grp, m_vpss_chn);
         if (ret != TD_SUCCESS) 
         {
             DEV_WRITE_LOG_ERROR("ss_mpi_vpss_enable_chn_attr failed with %#x", ret);
+            destroy_vb_pool();
             return false;
         }
 
@@ -355,6 +424,7 @@ namespace hisilicon{namespace dev{
     void yolov5::destroy_vpss_grp_chn()
     {
         ss_mpi_vpss_disable_chn(m_vpss_grp, m_vpss_chn);
+        destroy_vb_pool();
     }
 
     bool yolov5::set_svp_threshold()
@@ -401,6 +471,194 @@ namespace hisilicon{namespace dev{
         data[n++] = 1.0;//min_width
 
         return true;
+    }
+
+    bool yolov5::get_svp_rio(svp_npu_rect_info_t* rect_info)
+    {
+        svp_acl_error ret;
+        size_t roi_idx, stride;
+        const char* ROI_NAME = "output0";
+        int i;
+        svp_acl_data_buffer *data_buffer = TD_NULL;
+        td_float *x_min = TD_NULL;
+        td_float *y_min = TD_NULL;
+        td_float *x_max = TD_NULL;
+        td_float *y_max = TD_NULL;
+
+        if(!get_svp_roi_num(&rect_info->num))
+        {
+            return false;
+        }
+
+        ret = svp_acl_mdl_get_output_index_by_name(m_model_desc,ROI_NAME,&roi_idx);
+        if(ret != SVP_ACL_SUCCESS)
+        {
+            DEV_WRITE_LOG_ERROR("svp_acl_mdl_get_output_index_by_name failed with 0x%x",ret);
+            return false;
+        }
+
+        data_buffer = svp_acl_mdl_get_dataset_buffer(m_task_info.output_dataset, roi_idx);
+        if(data_buffer == TD_NULL)
+        {
+            DEV_WRITE_LOG_ERROR("svp_acl_mdl_get_dataset_buffer failed");
+            return false;
+        }
+
+        stride = svp_acl_get_data_buffer_stride(data_buffer);
+        if(stride == 0)
+        {
+            DEV_WRITE_LOG_ERROR("svp_acl_get_data_buffer_stride failed");
+            return false;
+        }
+
+         x_min = (td_float *)svp_acl_get_data_buffer_addr(data_buffer);
+         if(x_min == TD_NULL)
+         {
+            DEV_WRITE_LOG_ERROR("svp_acl_get_data_buffer_addr failed");
+            return false;
+         }
+
+         td_u32 roi_offset = 0;
+         y_min = x_min + stride / sizeof(td_float);
+         x_max = y_min + stride / sizeof(td_float);
+         y_max = x_max + stride / sizeof(td_float);
+         for (i = 0; i < rect_info->num; i++) 
+         {
+             rect_info->rect[i].point[SAMPLE_SVP_NPU_RECT_LEFT_TOP].x = (td_u32)((td_float)x_min[roi_offset]) & (~1);
+             rect_info->rect[i].point[SAMPLE_SVP_NPU_RECT_LEFT_TOP].y = (td_u32)((td_float)y_min[roi_offset]) & (~1);
+
+             rect_info->rect[i].point[SAMPLE_SVP_NPU_RECT_RIGHT_TOP].x = (td_u32)((td_float)x_max[roi_offset]) & (~1);
+             rect_info->rect[i].point[SAMPLE_SVP_NPU_RECT_RIGHT_TOP].y = rect_info->rect[i].point[SAMPLE_SVP_NPU_RECT_LEFT_TOP].y;
+
+             rect_info->rect[i].point[SAMPLE_SVP_NPU_RECT_RIGHT_BOTTOM].x = rect_info->rect[i].point[SAMPLE_SVP_NPU_RECT_RIGHT_TOP].x;
+             rect_info->rect[i].point[SAMPLE_SVP_NPU_RECT_RIGHT_BOTTOM].y = (td_u32)((td_float)y_max[roi_offset]) & (~1);
+
+             rect_info->rect[i].point[SAMPLE_SVP_NPU_RECT_LEFT_BOTTOM].x = rect_info->rect[i].point[SAMPLE_SVP_NPU_RECT_LEFT_TOP].x;
+             rect_info->rect[i].point[SAMPLE_SVP_NPU_RECT_LEFT_BOTTOM].y = rect_info->rect[i].point[SAMPLE_SVP_NPU_RECT_RIGHT_BOTTOM].y;
+             roi_offset++;
+         }
+
+         return true;
+    }
+
+    bool yolov5::get_svp_roi_num(td_u16* pnum)
+    {
+        svp_acl_error ret;
+        const char* NUM_NAME = "output0";
+        size_t num_idx;
+        svp_acl_mdl_io_dims dims;
+        svp_acl_data_buffer *data_buffer = TD_NULL;
+        td_float *data = TD_NULL;
+        td_float total_num = 0.0;
+        int i;
+
+        ret = svp_acl_mdl_get_output_index_by_name(m_model_desc,NUM_NAME,&num_idx);
+        if(ret != SVP_ACL_SUCCESS)
+        {
+            DEV_WRITE_LOG_ERROR("svp_acl_mdl_get_output_index_by_name failed with 0x%x",ret);
+            return false;
+        }
+
+        ret = svp_acl_mdl_get_output_dims(m_model_desc, num_idx, &dims);
+        if(ret != SVP_ACL_SUCCESS)
+        {
+            DEV_WRITE_LOG_ERROR("svp_acl_mdl_get_output_dims failed with error 0x%x",ret);
+            return false;
+        }
+
+        data_buffer = svp_acl_mdl_get_dataset_buffer(m_task_info.output_dataset, num_idx);
+        if(data_buffer == TD_NULL)
+        {
+            DEV_WRITE_LOG_ERROR("svp_acl_mdl_get_dataset_buffer failed");
+            return false;
+        }
+
+        data = (td_float *)svp_acl_get_data_buffer_addr(data_buffer);
+        if(data == TD_NULL)
+        {
+            DEV_WRITE_LOG_ERROR("svp_acl_mdl_get_dataset_buffer_addr failed");
+            return false;
+        }
+
+        for(i = 0; i < dims.dims[dims.dim_count - 1]; i++)
+        {
+            total_num += *(data + i);
+        }
+
+        *pnum = total_num;
+
+        return true;
+    }
+
+    void yolov5::on_process()
+    {
+        svp_acl_error ret;
+        td_u32 size, stride;
+        td_u8 *data = TD_NULL;
+        svp_acl_data_buffer *data_buffer = TD_NULL;
+        ot_video_frame_info frame;
+        const td_s32 milli_sec = 1000;
+        svp_npu_rect_info_t rect_info;
+        int i;
+        
+        ret = svp_acl_rt_set_device(0);
+        if(ret != SVP_ACL_SUCCESS)
+        {
+            DEV_WRITE_LOG_ERROR("svp_acl_rt_set_device failed with error 0x%x",ret);
+            return;
+        }
+
+        data_buffer = svp_acl_mdl_get_dataset_buffer(m_task_info.input_dataset, 0);
+        size = svp_acl_get_data_buffer_size(data_buffer);
+        stride = svp_acl_get_data_buffer_stride(data_buffer);
+        data = (td_u8*)svp_acl_get_data_buffer_addr(data_buffer);
+        DEV_WRITE_LOG_INFO("size:%d,stride:%d,vrit_addr:%x",size,stride,(td_u64)data);
+
+        while(m_is_start)
+        {
+            ret = ss_mpi_vpss_get_chn_frame(m_vpss_grp,m_vpss_chn,&frame,milli_sec);
+            if(ret != TD_SUCCESS)
+            {
+                DEV_WRITE_LOG_ERROR("svp_mpi_vpss_get_chn_frame failed with error 0x%x",ret);
+                break;
+            }
+
+            td_u32 frame_size = frame.video_frame.height * frame.video_frame.stride[0] * 3 / 2;
+            td_void* frame_virt_addr = m_vb_virt_addr + (frame.video_frame.phys_addr[0] - m_vb_pool_info.pool_phy_addr);
+            ret = svp_acl_update_data_buffer(data_buffer,frame_virt_addr,frame_size,frame.video_frame.stride[0]);
+            ss_mpi_vpss_release_chn_frame(m_vpss_grp,m_vpss_chn,&frame);
+            if(ret != TD_SUCCESS)
+            {
+                DEV_WRITE_LOG_ERROR("svp_acl_update_data_buffer failed with error 0x%x",ret);
+                break;
+            }
+
+            ret = svp_acl_mdl_execute(m_model_id, m_task_info.input_dataset, m_task_info.output_dataset);
+            if(ret != TD_SUCCESS)
+            {
+                DEV_WRITE_LOG_ERROR("svp_acl_mdl_execute failed with error 0x%x",ret);
+                break;
+            }
+
+            memset(&rect_info,0,sizeof(rect_info));
+            if(!get_svp_rio(&rect_info))
+            {
+                break;
+            }
+
+            printf("----------ROI Data----------\n");
+            printf("\tnum:%d\n",rect_info.num);
+            for(i = 0; i < rect_info.num; i++)
+            {
+                printf("\trect[%d],lt(%d,%d),rt(%d,%d),rb(%d,%d),lb(%d,%d)\n",i,
+                        rect_info.rect[i].point[SAMPLE_SVP_NPU_RECT_LEFT_TOP].x,rect_info.rect[i].point[SAMPLE_SVP_NPU_RECT_LEFT_TOP].y,
+                        rect_info.rect[i].point[SAMPLE_SVP_NPU_RECT_RIGHT_TOP].x,rect_info.rect[i].point[SAMPLE_SVP_NPU_RECT_RIGHT_TOP].y,
+                        rect_info.rect[i].point[SAMPLE_SVP_NPU_RECT_RIGHT_BOTTOM].x,rect_info.rect[i].point[SAMPLE_SVP_NPU_RECT_RIGHT_BOTTOM].y,
+                        rect_info.rect[i].point[SAMPLE_SVP_NPU_RECT_LEFT_BOTTOM].x,rect_info.rect[i].point[SAMPLE_SVP_NPU_RECT_LEFT_BOTTOM].y);
+            }
+
+            usleep(10);
+        }
     }
 
     bool yolov5::start()
@@ -523,11 +781,11 @@ namespace hisilicon{namespace dev{
         }
 
         m_is_start = true;
+        m_thread = std::thread(&yolov5::on_process,this);
         return true;
 end3:
         destroy_svp_input();
         destroy_svp_output();
-end2:
         destroy_vpss_grp_chn();
 end0:
         svp_acl_mdl_destroy_desc(m_model_desc);
@@ -547,6 +805,9 @@ end1:
         {
             return ;
         }
+
+        m_is_start = false;
+        m_thread.join();
 
         destroy_vpss_grp_chn();
 
