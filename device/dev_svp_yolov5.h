@@ -4,6 +4,7 @@
 #include "dev_svp.h"
 #include "dev_std.h"
 #include "dev_vi_isp.h"
+#include <stream_observer.h>
 
 namespace hisilicon{namespace dev{
 
@@ -33,17 +34,24 @@ namespace hisilicon{namespace dev{
     }svp_npu_rect_info_t;
 
     class yolov5 
+        :public ceanic::rtsp::stream_post
     {
         public:
-            yolov5(std::shared_ptr<vi> vi_ptr,const char* model_path);
+            yolov5(std::shared_ptr<vi> vi_ptr,const char* model_path,ot_venc_chn venc_chn);
             ~yolov5();
 
             bool start();
             void stop();
 
+            int venc_w();
+            int venc_h();
+
         private:
             bool create_vpss_grp_chn();
             void destroy_vpss_grp_chn();
+            bool create_venc_chn();
+            void destroy_venc_chn();
+            void process_video_stream(ot_venc_stream* pstream);
 
             bool create_svp_input();
             svp_acl_data_buffer* create_svp_input_buffer(int index);
@@ -63,6 +71,9 @@ namespace hisilicon{namespace dev{
             bool get_svp_rio(svp_npu_rect_info_t* rect_info);
 
             void on_process();
+            void on_venc_process();
+
+            void svp_vgs_fill_rect(const ot_video_frame_info *frame_info,svp_npu_rect_info_t* rect,td_u32 color);
 
         private:
             bool m_is_start;
@@ -83,9 +94,12 @@ namespace hisilicon{namespace dev{
             svp_npu_task_info_t m_task_info;
             ot_vb_pool m_vb_poolid;
             ot_vb_pool_info m_vb_pool_info;
-            td_void *m_vb_virt_addr;
 
             std::thread m_thread;
+            ot_venc_chn m_venc_chn;
+            ot_venc_chn_attr m_venc_chn_attr;
+
+            std::thread m_venc_thread;
     };
 
 }}//namespace

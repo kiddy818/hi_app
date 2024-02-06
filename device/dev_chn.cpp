@@ -221,12 +221,25 @@ namespace hisilicon{namespace dev{
         {
             stream = 0;
         }
-        else
+        else if(head->w == m_venc_sub_ptr->venc_w()
+                && head->h == m_venc_sub_ptr->venc_h())
         {
             stream = 1;
         }
+        else if(m_yolov5
+                && head->w == m_yolov5->venc_w()
+                && head->h == m_yolov5->venc_h())
+        {
+            //yolov5 stream
+            stream = 2;
+        }
+        else
+        {
+            return;
+        }
 
-        if(strstr(m_venc_mode.c_str(),"H264") != NULL)
+        if(strstr(m_venc_mode.c_str(),"H264") != NULL
+                && stream < 2)
         {
             ceanic::rtmp::session_manager::instance()->process_data(m_chn,stream,head);
         }
@@ -376,6 +389,11 @@ namespace hisilicon{namespace dev{
 
     bool chn::request_i_frame(int chn,int stream)
     {
+        if(chn >= MAX_CHANNEL)
+        {
+            return false;
+        }
+
         std::shared_ptr<dev::chn> chn_ptr = g_chns[chn];
         if(!chn_ptr)
         {
@@ -395,6 +413,11 @@ namespace hisilicon{namespace dev{
 
     bool chn::get_stream_head(int chn,int stream,ceanic::util::media_head* mh)
     {
+        if(chn >= MAX_CHANNEL)
+        {
+            return false;
+        }
+
         using namespace ceanic::util;
         std::shared_ptr<dev::chn> chn_ptr = g_chns[chn];
         if(!chn_ptr)
@@ -477,6 +500,35 @@ namespace hisilicon{namespace dev{
         }
 
         return m_snap->trigger(file,quality,str_info);
+    }
+
+    bool chn::yolov5_start(const char* model_file)
+    {
+        if(!m_is_start)
+        {
+            return false;
+        }
+
+        m_yolov5 = std::make_shared<yolov5>(m_vi_ptr,model_file,m_venc_sub_ptr->venc_chn() + 2);
+        if(!m_yolov5->start())
+        {
+            m_yolov5 = nullptr;
+            return false;
+        }
+
+        m_yolov5->register_stream_observer(shared_from_this());
+
+        return true;
+    }
+
+    void chn::yolov5_stop()
+    {
+        if(m_yolov5)
+        {
+            m_yolov5->unregister_stream_observer(shared_from_this());
+            m_yolov5->stop();
+            m_yolov5 = nullptr;
+        }
     }
 
 }}//namespace

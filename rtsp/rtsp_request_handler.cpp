@@ -234,7 +234,7 @@ namespace ceanic{namespace rtsp{
 
     void rtsp_request_handler::process_method_describe(const request& req, session& sess)
     {
-        if (!stream_manager::instance()->get_stream(m_chn / 2, m_chn % 2,m_stream))
+        if (!stream_manager::instance()->get_stream(m_chn / 3, m_chn % 3,m_stream))
         {
             send_faild(sess);
             return;
@@ -351,7 +351,7 @@ namespace ceanic{namespace rtsp{
             return;
         }
 
-        if (!stream_manager::instance()->get_stream(m_chn / 2,m_chn % 2, m_stream))
+        if (!stream_manager::instance()->get_stream(m_chn / 3,m_chn % 3, m_stream))
         {
             send_faild(sess);
             return;

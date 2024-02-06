@@ -10,6 +10,7 @@
 6. 海思编码自适应 
 7. Mp4文件保存(h264使用mp4v2,h265使用gpac)
 8. 抓拍JPG
+9. Yolov5(通过rtsp视频验证)
 
 当前支持的sensor为: 
 1. OS04A10,OS04A10_WDR
@@ -196,13 +197,34 @@ cd /opt/ceanic/bin
 | interval         | 抓拍间隔(秒)                                                                          |
 | dir_path         | 保存目录路径                                                                          |
 
+##### yolov5.json
+```
+{
+   "yolov5" : {
+      "enable" : 0,
+      "model_file" : "/opt/ceanic/yolov5/yolov5.om"
+   }
+}
+
+```
+|  类型            | 说明                                                                                  |
+|  ----            | ----                                                                                  |
+| enable           | 1:启用 0:启用                                                                         |
+| model_file       | 模型文件路径                                                                          |
 
 #### RTSP
 ##### RTSP URL
 url为:   
+```
+//main stream
 rtsp://192.168.10.98/stream1   
+
+//sub stream
 rtsp://192.168.10.98/stream2  
-其中192.168.10.98需要修改为实际的板端地址,stream1为主编码(高清)码流，stream2为子编码(标清)码流  
+
+//yolov5 stream(需要配置文件中开启yolov5)
+rtsp://192.168.10.98/stream3
+```
 ##### VLC连接RTSP
 vlc连接方法:媒体->打开网络串流->输入RTSP URL
 ![avatar](doc/rtsp_open.jpg)

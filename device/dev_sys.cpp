@@ -13,10 +13,12 @@ namespace hisilicon{namespace dev{
 
         memset(&vb_cfg,0,sizeof(ot_vb_cfg));
         vb_cfg.common_pool[0].blk_size = 3840 * 2160 * 2;
-        vb_cfg.common_pool[0].blk_cnt = 20;
+        vb_cfg.common_pool[0].blk_cnt = 10;
         vb_cfg.common_pool[1].blk_size = 704 * 576 * 3 / 2;
         vb_cfg.common_pool[1].blk_cnt = 10;
-        vb_cfg.max_pool_cnt= 2;
+        vb_cfg.common_pool[2].blk_size = 640 * 640 * 3 / 2;
+        vb_cfg.common_pool[2].blk_cnt = 10;
+        vb_cfg.max_pool_cnt= 3;
         ret = ss_mpi_vb_set_cfg(&vb_cfg);
         if(ret != TD_SUCCESS)
         {

@@ -571,6 +571,67 @@ static int get_jpg_save_info()
     }
 }
 
+typedef struct
+{
+    int enable;
+    char model_file[255];
+}yolov5_info_t;
+static yolov5_info_t g_yolov5_info;
+#define YOLOV5_INFO_PATH "/opt/ceanic/yolov5/yolov5.json"
+static void init_yolov5_info()
+{
+    Json::Value root;
+
+    root["yolov5"]["enable"] = 0;
+    root["yolov5"]["model_file"] = "/opt/ceanic/yolov5/yolov5.om";
+    std::string str= root.toStyledString();
+    std::ofstream ofs;
+    ofs.open(YOLOV5_INFO_PATH);
+    ofs << str;
+    ofs.close();
+}
+
+static int get_yolov5_info()
+{
+    try
+    {
+        if(access(YOLOV5_INFO_PATH,F_OK) < 0)
+        {
+            init_yolov5_info();
+
+            if(access(YOLOV5_INFO_PATH,F_OK) < 0)
+            {
+                return -1;
+            }
+        }
+
+        std::ifstream ifs;
+        ifs.open(YOLOV5_INFO_PATH);
+        if(!ifs.is_open())
+        {
+            return -1;
+        }
+        Json::Reader reader;  
+        Json::Value root; 
+        if (!reader.parse(ifs, root, false)) 
+        {
+            return -1;
+        }
+
+        Json::Value node; 
+        g_yolov5_info.enable = root["yolov5"]["enable"].asInt();
+        sprintf(g_yolov5_info.model_file,"%s",root["yolov5"]["model_file"].asCString());
+
+        ifs.close();
+
+        return 0;
+    }
+    catch(...)
+    {
+        return -1;
+    }
+}
+
 static std::thread g_thread_1s;
 static bool g_thread_run = false;
 static void thread_1s()
@@ -620,6 +681,12 @@ static void on_quit(int signal)
 
     g_thread_run = false;
     g_thread_1s.join();
+
+    if(g_yolov5_info.enable)
+    {
+        g_chn->yolov5_stop();
+        hisilicon::dev::svp::release();
+    }
 
     if(g_mp4_save_info.enable)
     {
@@ -769,6 +836,17 @@ int main(int argc,char* argv[])
     printf("\tquality:%d\n",g_jpg_save_info.quality);
     printf("\tinterval:%d\n",g_jpg_save_info.interval);
     printf("\tdir_path:%s\n",g_jpg_save_info.dir_path);
+
+    //yolov5
+    get_yolov5_info();
+    printf("yolov5 info\n");
+    printf("\tenable:%d\n",g_yolov5_info.enable);
+    printf("\tmodel_file:%s\n",g_yolov5_info.model_file);
+    if(g_yolov5_info.enable)
+    {
+        hisilicon::dev::svp::init();
+        g_chn->yolov5_start(g_yolov5_info.model_file);
+    }
 
     g_thread_run = true;
     g_thread_1s = std::thread(thread_1s);

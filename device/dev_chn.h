@@ -31,7 +31,11 @@ extern "C"
 #include <h264_mp4_save.h>
 #include <h265_mp4_save.h>
 
+//snap
 #include "dev_snap.h"
+
+//yolov5
+#include "dev_svp_yolov5.h"
 
 #define MAX_CHANNEL 1
 
@@ -78,6 +82,11 @@ namespace hisilicon{namespace dev{
             bool aiisp_start(const char* model_file,int mode);
             void aiisp_stop();
 
+
+            //for yolov5
+            bool yolov5_start(const char* model_file);
+            void yolov5_stop();
+
             static bool get_stream_head(int chn,int stram,ceanic::util::media_head* mh);
             static bool request_i_frame(int chn,int stream);
 
@@ -94,6 +103,7 @@ namespace hisilicon{namespace dev{
             std::string m_venc_mode;
             std::shared_ptr<ceanic::stream_save::stream_save> m_save;
             std::shared_ptr<snap> m_snap;
+            std::shared_ptr<yolov5> m_yolov5;
 
             static ot_scene_param g_scene_param;
             static ot_scene_video_mode g_scene_video_mode;
