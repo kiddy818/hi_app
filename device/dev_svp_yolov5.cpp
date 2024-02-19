@@ -1075,6 +1075,11 @@ end1:
 
             vgs_add_osd.rect.x = rect->rect[i].point[SAMPLE_SVP_NPU_RECT_LEFT_TOP].x;
             vgs_add_osd.rect.y = rect->rect[i].point[SAMPLE_SVP_NPU_RECT_LEFT_TOP].y;
+            vgs_add_osd.rect.y -= vgs_add_osd.rect.height;
+            if(vgs_add_osd.rect.y < 0)
+            {
+                vgs_add_osd.rect.y = 0;
+            }
 
             ss_mpi_vgs_add_osd_task(vgs_handle,&vgs_task,&vgs_add_osd,1);
         }
