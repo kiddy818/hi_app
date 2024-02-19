@@ -8,7 +8,7 @@ namespace hisilicon{namespace dev{
     class osd
     {
         public:
-            osd(int x,int y,int font_size,ot_rgn_handle rgn_h,ot_venc_chn venc_h);
+            osd(int x,int y,int font_size,ot_venc_chn venc_h);
 
             virtual ~osd();
 
@@ -33,7 +33,7 @@ namespace hisilicon{namespace dev{
         :public osd
     {
         public:
-            osd_date(int x,int y,int font_size,ot_rgn_handle rgn_h,ot_venc_chn venc_h);
+            osd_date(int x,int y,int font_size,ot_venc_chn venc_h);
             virtual ~osd_date();
 
             virtual bool start() override;
@@ -50,7 +50,7 @@ namespace hisilicon{namespace dev{
         :public osd
     {
         public:
-            osd_name(int x,int y,int font_size,ot_rgn_handle rgn_h,ot_venc_chn venc_h,const char* name);
+            osd_name(int x,int y,int font_size,ot_venc_chn venc_h,const char* name);
             virtual ~osd_name();
 
             virtual bool start() override;

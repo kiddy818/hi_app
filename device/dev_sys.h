@@ -10,6 +10,9 @@ namespace hisilicon{namespace dev{
         public:
             static bool init();
             static void release();
+
+            static ot_venc_chn alloc_venc_chn();
+            static ot_rgn_handle alloc_rgn_handle();
     };
 
 }}//namespace

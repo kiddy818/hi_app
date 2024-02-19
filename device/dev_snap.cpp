@@ -1,3 +1,4 @@
+#include "dev_sys.h"
 #include "dev_snap.h"
 #include "dev_log.h"
 #include "dev_osd.h"
@@ -8,8 +9,8 @@ extern ceanic_freetype  g_freetype;
 
 namespace hisilicon{namespace dev{
 
-    snap::snap(std::shared_ptr<vi> vi_ptr,ot_venc_chn venc_chn)
-        :m_vi_ptr(vi_ptr),m_venc_chn(venc_chn)
+    snap::snap(std::shared_ptr<vi> vi_ptr)
+        :m_vi_ptr(vi_ptr)
     {
         m_bstart = false;
 
@@ -24,6 +25,8 @@ namespace hisilicon{namespace dev{
         m_venc_chn_attr.venc_attr.jpeg_attr.dcf_en = TD_TRUE;
         m_venc_chn_attr.venc_attr.jpeg_attr.mpf_cfg.large_thumbnail_num = 0; 
         m_venc_chn_attr.venc_attr.jpeg_attr.recv_mode = OT_VENC_PIC_RECV_SINGLE;
+
+        m_venc_chn = sys::alloc_venc_chn();
     }
 
     snap::~snap()
@@ -122,12 +125,12 @@ namespace hisilicon{namespace dev{
         char data_str[255];
         sprintf(data_str,"%s %04d-%02d-%02d %02d:%02d:%02d",g_week_stsr[cur.tm_wday],cur.tm_year + 1900,cur.tm_mon + 1,cur.tm_mday,cur.tm_hour,cur.tm_min,cur.tm_sec);
 
-        std::shared_ptr<osd_name> osd1 = std::make_shared<osd_name>(10,10,64,m_venc_chn * 2/*rgn handle*/,m_venc_chn,data_str);
+        std::shared_ptr<osd_name> osd1 = std::make_shared<osd_name>(10,10,64,m_venc_chn,data_str);
         osd1->start();
         std::shared_ptr<osd_name> osd2;
         if(str_info)
         {
-            osd2 = std::make_shared<osd_name>(10,96,64,m_venc_chn * 2 + 1/*rgn handle*/,m_venc_chn,str_info);
+            osd2 = std::make_shared<osd_name>(10,96,64,m_venc_chn,str_info);
             osd2->start();
         }
 

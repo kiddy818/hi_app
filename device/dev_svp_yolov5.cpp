@@ -1,3 +1,4 @@
+#include "dev_sys.h"
 #include "dev_svp_yolov5.h"
 #include "dev_log.h"
 #include "ceanic_freetype.h"
@@ -21,13 +22,11 @@ namespace hisilicon{namespace dev{
 #define SAMPLE_SVP_NPU_RECT_RIGHT_TOP    1
 #define SAMPLE_SVP_NPU_RECT_RIGHT_BOTTOM 2
 #define SAMPLE_SVP_NPU_RECT_LEFT_BOTTOM  3
-#define SAMPLE_SVP_OSD_HANDLE 16 
 
-
-    yolov5::yolov5(std::shared_ptr<vi> vi_ptr,const char* model_path,ot_venc_chn venc_chn)
+    yolov5::yolov5(std::shared_ptr<vi> vi_ptr,const char* model_path)
         :m_is_start(false),m_model_path(model_path),m_vi_ptr(vi_ptr),m_vb_poolid(OT_VB_INVALID_POOL_ID)
          ,m_vpss_grp(0),m_vpss_chn(0),m_model_mem_size(0),m_model_mem_ptr(NULL),m_model_id(0),m_model_desc(NULL)
-         ,m_input_num(0),m_output_num(0),m_dynamic_batch_idx(0),m_venc_chn(venc_chn)
+         ,m_input_num(0),m_output_num(0),m_dynamic_batch_idx(0)
     {
         //init vpss chn attr
         memset(&m_vpss_chn_attr,0,sizeof(m_vpss_chn_attr));
@@ -45,6 +44,8 @@ namespace hisilicon{namespace dev{
         m_vpss_chn_attr.aspect_ratio.mode         = OT_ASPECT_RATIO_NONE;
         m_vpss_chn_attr.frame_rate.src_frame_rate = -1;
         m_vpss_chn_attr.frame_rate.dst_frame_rate = -1;
+
+        m_venc_chn = sys::alloc_venc_chn();
 
         //init venc chn attr
         memset(&m_venc_chn_attr,0,sizeof(m_venc_chn_attr));
@@ -72,7 +73,7 @@ namespace hisilicon{namespace dev{
 
         for(int i = 0; i < SVP_RECT_NUM; i++)
         {
-            m_brgn_exists[i] = false;
+            m_rgn[i] =  OT_INVALID_HANDLE;
         }
     }
 
@@ -526,14 +527,15 @@ namespace hisilicon{namespace dev{
         g_freetype.get_width("score:100.00,class_id:0000",16,&rgn_w);
         rgn_attr.attr.overlay.size.width = ROUND_UP(rgn_w,64);
         rgn_attr.attr.overlay.size.height = 24;
-        ret = ss_mpi_rgn_create(SAMPLE_SVP_OSD_HANDLE + idx, &rgn_attr);
+        ot_rgn_handle rgn_h = sys::alloc_rgn_handle();
+        ret = ss_mpi_rgn_create(rgn_h, &rgn_attr);
         if(ret != SVP_ACL_SUCCESS)
         {
             DEV_WRITE_LOG_ERROR("ss_mpi_rgn_create failed");
             return false;
         }
 
-        m_brgn_exists[idx] = true;
+        m_rgn[idx] = rgn_h;
         return true;
     }
 
@@ -815,10 +817,10 @@ namespace hisilicon{namespace dev{
 
         for(i = 0; i < SVP_RECT_NUM; i++)
         {
-            if(m_brgn_exists[i])
+            if(m_rgn[i] != OT_INVALID_HANDLE)
             {
-                ss_mpi_rgn_destroy(SAMPLE_SVP_OSD_HANDLE + i);
-                m_brgn_exists[i] = false;
+                ss_mpi_rgn_destroy(m_rgn[i]);
+                m_rgn[i] = OT_INVALID_HANDLE;
             }
         }
     }
@@ -1034,11 +1036,11 @@ end1:
         char str[255];
         for (i = 0; i < rect->num; i++)
         {
-            if(!m_brgn_exists[i])
+            if(m_rgn[i] == OT_INVALID_HANDLE)
             {
                 create_svp_rgn(i);
 
-                if(!m_brgn_exists[i])
+                if(m_rgn[i] == OT_INVALID_HANDLE)
                 {
                     break;
                 }
@@ -1046,7 +1048,7 @@ end1:
 
             ot_rgn_canvas_info canvas_info;
             memset(&canvas_info,0,sizeof(canvas_info));
-            ret = ss_mpi_rgn_get_canvas_info(SAMPLE_SVP_OSD_HANDLE + i, &canvas_info);
+            ret = ss_mpi_rgn_get_canvas_info(m_rgn[i], &canvas_info);
             if(ret != SVP_ACL_SUCCESS)
             {
                 DEV_WRITE_LOG_ERROR("ss_mpi_rgn_get_canvas_info failed");
@@ -1069,7 +1071,7 @@ end1:
 
             g_freetype.show_string(str,vgs_add_osd.rect.width,vgs_add_osd.rect.height,16,1,(unsigned char*)canvas_info.virt_addr,canvas_info.size.width * canvas_info.size.height * 2);
 
-            ss_mpi_rgn_update_canvas(SAMPLE_SVP_OSD_HANDLE + i);
+            ss_mpi_rgn_update_canvas(m_rgn[i]);
 
             vgs_add_osd.rect.x = rect->rect[i].point[SAMPLE_SVP_NPU_RECT_LEFT_TOP].x;
             vgs_add_osd.rect.y = rect->rect[i].point[SAMPLE_SVP_NPU_RECT_LEFT_TOP].y;

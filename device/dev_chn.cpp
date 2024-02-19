@@ -59,23 +59,23 @@ namespace hisilicon{namespace dev{
 
         if(m_venc_mode == "H264_CBR")
         {
-            m_venc_main_ptr = std::make_shared<venc_h264_cbr>(venc_w,venc_h,m_vi_ptr->fr(),fr,0,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),bitrate);
-            m_venc_sub_ptr  = std::make_shared<venc_h264_cbr>(704,576,m_vi_ptr->fr(),fr,m_venc_main_ptr->venc_chn() + 1,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),1000);
+            m_venc_main_ptr = std::make_shared<venc_h264_cbr>(venc_w,venc_h,m_vi_ptr->fr(),fr,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),bitrate);
+            m_venc_sub_ptr  = std::make_shared<venc_h264_cbr>(704,576,m_vi_ptr->fr(),fr,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),1000);
         }
         else if(m_venc_mode == "H264_AVBR")
         {
-            m_venc_main_ptr = std::make_shared<venc_h264_avbr>(venc_w,venc_h,m_vi_ptr->fr(),fr,0,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),bitrate);
-            m_venc_sub_ptr  = std::make_shared<venc_h264_avbr>(704,576,m_vi_ptr->fr(),fr,m_venc_main_ptr->venc_chn() + 1,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),1000);
+            m_venc_main_ptr = std::make_shared<venc_h264_avbr>(venc_w,venc_h,m_vi_ptr->fr(),fr,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),bitrate);
+            m_venc_sub_ptr  = std::make_shared<venc_h264_avbr>(704,576,m_vi_ptr->fr(),fr,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),1000);
         }
         else if(m_venc_mode == "H265_CBR")
         {
-            m_venc_main_ptr = std::make_shared<venc_h265_cbr>(venc_w,venc_h,m_vi_ptr->fr(),fr,0,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),bitrate);
-            m_venc_sub_ptr  = std::make_shared<venc_h265_cbr>(704,576,m_vi_ptr->fr(),fr,m_venc_main_ptr->venc_chn() + 1,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),1000);
+            m_venc_main_ptr = std::make_shared<venc_h265_cbr>(venc_w,venc_h,m_vi_ptr->fr(),fr,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),bitrate);
+            m_venc_sub_ptr  = std::make_shared<venc_h265_cbr>(704,576,m_vi_ptr->fr(),fr,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),1000);
         }
         else if(m_venc_mode == "H265_AVBR")
         {
-            m_venc_main_ptr = std::make_shared<venc_h265_avbr>(venc_w,venc_h,m_vi_ptr->fr(),fr,0,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),bitrate);
-            m_venc_sub_ptr  = std::make_shared<venc_h265_avbr>(704,576,m_vi_ptr->fr(),fr,m_venc_main_ptr->venc_chn() + 1,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),1000);
+            m_venc_main_ptr = std::make_shared<venc_h265_avbr>(venc_w,venc_h,m_vi_ptr->fr(),fr,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),bitrate);
+            m_venc_sub_ptr  = std::make_shared<venc_h265_avbr>(704,576,m_vi_ptr->fr(),fr,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),1000);
         }
         else
         {
@@ -99,8 +99,8 @@ namespace hisilicon{namespace dev{
             return false;
         }
 
-        m_osd_date_main = std::make_shared<osd_date>(32,32,64,m_venc_main_ptr->venc_chn(),m_venc_main_ptr->venc_chn());
-        m_osd_date_sub = std::make_shared<osd_date>(16,16,24,m_venc_sub_ptr->venc_chn(),m_venc_sub_ptr->venc_chn());
+        m_osd_date_main = std::make_shared<osd_date>(32,32,64,m_venc_main_ptr->venc_chn());
+        m_osd_date_sub = std::make_shared<osd_date>(16,16,24,m_venc_sub_ptr->venc_chn());
         m_osd_date_main->start();
         m_osd_date_sub->start();
 
@@ -490,7 +490,7 @@ namespace hisilicon{namespace dev{
 
         if(!m_snap)
         {
-            m_snap = std::make_shared<snap>(m_vi_ptr,m_venc_sub_ptr->venc_chn() + 1);
+            m_snap = std::make_shared<snap>(m_vi_ptr);
 
             if(!m_snap->start())
             {
@@ -509,7 +509,7 @@ namespace hisilicon{namespace dev{
             return false;
         }
 
-        m_yolov5 = std::make_shared<yolov5>(m_vi_ptr,model_file,m_venc_sub_ptr->venc_chn() + 2);
+        m_yolov5 = std::make_shared<yolov5>(m_vi_ptr,model_file);
         if(!m_yolov5->start())
         {
             m_yolov5 = nullptr;

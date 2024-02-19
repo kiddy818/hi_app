@@ -1,3 +1,4 @@
+#include "dev_sys.h"
 #include "dev_osd.h"
 #include "dev_log.h"
 #include "ceanic_freetype.h"
@@ -31,8 +32,8 @@ int rgb24to1555(int r,int g,int b,int a)
 
 namespace hisilicon{namespace dev{
 
-        osd::osd(int x,int y,int font_size,ot_rgn_handle rgn_h,ot_venc_chn venc_h)
-        :m_x(x),m_y(y),m_font_size(font_size),m_rgn_h(rgn_h),m_venc_h(venc_h),m_is_start(false)
+        osd::osd(int x,int y,int font_size,ot_venc_chn venc_h)
+        :m_x(x),m_y(y),m_font_size(font_size),m_venc_h(venc_h),m_is_start(false)
     {
         memset(&m_rgn_attr,0,sizeof(m_rgn_attr));
         m_rgn_attr.type = OT_RGN_OVERLAY; 
@@ -52,6 +53,8 @@ namespace hisilicon{namespace dev{
         m_rgn_chn_attr.attr.overlay_chn.qp_info.qp_val = 0;
         m_rgn_chn_attr.attr.overlay_chn.qp_info.enable = TD_FALSE;
         m_rgn_chn_attr.attr.overlay_chn.dst = OT_RGN_ATTACH_JPEG_MAIN;
+
+        m_rgn_h = sys::alloc_rgn_handle();
     }
 
     osd::~osd()
@@ -123,8 +126,8 @@ namespace hisilicon{namespace dev{
         m_is_start = false;
     }
 
-    osd_date::osd_date(int x,int y,int font_size,ot_rgn_handle rgn_h,ot_venc_chn venc_h)
-        :osd(x,y,font_size,rgn_h,venc_h)
+    osd_date::osd_date(int x,int y,int font_size,ot_venc_chn venc_h)
+        :osd(x,y,font_size,venc_h)
     {
         m_last_date_str[0] = '\0';
     }
@@ -241,8 +244,8 @@ namespace hisilicon{namespace dev{
         m_thd.join();
     }
 
-    osd_name::osd_name(int x,int y,int font_size,ot_rgn_handle rgn_h,ot_venc_chn venc_h,const char* name)
-        :osd(x,y,font_size,rgn_h,venc_h),m_name(name)
+    osd_name::osd_name(int x,int y,int font_size,ot_venc_chn venc_h,const char* name)
+        :osd(x,y,font_size,venc_h),m_name(name)
     {
     }
 

@@ -39,7 +39,7 @@ namespace hisilicon{namespace dev{
         :public ceanic::rtsp::stream_post
     {
         public:
-            yolov5(std::shared_ptr<vi> vi_ptr,const char* model_path,ot_venc_chn venc_chn);
+            yolov5(std::shared_ptr<vi> vi_ptr,const char* model_path);
             ~yolov5();
 
             bool start();
@@ -103,7 +103,7 @@ namespace hisilicon{namespace dev{
             ot_venc_chn_attr m_venc_chn_attr;
 
             std::thread m_venc_thread;
-            bool m_brgn_exists[SVP_RECT_NUM];
+            ot_rgn_handle m_rgn[SVP_RECT_NUM];
     };
 
 }}//namespace

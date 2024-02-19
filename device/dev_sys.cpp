@@ -1,5 +1,6 @@
 #include "dev_sys.h"
 #include "dev_log.h"
+#include <mutex>
 
 namespace hisilicon{namespace dev{
 
@@ -84,6 +85,24 @@ namespace hisilicon{namespace dev{
         ss_mpi_sys_exit();
         ss_mpi_vb_exit_mod_common_pool(OT_VB_UID_VDEC);
         ss_mpi_vb_exit();
+    }
+
+    ot_venc_chn sys::alloc_venc_chn()
+    {
+        static std::mutex g_venc_chn_mu;
+        static ot_venc_chn g_free_venc_chn = 0;
+
+        std::unique_lock<std::mutex> lock(g_venc_chn_mu);
+        return g_free_venc_chn++;
+    }
+
+    ot_rgn_handle sys::alloc_rgn_handle()
+    {
+        static std::mutex g_rgn_mu;
+        static ot_rgn_handle g_free_rgn = 0;
+
+        std::unique_lock<std::mutex> lock(g_rgn_mu);
+        return g_free_rgn++;
     }
 
 }}//namespace
