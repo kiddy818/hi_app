@@ -23,6 +23,8 @@ namespace hisilicon{namespace dev{
 #define SVP_RECT_POINT_NUM 4
     typedef struct
     {
+        td_u16 class_id;
+        float score;
         ot_point point[SVP_RECT_POINT_NUM];
     }svp_npu_rect_t;
 
@@ -69,6 +71,7 @@ namespace hisilicon{namespace dev{
 
             bool get_svp_roi_num(td_u16* pnum);
             bool get_svp_rio(svp_npu_rect_info_t* rect_info);
+            bool create_svp_rgn(int idx);
 
             void on_process();
             void on_venc_process();
@@ -100,6 +103,7 @@ namespace hisilicon{namespace dev{
             ot_venc_chn_attr m_venc_chn_attr;
 
             std::thread m_venc_thread;
+            bool m_brgn_exists[SVP_RECT_NUM];
     };
 
 }}//namespace

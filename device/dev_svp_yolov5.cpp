@@ -1,5 +1,16 @@
 #include "dev_svp_yolov5.h"
 #include "dev_log.h"
+#include "ceanic_freetype.h"
+
+#ifndef ROUND_DOWN
+#define ROUND_DOWN(size, align) ((size) & ~((align) - 1))
+#endif 
+#ifndef ROUND_UP
+#define ROUND_UP(size, align)   (((size) + ((align) - 1)) & ~((align) - 1))
+#endif
+
+extern int rgb24to1555(int r,int g,int b,int a);
+extern ceanic_freetype g_freetype;
 
 namespace hisilicon{namespace dev{
 
@@ -10,6 +21,7 @@ namespace hisilicon{namespace dev{
 #define SAMPLE_SVP_NPU_RECT_RIGHT_TOP    1
 #define SAMPLE_SVP_NPU_RECT_RIGHT_BOTTOM 2
 #define SAMPLE_SVP_NPU_RECT_LEFT_BOTTOM  3
+#define SAMPLE_SVP_OSD_HANDLE 16 
 
 
     yolov5::yolov5(std::shared_ptr<vi> vi_ptr,const char* model_path,ot_venc_chn venc_chn)
@@ -57,6 +69,11 @@ namespace hisilicon{namespace dev{
 
         m_pic_size.width = 640;
         m_pic_size.height = 640;
+
+        for(int i = 0; i < SVP_RECT_NUM; i++)
+        {
+            m_brgn_exists[i] = false;
+        }
     }
 
     yolov5::~yolov5()
@@ -496,6 +513,30 @@ namespace hisilicon{namespace dev{
         return true;
     }
 
+    bool yolov5::create_svp_rgn(int idx)
+    {
+        svp_acl_error ret;
+        int rgn_w = 160;
+        ot_rgn_attr rgn_attr;
+        memset(&rgn_attr,0,sizeof(rgn_attr));
+        rgn_attr.type = OT_RGN_OVERLAY; 
+        rgn_attr.attr.overlay.pixel_format = OT_PIXEL_FORMAT_ARGB_1555;
+        rgn_attr.attr.overlay.canvas_num = 1;
+        rgn_attr.attr.overlay.bg_color = rgb24to1555(0,255,0,0);
+        g_freetype.get_width("score:100.00,class_id:0000",16,&rgn_w);
+        rgn_attr.attr.overlay.size.width = ROUND_UP(rgn_w,64);
+        rgn_attr.attr.overlay.size.height = 24;
+        ret = ss_mpi_rgn_create(SAMPLE_SVP_OSD_HANDLE + idx, &rgn_attr);
+        if(ret != SVP_ACL_SUCCESS)
+        {
+            DEV_WRITE_LOG_ERROR("ss_mpi_rgn_create failed");
+            return false;
+        }
+
+        m_brgn_exists[idx] = true;
+        return true;
+    }
+
     bool yolov5::get_svp_rio(svp_npu_rect_info_t* rect_info)
     {
         svp_acl_error ret;
@@ -507,6 +548,8 @@ namespace hisilicon{namespace dev{
         td_float *y_min = TD_NULL;
         td_float *x_max = TD_NULL;
         td_float *y_max = TD_NULL;
+        td_float *score = TD_NULL;
+        td_float *class_id = TD_NULL;
 
         if(!get_svp_roi_num(&rect_info->num))
         {
@@ -545,6 +588,8 @@ namespace hisilicon{namespace dev{
          y_min = x_min + stride / sizeof(td_float);
          x_max = y_min + stride / sizeof(td_float);
          y_max = x_max + stride / sizeof(td_float);
+         score = y_max + stride / sizeof(td_float);
+         class_id = score + stride / sizeof(td_float);
          for (i = 0; i < rect_info->num; i++) 
          {
              rect_info->rect[i].point[SAMPLE_SVP_NPU_RECT_LEFT_TOP].x = (td_u32)((td_float)x_min[roi_offset]) & (~1);
@@ -558,6 +603,10 @@ namespace hisilicon{namespace dev{
 
              rect_info->rect[i].point[SAMPLE_SVP_NPU_RECT_LEFT_BOTTOM].x = rect_info->rect[i].point[SAMPLE_SVP_NPU_RECT_LEFT_TOP].x;
              rect_info->rect[i].point[SAMPLE_SVP_NPU_RECT_LEFT_BOTTOM].y = rect_info->rect[i].point[SAMPLE_SVP_NPU_RECT_RIGHT_BOTTOM].y;
+
+             rect_info->rect[i].score = score[roi_offset];
+             rect_info->rect[i].class_id = (td_u32)class_id[roi_offset];
+
              roi_offset++;
          }
 
@@ -745,8 +794,10 @@ namespace hisilicon{namespace dev{
                 printf("\tnum:%d\n",rect_info.num);
                 for(i = 0; i < rect_info.num; i++)
                 {
-                    printf("\trect[%d],lt(%d,%d),rt(%d,%d),rb(%d,%d),lb(%d,%d)\n",
+                    printf("\trect[%d],score:%f,class_id:%d,lt(%d,%d),rt(%d,%d),rb(%d,%d),lb(%d,%d)\n",
                             i,
+                            rect_info.rect[i].score,
+                            rect_info.rect[i].class_id,
                             rect_info.rect[i].point[SAMPLE_SVP_NPU_RECT_LEFT_TOP].x,rect_info.rect[i].point[SAMPLE_SVP_NPU_RECT_LEFT_TOP].y,
                             rect_info.rect[i].point[SAMPLE_SVP_NPU_RECT_RIGHT_TOP].x,rect_info.rect[i].point[SAMPLE_SVP_NPU_RECT_RIGHT_TOP].y,
                             rect_info.rect[i].point[SAMPLE_SVP_NPU_RECT_RIGHT_BOTTOM].x,rect_info.rect[i].point[SAMPLE_SVP_NPU_RECT_RIGHT_BOTTOM].y,
@@ -761,6 +812,15 @@ namespace hisilicon{namespace dev{
 
         ss_mpi_sys_munmap(virt_addr,m_vb_pool_info.pool_size);
         svp_acl_rt_reset_device(0);
+
+        for(i = 0; i < SVP_RECT_NUM; i++)
+        {
+            if(m_brgn_exists[i])
+            {
+                ss_mpi_rgn_destroy(SAMPLE_SVP_OSD_HANDLE + i);
+                m_brgn_exists[i] = false;
+            }
+        }
     }
 
     bool yolov5::start()
@@ -947,6 +1007,7 @@ end1:
         td_u16 i;
         ot_vgs_task_attr vgs_task;
         ot_cover vgs_add_cover;
+        ot_vgs_osd vgs_add_osd;
 
         ss_mpi_vgs_begin_job(&vgs_handle);
 
@@ -961,6 +1022,59 @@ end1:
             vgs_add_cover.quad_attr.thick = 2;
             memcpy_s(vgs_add_cover.quad_attr.point, sizeof(rect->rect[i].point),rect->rect[i].point, sizeof(rect->rect[i].point));
             ss_mpi_vgs_add_cover_task(vgs_handle, &vgs_task, &vgs_add_cover, 1);
+        }
+
+        vgs_add_osd.bg_color = 0x00ff00;
+        vgs_add_osd.pixel_format = OT_PIXEL_FORMAT_ARGB_1555;
+        vgs_add_osd.fg_alpha = 255;
+        //vgs_add_osd.bg_alpha = 128; 
+        vgs_add_osd.bg_alpha = 0; 
+        vgs_add_osd.osd_inverted_color = OT_VGS_OSD_INVERTED_COLOR_NONE;
+
+        char str[255];
+        for (i = 0; i < rect->num; i++)
+        {
+            if(!m_brgn_exists[i])
+            {
+                create_svp_rgn(i);
+
+                if(!m_brgn_exists[i])
+                {
+                    break;
+                }
+            }
+
+            ot_rgn_canvas_info canvas_info;
+            memset(&canvas_info,0,sizeof(canvas_info));
+            ret = ss_mpi_rgn_get_canvas_info(SAMPLE_SVP_OSD_HANDLE + i, &canvas_info);
+            if(ret != SVP_ACL_SUCCESS)
+            {
+                DEV_WRITE_LOG_ERROR("ss_mpi_rgn_get_canvas_info failed");
+                break;
+            }
+
+            vgs_add_osd.rect.width = canvas_info.size.width;
+            vgs_add_osd.rect.height = canvas_info.size.height;
+            vgs_add_osd.phys_addr = canvas_info.phys_addr;
+            vgs_add_osd.stride = canvas_info.stride;
+
+            sprintf(str,"score:%.2f id:%d",rect->rect[i].score,rect->rect[i].class_id);
+            
+            unsigned short* p = (unsigned short*)canvas_info.virt_addr;
+            for(unsigned int j = 0; j < canvas_info.size.width * canvas_info.size.height; j++)
+            {
+                *p = (short)rgb24to1555(0,255,0,0);
+                p++;
+            }
+
+            g_freetype.show_string(str,vgs_add_osd.rect.width,vgs_add_osd.rect.height,16,1,(unsigned char*)canvas_info.virt_addr,canvas_info.size.width * canvas_info.size.height * 2);
+
+            ss_mpi_rgn_update_canvas(SAMPLE_SVP_OSD_HANDLE + i);
+
+            vgs_add_osd.rect.x = rect->rect[i].point[SAMPLE_SVP_NPU_RECT_LEFT_TOP].x;
+            vgs_add_osd.rect.y = rect->rect[i].point[SAMPLE_SVP_NPU_RECT_LEFT_TOP].y;
+
+            ss_mpi_vgs_add_osd_task(vgs_handle,&vgs_task,&vgs_add_osd,1);
         }
 
         ss_mpi_vgs_end_job(vgs_handle);
