@@ -104,6 +104,7 @@ namespace hisilicon{namespace dev{
 
             std::thread m_venc_thread;
             ot_rgn_handle m_rgn[SVP_RECT_NUM];
+            int m_max_rgn_w;
     };
 
 }}//namespace

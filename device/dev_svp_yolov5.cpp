@@ -22,6 +22,12 @@ namespace hisilicon{namespace dev{
 #define SAMPLE_SVP_NPU_RECT_RIGHT_TOP    1
 #define SAMPLE_SVP_NPU_RECT_RIGHT_BOTTOM 2
 #define SAMPLE_SVP_NPU_RECT_LEFT_BOTTOM  3
+#define SAMPLE_SVP_OSD_FONT_SIZE      16
+#define SAMPLE_SVP_OSD_BG_COLOR rgb24to1555(0,255,0,0)
+#define SAMPLE_SVP_OSD_FG_COLOR rgb24to1555(255,255,255,1)
+#define SAMPLE_SVP_OSD_OUTLINE_COLOR rgb24to1555(0,255,0,0)
+
+static std::vector<std::string> g_yolov5_class_str = {"person", "bicycle", "car", "motorcycle", "airplane", "bus", "train", "truck", "boat", "traffic light", "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat", "dog", "horse", "sheep", "cow", "elephant", "bear", "zebra", "giraffe", "backpack", "umbrella", "handbag", "tie", "suitcase", "frisbee", "skis", "snowboard", "sports ball", "kite", "baseball bat", "baseball glove", "skateboard", "surfboard", "tennis racket", "bottle", "wine glass", "cup", "fork", "knife", "spoon", "bowl", "banana", "apple", "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake", "chair", "couch", "potted plant", "bed", "dining table", "toilet", "tv", "laptop", "mouse", "remote", "keyboard", "cell phone", "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors", "teddy bear", "hair drier", "toothbrush"};
 
     yolov5::yolov5(std::shared_ptr<vi> vi_ptr,const char* model_path)
         :m_is_start(false),m_model_path(model_path),m_vi_ptr(vi_ptr),m_vb_poolid(OT_VB_INVALID_POOL_ID)
@@ -74,6 +80,19 @@ namespace hisilicon{namespace dev{
         for(int i = 0; i < SVP_RECT_NUM; i++)
         {
             m_rgn[i] =  OT_INVALID_HANDLE;
+        }
+
+        m_max_rgn_w = 0;
+        char str[255];
+        int rgn_w;
+        for(int i = 0; i < g_yolov5_class_str.size(); i++)
+        {
+            sprintf(str,"%s,0.99",g_yolov5_class_str[i].c_str());
+            g_freetype.get_width(str,SAMPLE_SVP_OSD_FONT_SIZE,&rgn_w);
+            if(rgn_w > m_max_rgn_w)
+            {
+                m_max_rgn_w = rgn_w;
+            }
         }
     }
 
@@ -517,16 +536,14 @@ namespace hisilicon{namespace dev{
     bool yolov5::create_svp_rgn(int idx)
     {
         svp_acl_error ret;
-        int rgn_w = 160;
         ot_rgn_attr rgn_attr;
         memset(&rgn_attr,0,sizeof(rgn_attr));
         rgn_attr.type = OT_RGN_OVERLAY; 
         rgn_attr.attr.overlay.pixel_format = OT_PIXEL_FORMAT_ARGB_1555;
         rgn_attr.attr.overlay.canvas_num = 1;
-        rgn_attr.attr.overlay.bg_color = rgb24to1555(0,255,0,0);
-        g_freetype.get_width("score:100.00,class_id:0000",16,&rgn_w);
-        rgn_attr.attr.overlay.size.width = ROUND_UP(rgn_w,64);
-        rgn_attr.attr.overlay.size.height = 24;
+        rgn_attr.attr.overlay.bg_color = SAMPLE_SVP_OSD_BG_COLOR;
+        rgn_attr.attr.overlay.size.width = ROUND_UP(m_max_rgn_w,64);
+        rgn_attr.attr.overlay.size.height = ROUND_UP(SAMPLE_SVP_OSD_FONT_SIZE,2);
         ot_rgn_handle rgn_h = sys::alloc_rgn_handle();
         ret = ss_mpi_rgn_create(rgn_h, &rgn_attr);
         if(ret != SVP_ACL_SUCCESS)
@@ -1026,12 +1043,16 @@ end1:
             ss_mpi_vgs_add_cover_task(vgs_handle, &vgs_task, &vgs_add_cover, 1);
         }
 
-        vgs_add_osd.bg_color = 0x00ff00;
+        vgs_add_osd.bg_color = SAMPLE_SVP_OSD_BG_COLOR;
         vgs_add_osd.pixel_format = OT_PIXEL_FORMAT_ARGB_1555;
         vgs_add_osd.fg_alpha = 255;
         //vgs_add_osd.bg_alpha = 128; 
         vgs_add_osd.bg_alpha = 0; 
         vgs_add_osd.osd_inverted_color = OT_VGS_OSD_INVERTED_COLOR_NONE;
+
+        short bg_color = SAMPLE_SVP_OSD_BG_COLOR;
+        short fg_color = SAMPLE_SVP_OSD_FG_COLOR;
+        short outline_color = SAMPLE_SVP_OSD_OUTLINE_COLOR;
 
         char str[255];
         for (i = 0; i < rect->num; i++)
@@ -1060,16 +1081,15 @@ end1:
             vgs_add_osd.phys_addr = canvas_info.phys_addr;
             vgs_add_osd.stride = canvas_info.stride;
 
-            sprintf(str,"score:%.2f id:%d",rect->rect[i].score,rect->rect[i].class_id);
-            
+            sprintf(str,"%s %.2f",g_yolov5_class_str[rect->rect[i].class_id].c_str(),rect->rect[i].score);
             unsigned short* p = (unsigned short*)canvas_info.virt_addr;
             for(unsigned int j = 0; j < canvas_info.size.width * canvas_info.size.height; j++)
             {
-                *p = (short)rgb24to1555(0,255,0,0);
+                *p = SAMPLE_SVP_OSD_BG_COLOR;
                 p++;
             }
-
-            g_freetype.show_string(str,vgs_add_osd.rect.width,vgs_add_osd.rect.height,16,1,(unsigned char*)canvas_info.virt_addr,canvas_info.size.width * canvas_info.size.height * 2);
+           
+            g_freetype.show_string(str,canvas_info.size.width,vgs_add_osd.rect.height,SAMPLE_SVP_OSD_FONT_SIZE,(unsigned char*)canvas_info.virt_addr,canvas_info.size.width * canvas_info.size.height * 2,bg_color,fg_color,outline_color);
 
             ss_mpi_rgn_update_canvas(m_rgn[i]);
 

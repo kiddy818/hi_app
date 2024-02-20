@@ -4,6 +4,7 @@
 #include <locale>
 #include <string>
 #include <codecvt>
+#include "dev_log.h"
 
 static std::vector<basic_char_t> g_basic_chars;
 static std::mutex g_freetype_mutex;
@@ -25,7 +26,7 @@ bool ceanic_freetype::get_glyph_char(wchar_t c,int font_size,basic_char_t* char_
 	for(unsigned int i = 0; i < g_basic_chars.size(); i++)
 	{
 		if(g_basic_chars[i].c == c
-				&& g_basic_chars[i].font == font_size)
+				&& g_basic_chars[i].font_size == font_size)
 		{
 			*char_info =  g_basic_chars[i];
 			return true;
@@ -33,11 +34,10 @@ bool ceanic_freetype::get_glyph_char(wchar_t c,int font_size,basic_char_t* char_
 	}
 
     FT_Face glyph_face =  c > 127 ? m_ft_face_zh : m_ft_face_en;
-    //FT_Face glyph_face =  m_ft_face_en;
 	FT_Error error = FT_Set_Pixel_Sizes(glyph_face,font_size,0);
     if(error)
 	{
-		printf("ceanic_freetype:get_glyph_char#set pixel size error\n");
+        DEV_WRITE_LOG_ERROR("FT_Set_Pixel_Sizes failed");
 		return false;
 	}
 
@@ -46,26 +46,25 @@ bool ceanic_freetype::get_glyph_char(wchar_t c,int font_size,basic_char_t* char_
 
     if(!get_glyph(glyph_face,(FT_ULong)c,&glyph_ori,&glyph_outline))
     {
-		printf("ceanic_freetype:get_glyph_char#get_glyph error\n");
+        DEV_WRITE_LOG_ERROR("get_glyph failed");
         return false;
     }
 
     basic_char_t basic_char;
     basic_char.c = c;
-    basic_char.font = font_size;
+    basic_char.font_size = font_size;
     basic_char.glyph_ori = glyph_ori;
     basic_char.glyph_outline = glyph_outline;
-    basic_char.w = glyph_face->glyph->metrics.horiAdvance >> 6;
-    basic_char.top = font_size - (glyph_face->glyph->metrics.horiBearingY >> 6);
+    basic_char.w = glyph_face->glyph->advance.x >> 6;
+    basic_char.top = (font_size - (glyph_face->glyph->metrics.horiBearingY >> 6)) / 2;
     if(basic_char.top > font_size)
     {
         basic_char.top = font_size;
     }
+
     g_basic_chars.push_back(basic_char);
 
     *char_info = basic_char;
-
-    printf("update glyph %x\n",c);
 	return true;
 }
 
@@ -88,13 +87,11 @@ bool ceanic_freetype::init()
 		return false;
 	}
 
-#if 1
     error = FT_New_Face(m_ft_lib,m_zh_path.c_str(),0,&m_ft_face_zh);
 	if(error)
 	{
 		return false;
 	}
-#endif
 
 	m_inited = true;
 	return true;
@@ -110,9 +107,7 @@ void ceanic_freetype::release()
 	if(is_init())
 	{
 		FT_Done_Face(m_ft_face_en);
-#if 1
 		FT_Done_Face(m_ft_face_zh);
-#endif
 		FT_Done_FreeType(m_ft_lib);
 		m_inited = false;
 	}
@@ -162,14 +157,14 @@ bool ceanic_freetype::get_max_width(const char* str,int font_pixel,int* w)
 
         if(char_info.w > *w)
         {
-            *w = char_info.w;
+            *w = char_info.w ;
         }
     }
 
     return true;
 }
 
-bool ceanic_freetype::show_string(const char* str,int area_w,int area_h,int font_pixel,int outline,unsigned char* pdata,int data_size)
+bool ceanic_freetype::show_string(const char* str,int area_w,int area_h,int font_pixel,unsigned char* pdata,int data_size,short bg_color,short fg_color,short outline_color)
 {
     std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
     std::wstring wstr = conv.from_bytes(str);
@@ -177,23 +172,34 @@ bool ceanic_freetype::show_string(const char* str,int area_w,int area_h,int font
     basic_char_t char_info;
 
 	int startx=0;
-    int starty=0;
+    int starty = 0;
 	for(int i = 0; i < wstr.size(); i++)
 	{
 		if(!get_glyph_char(wstr[i],font_pixel,&char_info))
 		{
-			printf("get_glphy failed\n");
+            DEV_WRITE_LOG_ERROR("get_glyph failed");
 			continue;
 		}
 
         starty = char_info.top;
 
-		draw_yuv_char(area_w,area_h,char_info.w,outline,char_info.glyph_ori,char_info.glyph_outline,startx,starty,pdata,data_size);
+		draw_rgb1555_char(area_w,
+                area_h,
+                char_info.w,
+                char_info.glyph_ori,
+                char_info.glyph_outline,
+                startx,
+                starty,
+                pdata,
+                data_size,
+                bg_color,
+                fg_color,
+                outline_color);
 
         startx += char_info.w;
         if(startx > area_w)
         {
-            printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>c=%c,startx=%d,area_w=%d\n",str[i],startx,area_w);
+            DEV_WRITE_LOG_ERROR("unexpcepted error,startx:%d,area_w:%d",startx,area_w);
             break;
         }
     }
@@ -202,7 +208,7 @@ bool ceanic_freetype::show_string(const char* str,int area_w,int area_h,int font
 }
 
 
-bool ceanic_freetype::show_string_compare(const char* str_before,const char* str_now,int area_w,int area_h,int font_pixel,int outline,unsigned char* pdata,int data_size)
+bool ceanic_freetype::show_string_compare(const char* str_before,const char* str_now,int area_w,int area_h,int font_pixel,unsigned char* pdata,int data_size,short bg_color,short fg_color,short outline_color)
 {
     std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
     std::wstring wstr_before = conv.from_bytes(str_before);
@@ -227,7 +233,7 @@ bool ceanic_freetype::show_string_compare(const char* str_before,const char* str
 
         if(!get_glyph_char(wstr_cur[i],font_pixel,&char_info))
         {
-            printf("get_glphy failed\n");
+            DEV_WRITE_LOG_ERROR("get_glyph failed");
             continue;
         }
 
@@ -235,16 +241,21 @@ bool ceanic_freetype::show_string_compare(const char* str_before,const char* str
 		{
             starty = char_info.top;
 
-			draw_yuv_char(area_w,area_h,char_info.w,outline,char_info.glyph_ori,char_info.glyph_outline,startx,starty,pdata,data_size);
+			draw_rgb1555_char(area_w,
+                    area_h,
+                    char_info.w,
+                    char_info.glyph_ori,
+                    char_info.glyph_outline,
+                    startx,
+                    starty,
+                    pdata,
+                    data_size,
+                    bg_color,
+                    fg_color,
+                    outline_color);
         }
 
         startx += char_info.w;
-
-        if(startx > area_w)
-        {
-            printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>c=%c,startx=%d,area_w=%d\n",str_now[i],startx,area_w);
-            break;
-        }
     }
 
 	return true;
@@ -304,107 +315,40 @@ fail:
 
 extern int rgb24to1555(int r,int g,int b,int a);
 #define SHOW_LEVEL (5)
-bool ceanic_freetype::draw_yuv_char(int area_w,int area_h,int font_pixel,int with_outline,FT_Glyph orig,FT_Glyph outline,int startx,int starty,unsigned char* buf,int size)
+bool ceanic_freetype::draw_rgb1555_char(int area_w,int area_h,int font_pixel,FT_Glyph orig,FT_Glyph outline,int startx,int starty,unsigned char* buf,int size,short bg_color,short fg_color,short outline_color)
 {
 	FT_Bitmap * orig_bitmap = &((FT_BitmapGlyph)orig)->bitmap; 
 	FT_Bitmap * outline_bitmap = &((FT_BitmapGlyph)outline)->bitmap; 
 	unsigned char *pdata;
 
-	int total_width = font_pixel;
-	//int offset = (total_width-outline_bitmap->width)>>1; /* 让字居中显示 */
-	int offset=0;
-	int h_offset = (outline_bitmap->width-orig_bitmap->width)>>1;
-	int v_offset = (outline_bitmap->rows-orig_bitmap->rows)>>1;
+	int h_offset = (outline_bitmap->width - orig_bitmap->width) >> 1;
+	int v_offset = (outline_bitmap->rows - orig_bitmap->rows) >> 1;
+    int total_width = font_pixel;
 
-#if 1
-	if (startx + total_width > area_w)
-	{
-        //mjj need to fixed
-		printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>draw here 0\n");
-        //system("killall -9 osd_test.sh");
-        //exit(0);
-		return false;
-	}
-#endif
-
-#if 0
-    char hide_value = 0;//clut id=2
-    char point_value = 0xff;//clut id = 0
-    char outline_value = with_outline ? 1 : 2;
-#else
-    int hide_value = rgb24to1555(0,255,0,0);
-    int point_value = rgb24to1555(255,255,255,1);
-    int outline_value = rgb24to1555(0,0,0,1);
-#endif
-
-	for (int i=0; i<area_h; i++)
-	{
-        //printf("\n");
-		for (int j=0; j<total_width; j++)
-		{
+    for(int i = 0; i < area_h; i++)
+    {
+        for (int  j = 0 ; j < total_width;  ++j)  
+        {
 			pdata = buf + i * area_w * 2 + (startx + j) * 2;//RGB1555,so need to *2
-            assert(pdata < buf + size);
 
-			//不在显示字体的区域内
-			if (i<starty || (unsigned int) i>= starty+outline_bitmap->rows)
-			{
-				//*pdata = hide_value ; 
-                memcpy(pdata,&hide_value,2);
-			} 
-			else 
-			{
-				//显示字
-				if (j>=offset && (unsigned int) j < outline_bitmap->width+offset)
-				{
-					if (j>=offset+h_offset && (unsigned int) j<orig_bitmap->width+offset+h_offset \
-						&& i>=starty+v_offset && (unsigned int) i<orig_bitmap->rows+starty+v_offset)
-					{
-						if (orig_bitmap->buffer[(i-starty-v_offset)*orig_bitmap->width+j-offset-h_offset]>=SHOW_LEVEL)
-						{
-							//点
-                            //printf("#");
-							//*pdata = point_value;
-                            memcpy(pdata,&point_value,2);
-						}
-						else if (outline_bitmap->buffer[(i-starty)*outline_bitmap->width+j-offset]>=SHOW_LEVEL)
-						{
-							//描边点
-							//*pdata = outline_value;
-                            memcpy(pdata,&outline_value,2);
-                            //printf("y");
-						}
-						else {
-							//*pdata = hide_value;
-                            memcpy(pdata,&hide_value,2);
-                            //printf("x");
-						}
-					}
-					else
-					{
-						if (outline_bitmap->buffer[(i-starty)*outline_bitmap->width+j-offset]>=SHOW_LEVEL) 
-						{
-							//描边点
-							//*pdata = outline_value;
-                            memcpy(pdata,&outline_value,2);
-                            //printf("b");
-						}
-						else {
-							//空
-							//*pdata = hide_value;
-                            memcpy(pdata,&hide_value,2);
-                            //printf("a");
-						}
-					}
-				}
-				else 
-				{
-                    //printf("z");
-					//*pdata = hide_value;
-                    memcpy(pdata,&hide_value,2);
-				}
-			}
-		}
-	}
+            *(short*)pdata = bg_color;
+
+            if (j >= h_offset 
+                    && j < orig_bitmap->width + h_offset 
+                    && i >= starty + v_offset 
+                    && i < orig_bitmap->rows + starty + v_offset)
+            {
+                if (orig_bitmap->buffer[(i-starty-v_offset)*orig_bitmap->width+j-h_offset] >= SHOW_LEVEL)
+                {
+                    *(short*)pdata = fg_color;
+                }
+                else if (outline_bitmap->buffer[(i-starty)*outline_bitmap->width+j] >= SHOW_LEVEL)
+                {
+                    *(short*)pdata = outline_color;
+                }
+            }
+        }
+    }
 	
 	return true;
 }

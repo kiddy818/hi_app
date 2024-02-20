@@ -35,10 +35,14 @@ namespace hisilicon{namespace dev{
         osd::osd(int x,int y,int font_size,ot_venc_chn venc_h)
         :m_x(x),m_y(y),m_font_size(font_size),m_venc_h(venc_h),m_is_start(false)
     {
+        m_font_bg_color = rgb24to1555(0,255,0,0);
+        m_font_fg_color = rgb24to1555(255,255,255,1);
+        m_font_outline_color = rgb24to1555(0,0,0,1);
+
         memset(&m_rgn_attr,0,sizeof(m_rgn_attr));
         m_rgn_attr.type = OT_RGN_OVERLAY; 
         m_rgn_attr.attr.overlay.pixel_format = OT_PIXEL_FORMAT_ARGB_1555;
-        m_rgn_attr.attr.overlay.bg_color = rgb24to1555(0,255,0,0);
+        m_rgn_attr.attr.overlay.bg_color = m_font_bg_color;
         m_rgn_attr.attr.overlay.canvas_num = 2;
 
         memset(&m_rgn_chn_attr,0,sizeof(m_rgn_chn_attr));
@@ -47,7 +51,7 @@ namespace hisilicon{namespace dev{
         m_rgn_chn_attr.attr.overlay_chn.point.x = m_x;
         m_rgn_chn_attr.attr.overlay_chn.point.y = m_y;
         m_rgn_chn_attr.attr.overlay_chn.bg_alpha = 0;
-        m_rgn_chn_attr.attr.overlay_chn.fg_alpha = 128;
+        m_rgn_chn_attr.attr.overlay_chn.fg_alpha = 255;
         m_rgn_chn_attr.attr.overlay_chn.layer = 0; 
         m_rgn_chn_attr.attr.overlay_chn.qp_info.is_abs_qp = TD_FALSE;
         m_rgn_chn_attr.attr.overlay_chn.qp_info.qp_val = 0;
@@ -148,8 +152,8 @@ namespace hisilicon{namespace dev{
         int area_w;
         int area_h;
         g_freetype.get_width(data_str,m_font_size,&area_w);
-        area_w = ROUND_UP(area_w + 1,64);
-        area_h = ROUND_UP(m_font_size + 1,64);
+        area_w = ROUND_UP(area_w,64);
+        area_h = ROUND_UP(m_font_size,2);
         printf("area_w=%d,area_h=%d\n",area_w,area_h);
 
         m_rgn_attr.attr.overlay.size.width = area_w;
@@ -197,22 +201,17 @@ namespace hisilicon{namespace dev{
 
             if(strlen(m_last_date_str) == 0)
             {
-                unsigned short* p = (unsigned short*)canvas_info.virt_addr;
-                for(unsigned int i = 0; i < canvas_info.size.width * canvas_info.size.height; i++)
-                {
-                    *p = (short)rgb24to1555(0,255,0,0);
-                    p++;
-                }
-
                 //printf("chn=%d,stream=%d,area_w=%d,area_h=%d,%d,%d\n",chn,stream,g_osd_date_info[chn][stream].area_w,g_osd_date_info[chn][stream].area_h,stCanvasInfo.stSize.u32Width,stCanvasInfo.stSize.u32Height);
                 g_freetype.show_string(
                         cur_osd_date_str,
                         m_rgn_attr.attr.overlay.size.width,
                         m_rgn_attr.attr.overlay.size.height,
                         m_font_size,
-                        1,
                         (unsigned char*)canvas_info.virt_addr,
-                        canvas_info.size.width * canvas_info.size.height * 2);
+                        canvas_info.size.width * canvas_info.size.height * 2,
+                        m_font_bg_color,
+                        m_font_fg_color,
+                        m_font_outline_color);
             }
             else
             {
@@ -222,8 +221,11 @@ namespace hisilicon{namespace dev{
                         m_rgn_attr.attr.overlay.size.width,
                         m_rgn_attr.attr.overlay.size.height,
                         m_font_size,
-                        1,
-                        (unsigned char*)canvas_info.virt_addr, canvas_info.size.width * canvas_info.size.height * 2);
+                        (unsigned char*)canvas_info.virt_addr, 
+                        canvas_info.size.width * canvas_info.size.height * 2,
+                        m_font_bg_color,
+                        m_font_fg_color,
+                        m_font_outline_color);
             }
 
             strcpy(m_last_date_str,cur_osd_date_str);
@@ -260,8 +262,8 @@ namespace hisilicon{namespace dev{
         int area_w;
         int area_h;
         g_freetype.get_width(m_name.c_str(),m_font_size,&area_w);
-        area_w = ROUND_UP(area_w + 1,64);
-        area_h = ROUND_UP(m_font_size + 1,64);
+        area_w = ROUND_UP(area_w,64);
+        area_h = ROUND_UP(m_font_size,2);
         printf("area_w=%d,area_h=%d\n",area_w,area_h);
 
         m_rgn_attr.attr.overlay.size.width = area_w;
@@ -285,9 +287,11 @@ namespace hisilicon{namespace dev{
                 m_rgn_attr.attr.overlay.size.width,
                 m_rgn_attr.attr.overlay.size.height,
                 m_font_size,
-                1,
                 (unsigned char*)canvas_info.virt_addr,
-                canvas_info.size.width * canvas_info.size.height * 2);
+                canvas_info.size.width * canvas_info.size.height * 2,
+                m_font_bg_color,
+                m_font_fg_color,
+                m_font_outline_color);
 
         ret = ss_mpi_rgn_update_canvas(m_rgn_h);
         if (ret != TD_SUCCESS)

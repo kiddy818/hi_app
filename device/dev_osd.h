@@ -27,6 +27,9 @@ namespace hisilicon{namespace dev{
             ot_rgn_chn_attr m_rgn_chn_attr; 
             ot_rgn_attr m_rgn_attr;
             bool m_is_start;
+            short m_font_bg_color;
+            short m_font_fg_color;
+            short m_font_outline_color;
     };
 
     class osd_date

@@ -12,14 +12,12 @@
 typedef struct
 {
 	wchar_t c;
-	int font;
+	int font_size;
     FT_Face glyph_face;
     FT_Glyph glyph_ori;
     FT_Glyph glyph_outline;
-    int h;
-    int w;
-    int left;
     int top;
+    int w;
 }basic_char_t;
 
 class ceanic_freetype
@@ -39,14 +37,27 @@ public:
 
     bool get_max_width(const char* str,int font_pixel,int* w);
 
-	bool show_string(const char* str,int area_w,int area_h,int font_pixel,int outline,unsigned char* pdata,int data_size);
+	bool show_string(const char* str,int area_w,int area_h,int font_pixel,unsigned char* pdata,int data_size,short bg_color,short fg_color,short outline_color);
 
-	bool show_string_compare(const char* str_before,const char* str_now,int area_w,int area_h,int font_pixel,int outline,unsigned char* pdata,int data_size);
+	bool show_string_compare(const char* str_before,const char* str_now,int area_w,int area_h,int font_pixel,unsigned char* pdata,int data_size,short bg_clor,short fg_color,short outline_color);
 
 private:
     bool get_glyph_char(wchar_t c,int font_size,basic_char_t* char_info);
 	bool get_glyph(FT_Face face,FT_ULong ch,FT_Glyph* org,FT_Glyph* outline);
-	bool draw_yuv_char(int area_w,int area_h,int font_pixel,int with_outline,FT_Glyph orig,FT_Glyph outline,int startx,int starty,unsigned char* buf,int size);
+
+	bool draw_rgb1555_char(int area_w,
+            int area_h,
+            int font_pixel,
+            FT_Glyph orig,
+            FT_Glyph outline,
+            int startx,
+            int starty,
+            unsigned char* buf,
+            int size,
+            short bg_color,
+            short fg_color,
+            short outline_color);
+
 	bool get_basic_char(wchar_t c,int font_size,basic_char_t& char_info);
 
 private:
