@@ -56,7 +56,7 @@ bool ceanic_freetype::get_glyph_char(wchar_t c,int font_size,basic_char_t* char_
     basic_char.glyph_ori = glyph_ori;
     basic_char.glyph_outline = glyph_outline;
     basic_char.w = glyph_face->glyph->advance.x >> 6;
-    basic_char.top = (font_size - (glyph_face->glyph->metrics.horiBearingY >> 6)) / 2;
+    basic_char.top = font_size - (glyph_face->glyph->metrics.horiBearingY >> 6);
     if(basic_char.top > font_size)
     {
         basic_char.top = font_size;

@@ -35,7 +35,7 @@ namespace hisilicon{namespace dev{
         osd::osd(int x,int y,int font_size,ot_venc_chn venc_h)
         :m_x(x),m_y(y),m_font_size(font_size),m_venc_h(venc_h),m_is_start(false)
     {
-        m_font_bg_color = rgb24to1555(0,255,0,0);
+        m_font_bg_color = rgb24to1555(0,0,0,0);
         m_font_fg_color = rgb24to1555(255,255,255,1);
         m_font_outline_color = rgb24to1555(0,0,0,1);
 
@@ -153,7 +153,7 @@ namespace hisilicon{namespace dev{
         int area_h;
         g_freetype.get_width(data_str,m_font_size,&area_w);
         area_w = ROUND_UP(area_w,64);
-        area_h = ROUND_UP(m_font_size,2);
+        area_h = ROUND_UP(m_font_size + 4,2);
         printf("area_w=%d,area_h=%d\n",area_w,area_h);
 
         m_rgn_attr.attr.overlay.size.width = area_w;
@@ -263,7 +263,7 @@ namespace hisilicon{namespace dev{
         int area_h;
         g_freetype.get_width(m_name.c_str(),m_font_size,&area_w);
         area_w = ROUND_UP(area_w,64);
-        area_h = ROUND_UP(m_font_size,2);
+        area_h = ROUND_UP(m_font_size + 4,2);
         printf("area_w=%d,area_h=%d\n",area_w,area_h);
 
         m_rgn_attr.attr.overlay.size.width = area_w;
