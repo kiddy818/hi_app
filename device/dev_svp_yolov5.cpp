@@ -755,6 +755,8 @@ static std::vector<std::string> g_yolov5_class_str = {"person", "bicycle", "car"
         svp_npu_rect_info_t rect_info;
         int i;
         td_void *virt_addr = TD_NULL;
+        td_void *ori_data = TD_NULL;
+        size_t ori_size,ori_stride;
         
         ret = svp_acl_rt_set_device(0);
         if(ret != SVP_ACL_SUCCESS)
@@ -771,6 +773,9 @@ static std::vector<std::string> g_yolov5_class_str = {"person", "bicycle", "car"
         }
 
         data_buffer = svp_acl_mdl_get_dataset_buffer(m_task_info.input_dataset, 0);
+        ori_data = svp_acl_get_data_buffer_addr(data_buffer);
+        ori_size = svp_acl_get_data_buffer_size(data_buffer);
+        ori_stride = svp_acl_get_data_buffer_stride(data_buffer);
 
         while(m_is_start)
         {
@@ -829,6 +834,7 @@ static std::vector<std::string> g_yolov5_class_str = {"person", "bicycle", "car"
             ss_mpi_vpss_release_chn_frame(m_vpss_grp,m_vpss_chn,&frame);
         }
 
+        svp_acl_update_data_buffer(data_buffer,ori_data,ori_size,ori_stride);
         ss_mpi_sys_munmap(virt_addr,m_vb_pool_info.pool_size);
         svp_acl_rt_reset_device(0);
 
@@ -1007,6 +1013,10 @@ end1:
 
         svp_acl_mdl_unload(m_model_id);
         svp_acl_mdl_destroy_desc(m_model_desc);
+
+        svp_acl_rt_free(m_model_mem_ptr);
+        m_model_mem_ptr = NULL;
+        m_model_mem_size = 0;
     }
 
     int yolov5::venc_w()
