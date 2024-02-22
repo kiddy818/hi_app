@@ -148,6 +148,7 @@ namespace hisilicon{namespace dev{
                 stream.pack = NULL;
             }
         }
+        DEV_WRITE_LOG_INFO("venc thread exit");
     }
 
     bool venc::start_capture()

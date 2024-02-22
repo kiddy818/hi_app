@@ -210,13 +210,22 @@ namespace hisilicon{namespace dev{
                 break;
             }
         }
+
+        DEV_WRITE_LOG_INFO("osd date thread exit");
     }
 
     void osd_date::stop()
     {
-        osd::stop();
-
+        m_is_start = false;
         m_thd.join();
+
+        ot_mpp_chn src_chn;
+        src_chn.mod_id = OT_ID_VENC;
+        src_chn.dev_id = 0;
+        src_chn.chn_id = m_venc_h;
+
+        ss_mpi_rgn_detach_from_chn(m_rgn_h, &src_chn);
+        ss_mpi_rgn_destroy(m_rgn_h); 
     }
 
     osd_name::osd_name(int x,int y,int font_size,ot_venc_chn venc_h,const char* name)
