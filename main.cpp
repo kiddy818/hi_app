@@ -682,6 +682,7 @@ static void on_quit(int signal)
     g_thread_run = false;
     g_thread_1s.join();
 
+    int chn = 0;
     if(g_yolov5_info.enable)
     {
         g_chn->yolov5_stop();
@@ -693,7 +694,8 @@ static void on_quit(int signal)
         g_chn->stop_save();
     }
 
-    if(g_rate_auto_info.enable)
+    if(g_rate_auto_info.enable
+            && strstr(g_venc_info[chn].name,"AVBR") != NULL)
     {
         hisilicon::dev::chn::rate_auto_release();
     }
