@@ -2,6 +2,7 @@
 #include "dev_svp_yolov5.h"
 #include "dev_log.h"
 #include "ceanic_freetype.h"
+#include <util/check_interval.h>
 
 #ifndef ROUND_DOWN
 #define ROUND_DOWN(size, align) ((size) & ~((align) - 1))
@@ -48,8 +49,13 @@ static std::vector<std::string> g_yolov5_class_str = {"person", "bicycle", "car"
         m_vpss_chn_attr.pixel_format              = OT_PIXEL_FORMAT_YVU_SEMIPLANAR_420;
         m_vpss_chn_attr.compress_mode             = OT_COMPRESS_MODE_NONE;
         m_vpss_chn_attr.aspect_ratio.mode         = OT_ASPECT_RATIO_NONE;
-        m_vpss_chn_attr.frame_rate.src_frame_rate = -1;
-        m_vpss_chn_attr.frame_rate.dst_frame_rate = -1;
+
+        //3516dv500 svp_acl_mdl_execute()处理640x640的一帧数据耗时40ms左右
+        //加上其他处理时间，耗时较长，如果按照满帧率处理,cat /dev/logmpp会有get vb fail错误，所以适当减少帧率
+        //实际帧率为:vi帧率x dst_frame_rate/src_frame_rate
+        //其他芯片，可以按照处理能力来设置
+        m_vpss_chn_attr.frame_rate.src_frame_rate = 5;
+        m_vpss_chn_attr.frame_rate.dst_frame_rate = 3;
 
         m_venc_chn = sys::alloc_venc_chn();
 
@@ -777,6 +783,7 @@ static std::vector<std::string> g_yolov5_class_str = {"person", "bicycle", "car"
         ori_size = svp_acl_get_data_buffer_size(data_buffer);
         ori_stride = svp_acl_get_data_buffer_stride(data_buffer);
 
+        ceanic::util::check_interval ci;
         while(m_is_start)
         {
             ret = ss_mpi_vpss_get_chn_frame(m_vpss_grp,m_vpss_chn,&frame,milli_sec);
@@ -796,6 +803,7 @@ static std::vector<std::string> g_yolov5_class_str = {"person", "bicycle", "car"
                 break;
             }
 
+            //ci.set_beg();
             ret = svp_acl_mdl_execute(m_model_id, m_task_info.input_dataset, m_task_info.output_dataset);
             if(ret != TD_SUCCESS)
             {
@@ -803,6 +811,7 @@ static std::vector<std::string> g_yolov5_class_str = {"person", "bicycle", "car"
                 ss_mpi_vpss_release_chn_frame(m_vpss_grp,m_vpss_chn,&frame);
                 break;
             }
+            //printf("interval=%lld\n",ci.interval());
 
             memset(&rect_info,0,sizeof(rect_info));
             if(!get_svp_rio(&rect_info))
