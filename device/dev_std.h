@@ -46,5 +46,19 @@ typedef struct
     int reserve[32];
 }isp_exposure_t;
 
+#ifndef ROUND_DOWN
+#define ROUND_DOWN(size, align) ((size) & ~((align) - 1))
+#endif
+
+#ifndef ROUND_UP
+#define ROUND_UP(size, align)   (((size) + ((align) - 1)) & ~((align) - 1))
+#endif
+
+int rgb24to1555(int r,int g,int b,int a);
+
+class ceanic_freetype;
+extern ceanic_freetype g_freetype;
+extern const char* g_week_stsr[7];
+
 #endif
 

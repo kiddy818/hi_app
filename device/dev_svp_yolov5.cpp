@@ -4,16 +4,6 @@
 #include "ceanic_freetype.h"
 #include <util/check_interval.h>
 
-#ifndef ROUND_DOWN
-#define ROUND_DOWN(size, align) ((size) & ~((align) - 1))
-#endif 
-#ifndef ROUND_UP
-#define ROUND_UP(size, align)   (((size) + ((align) - 1)) & ~((align) - 1))
-#endif
-
-extern int rgb24to1555(int r,int g,int b,int a);
-extern ceanic_freetype g_freetype;
-
 namespace hisilicon{namespace dev{
 
 #define SAMPLE_SVP_NPU_EXTRA_INPUT_NUM   2

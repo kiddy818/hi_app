@@ -74,6 +74,7 @@ DEVICE_SRC += device/dev_snap.cpp
 DEVICE_SRC += device/dev_svp.cpp
 DEVICE_SRC += device/dev_svp_yolov5.cpp
 DEVICE_SRC += device/ceanic_freetype.cpp
+DEVICE_SRC += device/dev_std.cpp
 
 #surpport scene
 SCENE_PATH = ../scene_auto

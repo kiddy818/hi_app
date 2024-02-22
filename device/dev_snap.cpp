@@ -4,9 +4,6 @@
 #include "dev_osd.h"
 #include "ceanic_freetype.h"
 
-extern const char* g_week_stsr[7];
-extern ceanic_freetype  g_freetype;
-
 namespace hisilicon{namespace dev{
 
     snap::snap(std::shared_ptr<vi> vi_ptr)
