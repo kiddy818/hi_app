@@ -1,7 +1,6 @@
 include ../Makefile.param
 CXX:=$(CROSS)g++
 STRIP=$(CROSS)strip
-CFLAGS += -Wall -O2
 CXXFLAGS += -std=c++17
 
 THIRD_LIBRARY_PATH=./thirdlibrary
@@ -128,7 +127,6 @@ DEVICE_OBJ= $(DEVICE_SRC:.cpp=.o)
 
 $(target):$(PROGXX_OBJ) $(PROG_OBJ) $(DEVICE_OBJ)
 	$(CXX) $^ -o $@ $(INC_PATH) $(LIBPATH) $(LIBS) $(CFLAGS) -lpthread
-	$(STRIP) $(target)
 
 %.o:%.cpp
 	$(CXX) -c -o  $@ $< $(INC_PATH) $(CFLAGS) $(CXXFLAGS)

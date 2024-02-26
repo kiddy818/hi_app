@@ -380,7 +380,29 @@ cp ../zlib-1.2.11/mybuild_aarch64_v01c01_linux_gnu/lib/libz.* bin/gcc/ -Rdp
 make && make install
 ```
 
+#### 调试记录
+##### 段错误的处理 
+在资源释放前，如果出现段错误,再重新启动程序，因为上次未正确关闭资源(例如vi,rgn资源未正确关闭)，导致本次资源初始化失败,程序会启动失败。
+可以捕获SIGSEGV信号(段错误信号)，在信号处理中释放资源 
+```
+//sigsegv_handler需要确保不出现错误，资源能正常释放    
+signal(SIGSEGV,sigsegv_handler);
+```
 
+##### 用core文件调试
+1. 如果需要用gdb调试core文件，需要修改smp/a55_linux/source/cfg.mak,修改CONFIG_OT_DGB变量
+```
+export CONFIG_OT_GDB=y  //改为y,编译选项会增加-g 
+```
+
+2. 关闭信号处理(即不要处理SIGSEGV信号，否则不会生存core文件)
+
+3. 调用ulimit -c 500 (500代表生成的core文件最大为500K)
+```
+ulimit -c 500
+./ceanic_app  //段错误会生成core文件
+./gdb ceanic_app core
+```
 
 #### 合作交流
 联系方式:   

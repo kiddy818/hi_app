@@ -5,6 +5,7 @@
 #include <rtsp/server.h>
 #include <rtsp/stream/stream_manager.h>
 #include <rtmp/session_manager.h>
+#include <execinfo.h>
 
 LOG_HANDLE g_app_log;
 LOG_HANDLE g_rtsp_log;
@@ -638,6 +639,7 @@ static void thread_1s()
 {
     time_t cur_tm = time(NULL);
     time_t last_tm = cur_tm;
+
     while(g_thread_run 
             && g_chn && g_chn->is_start())
     {
@@ -675,48 +677,85 @@ static void thread_1s()
     APP_WRITE_LOG_DEBUG("thread_1s exit");
 }
 
+static void do_exit()
+{
+    try
+    {
+        g_thread_run = false;
+        g_thread_1s.join();
+
+        int chn = 0;
+        if(g_yolov5_info.enable)
+        {
+            g_chn->yolov5_stop();
+            hisilicon::dev::svp::release();
+        }
+
+        if(g_mp4_save_info.enable)
+        {
+            g_chn->stop_save();
+        }
+
+        if(g_rate_auto_info.enable
+                && strstr(g_venc_info[chn].name,"AVBR") != NULL)
+        {
+            hisilicon::dev::chn::rate_auto_release();
+        }
+
+        if(g_aiisp_info.enable)
+        {
+            g_chn->aiisp_stop();
+        }
+
+        if(g_scene_info.enable)
+        {
+            hisilicon::dev::chn::scene_release();
+        }
+
+        hisilicon::dev::chn::start_capture(false);
+        if(g_chn)
+        {
+            g_chn->stop();
+        }
+
+        hisilicon::dev::chn::release();
+    }catch(...)
+    {
+        printf("do exit unexcepted error\n");
+    }
+}
+
+#define BACKTRACE_SIZE 16
+static void show_stack(void)
+{
+    int i;
+    void *buffer[BACKTRACE_SIZE];
+
+    int n = backtrace(buffer, BACKTRACE_SIZE);
+    char **symbols = backtrace_symbols(buffer, n);
+    if(NULL == symbols){
+        perror("backtrace symbols");
+        return;
+    }
+    for (i = 0; i < n; i++)
+    {
+        printf("%d: %s\n", i, symbols[i]);
+	}
+
+	free(symbols);
+}
+
+void sigsegv_handler(int signo)
+{
+    printf("Receive SIGSEGV signal\n");
+    show_stack();
+    do_exit();
+    exit(-1);
+}
 static void on_quit(int signal)
 {
     fprintf(stderr,"on quit\n");
-
-    g_thread_run = false;
-    g_thread_1s.join();
-
-    int chn = 0;
-    if(g_yolov5_info.enable)
-    {
-        g_chn->yolov5_stop();
-        hisilicon::dev::svp::release();
-    }
-
-    if(g_mp4_save_info.enable)
-    {
-        g_chn->stop_save();
-    }
-
-    if(g_rate_auto_info.enable
-            && strstr(g_venc_info[chn].name,"AVBR") != NULL)
-    {
-        hisilicon::dev::chn::rate_auto_release();
-    }
-
-    if(g_aiisp_info.enable)
-    {
-        g_chn->aiisp_stop();
-    }
-    
-    if(g_scene_info.enable)
-    {
-        hisilicon::dev::chn::scene_release();
-    }
-
-    hisilicon::dev::chn::start_capture(false);
-    if(g_chn)
-    {
-        g_chn->stop();
-    }
-
-    hisilicon::dev::chn::release();
+    do_exit();
     printf("quit ok\n");
     exit(0);
 }
@@ -726,6 +765,7 @@ int main(int argc,char* argv[])
     signal(SIGINT,on_quit);
     signal(SIGQUIT,on_quit);
     signal(SIGTERM,on_quit);
+    signal(SIGSEGV,sigsegv_handler);
 
     int chn = 0;
 
@@ -852,6 +892,7 @@ int main(int argc,char* argv[])
 
     g_thread_run = true;
     g_thread_1s = std::thread(thread_1s);
+
     while(1)
     {
         sleep(1);
