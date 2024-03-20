@@ -26,6 +26,10 @@ namespace hisilicon{namespace dev{
 
             void stop() override;
 
+            int isp_w();
+
+            int isp_h();
+
             int wdr_mode();
 
             bool get_isp_exposure_info(isp_exposure_t* val);

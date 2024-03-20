@@ -36,6 +36,14 @@ namespace hisilicon{namespace dev{
         {
             m_vi_ptr = std::make_shared<vi_os04a10_2to1wdr>();
         }
+        else if(m_vi_name == "OS08A20")
+        {
+            m_vi_ptr = std::make_shared<vi_os08a20_liner>();
+        }
+        else if(m_vi_name == "OS08A20_WDR")
+        {
+            m_vi_ptr = std::make_shared<vi_os08a20_2to1wdr>();
+        }
         else
         {
             DEV_WRITE_LOG_ERROR("unsupport sensor name=%s",m_vi_name.c_str());
@@ -319,21 +327,21 @@ namespace hisilicon{namespace dev{
         {
             case 0://brn
                 {
-                    aiisp_bnr::init(model_file,viisp->w(),viisp->h(),viisp->wdr_mode());
+                    aiisp_bnr::init(model_file,viisp->isp_w(),viisp->isp_h(),viisp->wdr_mode());
                     m_aiisp_ptr = std::make_shared<aiisp_bnr>(viisp->pipes()[0]);
                     break;
                 }
 
             case 1://drc
                 {
-                    aiisp_drc::init(model_file,viisp->w(),viisp->h(),viisp->wdr_mode());
+                    aiisp_drc::init(model_file,viisp->isp_w(),viisp->isp_h(),viisp->wdr_mode());
                     m_aiisp_ptr = std::make_shared<aiisp_drc>(viisp->pipes()[0]);
                     break;
                 }
 
             case 2://3dnr
                 {
-                    aiisp_3dnr::init(model_file,viisp->w(),viisp->h());
+                    aiisp_3dnr::init(model_file,viisp->isp_w(),viisp->isp_h());
                     m_aiisp_ptr = std::make_shared<aiisp_3dnr>(viisp->pipes()[0]);
                     break;
                 }

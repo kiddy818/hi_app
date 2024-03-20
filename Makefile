@@ -66,6 +66,8 @@ DEVICE_SRC += device/dev_vi.cpp
 DEVICE_SRC += device/dev_vi_isp.cpp
 DEVICE_SRC += device/dev_vi_os04a10_liner.cpp
 DEVICE_SRC += device/dev_vi_os04a10_2to1wdr.cpp
+DEVICE_SRC += device/dev_vi_os08a20_liner.cpp
+DEVICE_SRC += device/dev_vi_os08a20_2to1wdr.cpp
 DEVICE_SRC += device/dev_venc.cpp
 DEVICE_SRC += device/dev_chn.cpp
 DEVICE_SRC += device/dev_osd.cpp
@@ -141,5 +143,6 @@ clean:
 	-rm $(target) $(PROG_OBJ) $(PROGXX_OBJ) $(DEVICE_OBJ)
 
 install:
-	cp $(target) /home/mjj/work/nfs/3516dv500/011/
+	#cp $(target) /home/mjj/work/nfs/3516dv500/011/
+	cp $(target) /home/mjj/work/nfs/3519dv500/011/
 

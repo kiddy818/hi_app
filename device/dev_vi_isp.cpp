@@ -541,5 +541,15 @@ namespace hisilicon{namespace dev{
         return m_sns_obj;
     }
 
+    int vi_isp::isp_w()
+    {
+        return m_vi_pipe_attr.size.width;
+    }
+
+    int vi_isp::isp_h()
+    {
+        return m_vi_pipe_attr.size.height;
+    }
+
 }}//namespace
 

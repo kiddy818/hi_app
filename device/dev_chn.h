@@ -4,6 +4,8 @@
 #include "dev_sys.h"
 #include "dev_vi_os04a10_liner.h"
 #include "dev_vi_os04a10_2to1wdr.h"
+#include "dev_vi_os08a20_liner.h"
+#include "dev_vi_os08a20_2to1wdr.h"
 #include "dev_venc.h"
 #include "dev_osd.h"
 #include "dev_log.h"
