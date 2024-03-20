@@ -13,7 +13,7 @@
 9. Yolov5(通过rtsp视频验证)
 
 当前支持的sensor为: 
-1. OS04A10,OS04A10_WDR
+1. OS04A10,OS04A10_WDR,OS08A20(for 3519DV500),OS08A20_WDR(for 3519DV500)
 
 
 #### 编译方法
@@ -58,6 +58,7 @@ cd /opt/ceanic/bin
 #### 配置文件说明
 ##### vi.json
 ```
+//sample for os04a10
 {
    "sensor1" : {
       "flip" : 0,
@@ -67,13 +68,25 @@ cd /opt/ceanic/bin
       "w" : 2688
    }
 }
+
+//sample for os08a20
+{
+   "sensor1" : {
+      "flip" : 0,
+      "fr" : 30,
+      "h" : 2184,
+      "name" : "OS08A20",
+      "w" : 3840
+   }
+}
+
 ```
 |  类型            | 说明                                                                                  |
 |  ----            | ----                                                                                  |
 | flip             | 保留                                                                                  |
 | fr               | 帧率                                                                                  |
 | h                | sensor视频高                                                                          |
-| name             | sensor类型,当前支持"OS04A10","OS04A10_WDR"                                            |
+| name             | sensor类型,当前支持"OS04A10","OS04A10_WDR","OS08A20","OS08A20_WDR"                    |
 | w                | sensor视频宽                                                                          |
 
 ##### venc.json
@@ -134,6 +147,8 @@ cd /opt/ceanic/bin
 | enable           | 1:启用 0:启用                                                                         |
 | mode             | 0:aibnr 1:aidrc 2:ai3dnr                                                              |
 | model_file       | 模型文件绝对路径，需要和mode中的类型匹配                                              |
+
+备注: 如果sensor为OS08A20_WDR,因为性能关系，开启aiisp会有报错信息，所以OS08A20_WDR不支持AIISP
 
 ##### scene.json
 ```
