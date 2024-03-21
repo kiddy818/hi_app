@@ -136,8 +136,6 @@ cd /opt/ceanic/bin
 | mode             | 0:aibnr 1:aidrc 2:ai3dnr                                                              |
 | model_file       | 模型文件绝对路径，需要和mode中的类型匹配                                              |
 
-备注: 如果sensor为OS08A20_WDR,因为性能关系，开启aiisp会有报错信息，所以OS08A20_WDR不支持AIISP
-
 ##### scene.json
 ```
 {
@@ -407,6 +405,9 @@ ulimit -c 500
 ./ceanic_app  //段错误会生成core文件
 ./gdb ceanic_app core
 ```
+
+##### vlc连接yolov5视频卡住
+因为性能原因，yolov5的视频帧率在8-10帧之间，vlc用默认方式连接,会发现视频卡在第一帧，需要增大vlc的缓存(建议设置为2000ms)
 
 #### 合作交流
 联系方式:   
