@@ -172,10 +172,6 @@ static int get_venc_info()
 typedef struct
 {
     char name[32];
-    int w;
-    int h;
-    int fr;
-    int flip;
 }vi_t;
 static vi_t g_vi_info[MAX_CHANNEL];
 static void init_vi_info()
@@ -186,16 +182,8 @@ static void init_vi_info()
         std::string sns = "sensor" + std::to_string(i + 1);
 
         sprintf(g_vi_info[i].name,"OS04A10");
-        g_vi_info[i].w = 2688;
-        g_vi_info[i].h = 1520;
-        g_vi_info[i].fr = 30;
-        g_vi_info[i].flip = 0;
 
         root[sns]["name"] = g_vi_info[i].name;
-        root[sns]["w"] = g_vi_info[i].w;
-        root[sns]["h"] = g_vi_info[i].h;
-        root[sns]["fr"] = g_vi_info[i].fr;
-        root[sns]["flip"] = g_vi_info[i].flip;
     }
 
     std::string str= root.toStyledString();
@@ -239,10 +227,6 @@ static int get_vi_info()
             node = root[sns];
 
             sprintf(g_vi_info[i].name,"%s",node["name"].asCString());
-            g_vi_info[i].w = node["w"].asInt();
-            g_vi_info[i].h = node["h"].asInt();
-            g_vi_info[i].fr = node["fr"].asInt();
-            g_vi_info[i].flip = node["flip"].asInt();
         }
 
         ifs.close();
@@ -805,9 +789,6 @@ int main(int argc,char* argv[])
     {
         printf("sensor%d:\n",i + 1);
         printf("\tname:%s\n",g_vi_info[i].name);
-        printf("\tw:%d\n",g_vi_info[i].w);
-        printf("\th:%d\n",g_vi_info[i].h);
-        printf("\tfr:%d\n",g_vi_info[i].fr);
     }
 
     //venc

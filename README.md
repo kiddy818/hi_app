@@ -61,33 +61,21 @@ cd /opt/ceanic/bin
 //sample for os04a10
 {
    "sensor1" : {
-      "flip" : 0,
-      "fr" : 30,
-      "h" : 1520,
-      "name" : "OS04A10",
-      "w" : 2688
+      "name" : "OS04A10"
    }
 }
 
 //sample for os08a20
 {
    "sensor1" : {
-      "flip" : 0,
-      "fr" : 30,
-      "h" : 2184,
-      "name" : "OS08A20",
-      "w" : 3840
+      "name" : "OS08A20"
    }
 }
 
 ```
 |  类型            | 说明                                                                                  |
 |  ----            | ----                                                                                  |
-| flip             | 保留                                                                                  |
-| fr               | 帧率                                                                                  |
-| h                | sensor视频高                                                                          |
 | name             | sensor类型,当前支持"OS04A10","OS04A10_WDR","OS08A20","OS08A20_WDR"                    |
-| w                | sensor视频宽                                                                          |
 
 ##### venc.json
 ```
@@ -238,6 +226,7 @@ rtsp://192.168.10.98/stream1
 rtsp://192.168.10.98/stream2  
 
 //yolov5 stream(需要配置文件中开启yolov5)
+//因为性能限制，yolov5的帧率在8-12之间，如果使用vlc连接yolov5视频，需要开大vlc缓存(建议开到2000ms) 
 rtsp://192.168.10.98/stream3
 ```
 ##### VLC连接RTSP
