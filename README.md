@@ -16,6 +16,24 @@
 1. OS04A10,OS04A10_WDR,OS08A20(for 3519DV500),OS08A20_WDR(for 3519DV500)
 
 
+#### 流程图
+```
+                   |-------->jpg保存
+                   |
+                   |
+                   |                   |--------->venc sub(固定720 x576)-------->rtsp stream2
+                   |                   |
+            (和vi相同分辨率)      (和vi相同分辨率)
+mipi/vi-------->vpss grp(0)-------->vpss chn(0)---------->venc main(分辨率大小由venc.json中指定,例如1920x1080)--------->rtsp stream1
+                   |                                         |
+                   |                                         |-------->mp4保存
+                   |
+                   |
+                   |      vpss缩放至(640x640)
+                   |------->vpss chn(1)---------->yolov5-------->rtsp stream3
+
+```
+
 #### 编译方法
 1. 按照Hi3519DV500_SDK_V2.0.1.1/smp/a55_linux/source/bsp/readme_cn.txt文档编译SDK
 
@@ -231,9 +249,15 @@ rtsp://192.168.10.98/stream3
 vlc连接方法:媒体->打开网络串流->输入RTSP URL
 ![avatar](doc/rtsp_open.jpg)
 
-
 #### RTMP
-rtmp默认不开启,需要修改/opt/ceanic/etc/net_service.json文件  
+rtmp功能默认不开启,需要修改/opt/ceanic/etc/net_service.json文件 
+
+##### RTMP测试流程
+1. ubuntu下启动nginx测试服务器程序
+2. 修改net_service.json中enable为1
+3. 运行设备程序ceanic_app,运行成功的话,设备会connect到nginx并发布视频(发布的视频url在net_service.json中设置) 
+4. pc端运行vlc,输入url,从nginx拉流，观看视频 
+
 ##### RTMP测试服务器(nginx)搭建(ubuntu20.04)
 1. 按照如下命令编译nginx,需要注意的是运行nginx, -C 后面的参赛需要是全路径
 ```
