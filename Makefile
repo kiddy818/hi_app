@@ -119,6 +119,8 @@ LIBS += $(MPI_LIBS) $(REL_LIB)/libsecurec.a $(REL_LIB)/libss_mpi_snap.a
 
 LIBS+= -Wl,--end-group
 
+LIBS+= -Wl,-gc-sections
+
 target = ceanic_app
 
 all: $(target)
