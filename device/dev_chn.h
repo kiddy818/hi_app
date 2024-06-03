@@ -30,8 +30,7 @@ extern "C"
 #include <aiisp_3dnr.h>
 
 //mp4
-#include <h264_mp4_save.h>
-#include <h265_mp4_save.h>
+#include <mp4_save.h>
 
 //snap
 #include "dev_snap.h"

@@ -1,5 +1,5 @@
-#ifndef h264_mp4_save_include_h
-#define h264_mp4_save_include_h
+#ifndef mp4_save_include_h
+#define mp4_save_include_h
 
 #include <util/std.h>
 #include <util/stream_buf.h>
@@ -7,16 +7,22 @@
 #include <mutex>
 #include <thread>
 #include "stream_save.h"
-#include <mp4v2/mp4v2.h>
+#include <ss_mp4_format.h>
 
 namespace ceanic{namespace stream_save{
 
-    class h264_mp4_save
+    enum
+    {
+        MP4_SAVE_H264 = 0,
+        MP4_SAVE_H265 = 1,
+    };
+
+    class mp4_save
         :public stream_save
     {
         public:
-            h264_mp4_save(const char* file_path,int w,int h,int fr);
-            virtual ~h264_mp4_save();
+            mp4_save(int type,const char* file_path,int w,int h,int fr);
+            virtual ~mp4_save();
 
         public:
             bool open() override;
@@ -25,14 +31,18 @@ namespace ceanic{namespace stream_save{
             bool input_data(ceanic::util::stream_head* head,const char* buf,int len) override;
 
         private:
-            void process_h264_nalue(const char* nalu_data,int nalu_size);
+            void process_frame(const char* frame_buf,int frame_len);
             void on_process();
 
         private:
             bool m_bopen;
+            int m_type;
             std::string m_file_path;
-            MP4FileHandle m_mp4_fh;
-            MP4TrackId m_mp4_track_id;
+
+            OT_MP4_CONFIG_S m_mp4_cfg;
+            TD_MW_PTR m_mp4_fh;
+            TD_MW_PTR m_mp4_video_track_h;
+            OT_MP4_TRACK_INFO_S m_mp4_video_info;
             std::mutex m_interface_mu;
             std::thread m_process_thread;
 

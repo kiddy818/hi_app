@@ -99,12 +99,9 @@ SRC += $(SVC_RATE_PATH)/src/ot_bitrate_auto.c
 SRC += $(SVC_RATE_PATH)/src/bitrate_auto_load_param.c
 
 #support stream_save
-INC_PATH += -I$(THIRD_LIBRARY_PATH)/mp4v2/include
-INC_PATH += -I$(THIRD_LIBRARY_PATH)/gpac-1.0.1/include
+INC_PATH += -I$(THIRD_LIBRARY_PATH)/hisilicon_mp4/include
 INC_PATH += -I./stream_save/
-SRCXX += stream_save/h264_mp4_save.cpp
-SRCXX += stream_save/h265_mp4_save.cpp
-SRCXX += stream_save/MP4Writer.cpp
+SRCXX += stream_save/mp4_save.cpp
 
 LIBS += -Wl,--start-group
 
@@ -112,9 +109,9 @@ LIBS += $(THIRD_LIBRARY_PATH)/rtmpdump/lib/librtmp.a
 LIBS += $(THIRD_LIBRARY_PATH)/log4cpp/lib/liblog4cpp.a
 LIBS += $(THIRD_LIBRARY_PATH)/libevent-2.0.18-stable/lib/libevent.a
 LIBS += $(THIRD_LIBRARY_PATH)/freetype-2.7.1/lib/libfreetype.a
-LIBS += $(THIRD_LIBRARY_PATH)/mp4v2/lib/libmp4v2.a
-LIBS += $(THIRD_LIBRARY_PATH)/gpac-1.0.1/lib/libgpac_static.a
-LIBS += $(THIRD_LIBRARY_PATH)/gpac-1.0.1/lib/libz.a
+LIBS += $(THIRD_LIBRARY_PATH)/hisilicon_mp4/lib/libmp4.a
+LIBS += $(THIRD_LIBRARY_PATH)/hisilicon_mp4/lib/libuproc.a
+LIBS += $(THIRD_LIBRARY_PATH)/hisilicon_mp4/lib/libmwlog.a
 LIBS += $(MPI_LIBS) $(REL_LIB)/libsecurec.a $(REL_LIB)/libss_mpi_snap.a
 
 LIBS+= -Wl,--end-group
@@ -145,6 +142,6 @@ clean:
 	-rm $(target) $(PROG_OBJ) $(PROGXX_OBJ) $(DEVICE_OBJ)
 
 install:
-	#cp $(target) /home/mjj/work/nfs/3516dv500/011/
-	cp $(target) /home/mjj/work/nfs/3519dv500/011/
+	cp $(target) /home/mjj/work/nfs/3516dv500/011/
+	#cp $(target) /home/mjj/work/nfs/3519dv500/011/
 

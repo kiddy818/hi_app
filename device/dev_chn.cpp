@@ -159,11 +159,11 @@ namespace hisilicon{namespace dev{
 
         if(strstr(m_venc_mode.c_str(),"H264") != NULL)
         {
-            m_save = std::make_shared<ceanic::stream_save::h264_mp4_save>(file,m_venc_main_ptr->venc_w(),m_venc_main_ptr->venc_h(),m_venc_main_ptr->venc_fr());
+            m_save = std::make_shared<ceanic::stream_save::mp4_save>(ceanic::stream_save::MP4_SAVE_H264,file,m_venc_main_ptr->venc_w(),m_venc_main_ptr->venc_h(),m_venc_main_ptr->venc_fr());
         }
         else if(strstr(m_venc_mode.c_str(),"H265") != NULL)
         {
-            m_save = std::make_shared<ceanic::stream_save::h265_mp4_save>(file);
+            m_save = std::make_shared<ceanic::stream_save::mp4_save>(ceanic::stream_save::MP4_SAVE_H265,file,m_venc_main_ptr->venc_w(),m_venc_main_ptr->venc_h(),m_venc_main_ptr->venc_fr());
         }
         else
         {
