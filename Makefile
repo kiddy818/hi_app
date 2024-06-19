@@ -142,6 +142,6 @@ clean:
 	-rm $(target) $(PROG_OBJ) $(PROGXX_OBJ) $(DEVICE_OBJ)
 
 install:
-	cp $(target) /home/mjj/work/nfs/3516dv500/011/
-	#cp $(target) /home/mjj/work/nfs/3519dv500/011/
+	#cp $(target) /home/mjj/work/nfs/3516dv500/011/
+	cp $(target) /home/mjj/work/nfs/3519dv500/011/
 

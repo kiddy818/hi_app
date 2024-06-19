@@ -3,12 +3,12 @@
 
 namespace hisilicon{namespace dev{
 
-    bool svp::init()
+    bool svp::init(const char* cfg_file)
     {
         svp_acl_error ret;
         svp_acl_rt_run_mode run_mode;
 
-        ret = svp_acl_init(NULL);
+        ret = svp_acl_init(cfg_file);
         if(ret != SVP_ACL_SUCCESS)
         {
             DEV_WRITE_LOG_ERROR("svp_acl_init failed with error 0x%x",ret);

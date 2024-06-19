@@ -560,6 +560,7 @@ typedef struct
 {
     int enable;
     char model_file[255];
+    char cfg_file[255];
 }yolov5_info_t;
 static yolov5_info_t g_yolov5_info;
 #define YOLOV5_INFO_PATH "/opt/ceanic/yolov5/yolov5.json"
@@ -569,6 +570,7 @@ static void init_yolov5_info()
 
     root["yolov5"]["enable"] = 0;
     root["yolov5"]["model_file"] = "/opt/ceanic/yolov5/yolov5.om";
+    root["yolov5"]["cfg_file"] = "/opt/ceanic/yolov5/acl.json";
     std::string str= root.toStyledString();
     std::ofstream ofs;
     ofs.open(YOLOV5_INFO_PATH);
@@ -606,6 +608,7 @@ static int get_yolov5_info()
         Json::Value node; 
         g_yolov5_info.enable = root["yolov5"]["enable"].asInt();
         sprintf(g_yolov5_info.model_file,"%s",root["yolov5"]["model_file"].asCString());
+        sprintf(g_yolov5_info.cfg_file,"%s",root["yolov5"]["cfg_file"].asCString());
 
         ifs.close();
 
@@ -865,9 +868,10 @@ int main(int argc,char* argv[])
     printf("yolov5 info\n");
     printf("\tenable:%d\n",g_yolov5_info.enable);
     printf("\tmodel_file:%s\n",g_yolov5_info.model_file);
+    printf("\tcfg_file:%s\n",g_yolov5_info.cfg_file);
     if(g_yolov5_info.enable)
     {
-        hisilicon::dev::svp::init();
+        hisilicon::dev::svp::init(g_yolov5_info.cfg_file);
         g_chn->yolov5_start(g_yolov5_info.model_file);
     }
 

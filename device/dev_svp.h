@@ -14,7 +14,7 @@ namespace hisilicon{namespace dev{
     class svp 
     {
         public:
-            static bool init();
+            static bool init(const char* cfg_file);
             static void release();
     };
 

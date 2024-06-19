@@ -222,6 +222,7 @@ cd /opt/ceanic/bin
    "yolov5" : {
       "enable" : 0,
       "model_file" : "/opt/ceanic/yolov5/yolov5.om"
+      "cfg_file" : "/opt/ceanic/yolov5/acl.json"
    }
 }
 
@@ -230,6 +231,38 @@ cd /opt/ceanic/bin
 |  ----            | ----                                                                                  |
 | enable           | 1:启用 0:启用                                                                         |
 | model_file       | 模型文件路径                                                                          |
+| cfg_file         | acl配置文件路径                                                                       |
+
+#### YOLO配置文件acl.json相关
+
+##### 默认(无任何功能)
+acl.json例子如下:
+```
+{
+}
+```
+
+##### 支持Profiling
+1. 生成模型时需要加入atc命令需要加入-online_model_type=2,如下为atc 例子: 
+```
+atc --dump_data=0 --input_shape="images:1,3,640,640" --input_type="images:UINT8" --log_level=0 --online_model_type=2 --batch_num=1 --input_format=NCHW --output="./model/yolov5_with_profiling" --soc_version=Hi3519DV500 --insert_op_conf=./insert_op_yvu420sp.cfg --framework=5 --compile_mode=0 --save_original_model=true --model="./onnx_model/yolov5s.onnx" --image_list="images:./data/image_ref_list.txt"
+```
+
+2. acl.json例子如下，具体请看"Profiling工具使用指南.pdf"
+```
+{
+    "profiler":{
+        "output":"/mnt/3519dv500/011/profiling",
+        "aicpu":"on",
+        "aic_metrics":"ArithmeticUtilization",
+        "interval":"0",
+        "acl_api":"on",
+        "switch":"on"
+    }
+}
+```
+
+3. aiisp功能必须关闭(aiisp.json中enable=0),否则无法生成profile文件
 
 #### RTSP
 ##### RTSP URL
@@ -432,10 +465,4 @@ ulimit -c 500
 
 ##### vlc连接yolov5视频卡住
 因为性能原因，yolov5的视频帧率在8-10帧之间，vlc用默认方式连接,会发现视频卡在第一帧，需要增大vlc的缓存(建议设置为2000ms)
-
-#### 合作交流
-联系方式:   
-深圳思尼克技术有限公司   
-jiajun.ma@ceanic.com   
-马佳君  
 
