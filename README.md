@@ -243,10 +243,11 @@ acl.json例子如下:
 ```
 
 ##### 支持Profiling
-1. 生成模型时需要加入atc命令需要加入-online_model_type=2,如下为atc 例子: 
+1. 转化模型时atc命令需要加入-online_model_type=2,如下为atc 例子: 
 ```
 atc --dump_data=0 --input_shape="images:1,3,640,640" --input_type="images:UINT8" --log_level=0 --online_model_type=2 --batch_num=1 --input_format=NCHW --output="./model/yolov5_with_profiling" --soc_version=Hi3519DV500 --insert_op_conf=./insert_op_yvu420sp.cfg --framework=5 --compile_mode=0 --save_original_model=true --model="./onnx_model/yolov5s.onnx" --image_list="images:./data/image_ref_list.txt"
 ```
+实际测试下来，如果不做-online_mode_type=2这个操作，JOBXXXX/生成不了data目录
 
 2. acl.json例子如下，具体请看"Profiling工具使用指南.pdf"
 ```
@@ -262,7 +263,19 @@ atc --dump_data=0 --input_shape="images:1,3,640,640" --input_type="images:UINT8"
 }
 ```
 
-3. aiisp功能必须关闭(aiisp.json中enable=0),否则无法生成profile文件
+3. aiisp功能必须关闭(aiisp.json中enable=0),否则无法生成JOBXXXX目录 
+
+4. 运行ceanic_app,如果开启了profiling,会在output(在acl.json中制定,例如例子中的/mnt/3519dv500/011/profiling)生存JOBXXX目录
+
+5. 运行一段时间后，退出ceanic_app,将JOBXXX目录复制到atc命令所在的PC,执行如下命令显示模型性能信息
+
+```
+/usr/local/Ascend/ascend-toolkit/svp_latest/toolkit/tools/profiler/profiler_tool/analysis/msprof/msprof.py show -dir /root/share/3519dv500/profiling/JOBZPBSGWKFISTVRWHVRMPJYEUZOERMY/
+
+//也可以用如下命令将信息保存到文件
+/usr/local/Ascend/ascend-toolkit/svp_latest/toolkit/tools/profiler/profiler_tool/analysis/msprof/msprof.py show -dir /root/share/3519dv500/profiling/JOBZPBSGWKFISTVRWHVRMPJYEUZOERMY/ > test.txt
+```
+6. 根据"MindStudio 用户指南.pdf"和"Profiling工具使用指南.pdf"文档分析上一个步骤显示的信息(或文件),主要指标为每层耗时时间，占用百分比等等。
 
 #### RTSP
 ##### RTSP URL
