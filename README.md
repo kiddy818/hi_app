@@ -265,7 +265,7 @@ atc --dump_data=0 --input_shape="images:1,3,640,640" --input_type="images:UINT8"
 
 3. aiisp功能必须关闭(aiisp.json中enable=0),否则无法生成JOBXXXX目录 
 
-4. 运行ceanic_app,如果开启了profiling,会在output(在acl.json中制定,例如例子中的/mnt/3519dv500/011/profiling)生存JOBXXX目录
+4. 运行ceanic_app,如果开启了profiling,会在output(在acl.json中制定,例如例子中的/mnt/3519dv500/011/profiling)生成JOBXXX目录
 
 5. 运行一段时间后，退出ceanic_app,将JOBXXX目录复制到atc命令所在的PC,执行如下命令显示模型性能信息
 
@@ -478,4 +478,49 @@ ulimit -c 500
 
 ##### vlc连接yolov5视频卡住
 因为性能原因，yolov5的视频帧率在8-10帧之间，vlc用默认方式连接,会发现视频卡在第一帧，需要增大vlc的缓存(建议设置为2000ms)
+
+##### sshd环境搭建问题总结
+1. "驱动和开发环境安装指南.pdf" 4.2.2 步骤5,6(修改/etc/passwd,/etc/group)不用做，只要增加sshd用户就可以(sshd的密码可以为空) 
+```
+adduser sshd
+
+#按两次回车,设置空密码
+Changing password for sshd
+New password:
+Bad password: too short
+Retype password:
+passwd: password for sshd
+```
+
+2. "驱动和开发环境安装指南.pdf" 4.2.2 按照步骤8，会碰到问题，当前实验下来，只能用root登录到服务器，其他用户登录到服务器(ssh mjj@192.168.10.98)会有could not chdir to home directory /home/mjj: Permission denied错误(板子端建了mjj用户，密码已经验证成功，但是ssh客户端无法chdir到/home/mjj)，当前只能允许root用户登录，sshd_config修改如下:
+```
+PermitRootLogin yes
+```
+
+3. demo板子root用户密码一定要有，不能为空，否则客户端通过 ssh root@192.168.10.98(192.168.10.98为板子ip)登录，会有错误，通过如下命令修改root密码
+```
+passwd 
+
+#设置有效的密码
+Changing password for root
+New password:
+Retype password:
+passwd: password for root changed by root
+```
+
+4. 服务端运行例子如下:
+```
+export LD_LIBRARY_PATH=/mnt/3519dv500/011/openssh
+/mnt/3519dv500/011/openssh/sshd -f /mnt/3519dv500/011/openssh/etc/sshd_config -h /mnt/3519dv500/011/openssh/etc/ssh/ssh_host_rsa_key
+```
+
+5. 客户端通过ssh root@192.168.10.98(192.168.10.98为板端ip),如果成功，打印如下:
+```
+<SVP_Docker_GPU> [root@85d1c59779f9]:~$ ssh root@192.168.10.98
+root@192.168.10.98's password:
+Welcome to Linux.
+~ #
+```
+
+
 
