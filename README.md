@@ -523,4 +523,91 @@ Welcome to Linux.
 ```
 
 
+##### mindcmd一键推理
+1. 板端能运行sshd(见上面sshd环境搭建问题总结),特别注意的是，sshd_conf配置文件需要修改如下，否则mindcmd 一键推理的时候会有sftp相关错误。
+```
+Subsystem       sftp    internal-sftp
+```
 
+2. 当前mindcmd一键推理暂时无法在docker下使用(当前docker的ip为172.x.x.x,为内部ip,板子端无复访问，无法mount),所以mindcmd当前在pc端(非docker)下可以验证，后续再考虑docker下验证。
+
+3. pc端需要修改/etc/hosts文件,如下把第二行注释掉，否则mindcmd 一键推理时，板子端mount得到的pc机的ip为127.0.0.1
+```
+127.0.0.1	localhost
+#127.0.1.1	mjj-VirtualBox
+```
+
+3. 修改mindcmd 配置文件，指定板子的交叉编译环境
+```
+base_config.cross_compiler=gnu
+```
+上述表示板子端的环境为glibc,mindcmd一键推理的时候会交叉编译一个应用程序(glibc编译环境应用程序名为gnu,可以直接在板子端运行)
+
+4. 板子端需要将libsvp_acl.so,libss_mpi_sysmem.so,libss_mpi_km.so,libprotobuf-c.so.1.0.0,四个文件复制到板子/lib64/目录下,这个比较关键，第三部的交叉编译的程序需要依赖这些库来运行。
+```
+cp /mnt/3519dv500/011/out/lib/libsvp_acl.so  /lib64/
+cp /mnt/3519dv500/011/out/lib/libss_mpi_sysmem.so  /lib64/
+cp /mnt/3519dv500/011/out/lib/libss_mpi_km.so  /lib64/
+cp /mnt/3519dv500/011/out/lib/libprotobuf-c.so.1.0.0  /lib64/
+
+//mindcmd 交叉编译出来的gnu程序链接的库为libprotobuf-c.so.1,需要软连接下
+cd /lib64
+ln -s libprotobuf-c.so.1.0.0 libprotobuf-c.so.1
+
+```
+
+5. mindcmd ssh.cfg配置文件如下:   
+其中:   
+BOARD_IP:板子端的ip   
+BOARD_MOUNT_PATH: 板子端的目录  
+HOST_MOUNT_PATH:pc端的nfs目录  
+USER:板子端sshd用户名  
+PASSWORD:板子端sshd密码   
+
+```
+[ssh_config]
+# board ip
+BOARD_IP=192.168.10.98
+# board work directory, automatically mount to $HOST_MOUNT_PATH
+BOARD_MOUNT_PATH=/mnt_docker
+# board work directory
+# to avoid bottlenecks caused by copying test resources, store test resources in this path as much as
+HOST_MOUNT_PATH=/home/mjj/work/docker_shared/3519dv500/SVP_NNN_PC_V3.0.0.12//Sample/samples/2_object_detection/yolo/
+# board user name
+USER=root
+# board user's password
+PASSWORD=XXXXXX
+# default port is 22
+PORT=22
+```
+
+mindcmd.ini
+```
+include.path=/usr/local/lib/python3.8/dist-packages/mindcmd/mindcmd.ini
+base_config.cann_install_path=~/Ascend/ascend-toolkit/svp_latest
+base_config.target_version=Hi3519DV500
+base_config.default_workspace=/home/mjj/work/docker_shared/3519dv500/SVP_NNN_PC_V3.0.0.12/Sample/samples/2_object_detection/yolo/
+base_config.ssh_cfg_path=/home/mjj/work/docker_shared/3519dv500/SVP_NNN_PC_V3.0.0.12/Sample/samples/2_object_detection/yolo/ssh.conf
+base_config.cross_compiler=gnu
+oneclick_switch.is_clean_previous_output=1
+oneclick_switch.is_amct_run=1
+oneclick_switch.is_open_gt_dump=1
+oneclick_switch.is_npu_run=1
+oneclick_switch.is_func_run=1
+oneclick_switch.is_inst_run=0
+oneclick_switch.is_perf_run=0
+oneclick_switch.is_dump_run=1
+oneclick_switch.is_open_compare=1
+oneclick_switch.is_board_profiling_run=1
+oneclick_switch.is_open_profile_display=0
+oneclick_switch.is_print_process_detail=0
+```
+
+6. 调用如下命令一键推理(调用前，需要确保板子端的sshd已经启动,ko已经加载)
+```
+mindcmd config --global oneclick_switch.is_npu_run=1
+mindcmd config --global base_config.ssh_cfg_path=./ssh.conf //内容见第五步
+cd /home/mjj/work/docker_shared/3519dv500/SVP_NNN_PC_V3.0.0.12//Sample/samples/2_object_detection/yolo/onnx_model
+mindcmd oneclick onnx -m yolov5s.onnx -i ../data/image_ref_list.txt -r ../src/yolov5_rpn.txt
+```
+如果有异常，可以参考log文件(路径在output/log下)
