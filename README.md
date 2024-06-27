@@ -523,13 +523,13 @@ Welcome to Linux.
 ```
 
 
-##### mindcmd一键推理
+##### mindcmd一键推理(非docker环境下)
 1. 板端能运行sshd(见上面sshd环境搭建问题总结),特别注意的是，sshd_conf配置文件需要修改如下，否则mindcmd 一键推理的时候会有sftp相关错误。
 ```
 Subsystem       sftp    internal-sftp
 ```
 
-2. 当前mindcmd一键推理暂时无法在docker下使用(当前docker的ip为172.x.x.x,为内部ip,板子端无复访问，无法mount),所以mindcmd当前在pc端(非docker)下可以验证，后续再考虑docker下验证。
+2. 当前mindcmd一键推理暂时无法在docker下使用(当前docker的ip为172.x.x.x,为内部ip,板子端无复访问，无法mount),所以mindcmd当前在pc端(非docker)下可以验证，后续再考虑docker下验证。//(已经验证通过)
 
 3. pc端需要修改/etc/hosts文件,如下把第二行注释掉，否则mindcmd 一键推理时，板子端mount得到的pc机的ip为127.0.0.1
 ```
@@ -611,3 +611,14 @@ cd /home/mjj/work/docker_shared/3519dv500/SVP_NNN_PC_V3.0.0.12//Sample/samples/2
 mindcmd oneclick onnx -m yolov5s.onnx -i ../data/image_ref_list.txt -r ../src/yolov5_rpn.txt
 ```
 如果有异常，可以参考log文件(路径在output/log下)
+
+
+##### mindcmd一键推理(docker环境下)
+1. docker启动必须: 
+   1. 加入--net=host 选项 
+   2. docker和pc端的共享路径必须为一样,且为pc端的nfs目录(板子端可以mount成功)
+```
+sudo docker run -it -v /home/mjj/work/docker_shared:/home/mjj/work/docker_shared --net=host  --name=3519dv500_011 hispark/qiankunbp:1.0.1
+```
+
+2. 其他和非docker环境一样
