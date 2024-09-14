@@ -408,7 +408,12 @@ namespace hisilicon{namespace dev{
             return false;
         }
 
-        if(stream == 0)
+        if(stream == 2)
+        {
+            //yolov5 stream
+            return true;
+        }
+        else if(stream == 0)
         {
             chn_ptr->m_venc_main_ptr->request_i_frame();
         }
@@ -436,7 +441,12 @@ namespace hisilicon{namespace dev{
         memset(mh,0,sizeof(media_head));
         mh->media_fourcc = CEANIC_TAG;
         mh->ver = 1;
-        if(strstr(chn_ptr->m_venc_mode.c_str(),"H264") != NULL)
+        if(stream == 2)
+        {
+            //yolov5 use h264
+            mh->vdec = STREAM_ENCODE_H264;
+        }
+        else if(strstr(chn_ptr->m_venc_mode.c_str(),"H264") != NULL)
         {
             mh->vdec = STREAM_ENCODE_H264;
         }
