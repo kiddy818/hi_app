@@ -40,12 +40,8 @@ static std::vector<std::string> g_yolov5_class_str = {"person", "bicycle", "car"
         m_vpss_chn_attr.compress_mode             = OT_COMPRESS_MODE_NONE;
         m_vpss_chn_attr.aspect_ratio.mode         = OT_ASPECT_RATIO_NONE;
 
-        //3516dv500 svp_acl_mdl_execute()处理640x640的一帧数据耗时40ms左右
-        //加上其他处理时间，耗时较长，如果按照满帧率处理,cat /dev/logmpp会有get vb fail错误，所以适当减少帧率
-        //实际帧率为:vi帧率x dst_frame_rate/src_frame_rate
-        //其他芯片，可以按照处理能力来设置
-        m_vpss_chn_attr.frame_rate.src_frame_rate = 5;
-        m_vpss_chn_attr.frame_rate.dst_frame_rate = 3;
+        m_vpss_chn_attr.frame_rate.src_frame_rate = -1;
+        m_vpss_chn_attr.frame_rate.dst_frame_rate = -1;
 
         m_venc_chn = sys::alloc_venc_chn();
 

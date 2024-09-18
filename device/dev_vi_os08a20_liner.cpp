@@ -44,10 +44,15 @@ namespace hisilicon{namespace dev{
     {
         memcpy(&m_mipi_attr,&g_mipi_4lane_chn0_sensor_os08a20_12bit_8m_nowdr_attr,sizeof(combo_dev_attr_t));
         memcpy(&m_isp_pub_attr,&g_isp_pub_attr_os08a20_mipi_8m_30fps,sizeof(ot_isp_pub_attr));
-        m_vi_pipe_attr.size.width = 3840;
-        m_vi_pipe_attr.size.height = 2160;
-        m_vi_chn_attr.size.width = 3840;
-        m_vi_chn_attr.size.height = 2160;
+
+        m_vi_pipe_attr.size.width = m_isp_pub_attr.sns_size.width;
+        m_vi_pipe_attr.size.height = m_isp_pub_attr.sns_size.height;
+        m_vi_chn_attr.size.width = m_isp_pub_attr.sns_size.width;
+        m_vi_chn_attr.size.height = m_isp_pub_attr.sns_size.height;
+        m_vpss_grp_attr.max_width = m_isp_pub_attr.sns_size.width;
+        m_vpss_grp_attr.max_height = m_isp_pub_attr.sns_size.height;
+        m_vpss_chn_attr.width = m_isp_pub_attr.sns_size.width;
+        m_vpss_chn_attr.height = m_isp_pub_attr.sns_size.height;
     }
 
     vi_os08a20_liner::~vi_os08a20_liner()
