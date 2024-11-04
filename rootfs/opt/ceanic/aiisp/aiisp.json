@@ -1,0 +1,7 @@
+{
+   "aiisp" : {
+      "enable" : 0,
+      "mode" : 0,
+      "model_file" : "/opt/ceanic/aiisp/aibnr/model/aibnr_model_denoise_priority.bin"
+   }
+}

@@ -1,0 +1,8 @@
+{
+   "jpg_save" : {
+      "dir_path" : "/mnt/",
+      "enable" : 0,
+      "interval" : 60,
+      "quality" : 90
+   }
+}

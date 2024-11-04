@@ -1,0 +1,7 @@
+{
+   "yolov5" : {
+      "cfg_file" : "/opt/ceanic/yolov5/acl.json",
+      "enable" : 0,
+      "model_file" : "/opt/ceanic/yolov5/yolov5.om"
+   }
+}
