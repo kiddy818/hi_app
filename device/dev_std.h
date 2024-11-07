@@ -14,6 +14,7 @@
 #include "ss_mpi_vi.h"
 #include "ss_mpi_isp.h"
 #include "ss_mpi_vo.h"
+#include "ss_mpi_vo_dev.h"
 #include "ss_mpi_venc.h"
 #include "ss_mpi_vdec.h"
 #include "ss_mpi_vpss.h"

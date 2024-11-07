@@ -141,6 +141,13 @@ namespace hisilicon{namespace dev{
                     break;
                 }
 
+                /*
+                td_u64 cur_pts;
+                ss_mpi_sys_get_cur_pts(&cur_pts);
+                int test_i = cur_pts - stream.pack[0].pts;
+                DEV_WRITE_LOG_INFO("test_i:%dms\n",test_i / 1000);
+                */
+
                 (*it)->process_video_stream(&stream);
 
                 ss_mpi_venc_release_stream(venc_chn, &stream);

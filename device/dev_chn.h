@@ -10,6 +10,8 @@
 #include "dev_osd.h"
 #include "dev_log.h"
 #include <stream_observer.h>
+#include "dev_vo.h"
+#include "dev_vo_bt1120.h"
 
 //for scene
 extern "C"
@@ -88,6 +90,10 @@ namespace hisilicon{namespace dev{
             bool yolov5_start(const char* model_file);
             void yolov5_stop();
 
+            //for vo
+            bool vo_start(const char* intf_type,const char* intf_sync);
+            void  vo_stop();
+
             static bool get_stream_head(int chn,int stram,ceanic::util::media_head* mh);
             static bool request_i_frame(int chn,int stream);
 
@@ -105,6 +111,7 @@ namespace hisilicon{namespace dev{
             std::shared_ptr<ceanic::stream_save::stream_save> m_save;
             std::shared_ptr<snap> m_snap;
             std::shared_ptr<yolov5> m_yolov5;
+            std::shared_ptr<vo> m_vo;
 
             static ot_scene_param g_scene_param;
             static ot_scene_video_mode g_scene_video_mode;

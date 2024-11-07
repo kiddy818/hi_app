@@ -620,6 +620,71 @@ static int get_yolov5_info()
     }
 }
 
+typedef struct
+{
+    int enable;
+    char intf_type[32];
+    char intf_sync[32];
+}vo_info_t;
+static vo_info_t g_vo_info;
+#define VO_INFO_PATH "/opt/ceanic/etc/vo.json"
+static void init_vo_info()
+{
+    Json::Value root;
+
+    root["vo"]["enable"] = 0;
+    root["vo"]["intf_type"] = "BT1120";
+    root["vo"]["intf_sync"] = "1080P60";
+    std::string str= root.toStyledString();
+    std::ofstream ofs;
+    ofs.open(VO_INFO_PATH);
+    ofs << str;
+    ofs.close();
+}
+
+static int get_vo_info()
+{
+    try
+    {
+        if(access(VO_INFO_PATH,F_OK) < 0)
+        {
+            init_vo_info();
+
+            if(access(VO_INFO_PATH,F_OK) < 0)
+            {
+                return -1;
+            }
+        }
+
+        std::ifstream ifs;
+        ifs.open(VO_INFO_PATH);
+        if(!ifs.is_open())
+        {
+            return -1;
+        }
+        Json::Reader reader;  
+        Json::Value root; 
+        if (!reader.parse(ifs, root, false)) 
+        {
+            return -1;
+        }
+
+        Json::Value node; 
+        g_vo_info.enable = root["vo"]["enable"].asInt();
+        sprintf(g_vo_info.intf_type,"%s",root["vo"]["intf_type"].asCString());
+        sprintf(g_vo_info.intf_sync,"%s",root["vo"]["intf_sync"].asCString());
+
+        ifs.close();
+
+        return 0;
+    }
+    catch(...)
+    {
+        return -1;
+    }
+}
+
+
 static std::thread g_thread_1s;
 static bool g_thread_run = false;
 static void thread_1s()
@@ -672,6 +737,12 @@ static void do_exit()
         g_thread_1s.join();
 
         int chn = 0;
+
+        if(g_vo_info.enable)
+        {
+            g_chn->vo_stop();
+        }
+
         if(g_yolov5_info.enable)
         {
             g_chn->yolov5_stop();
@@ -873,6 +944,17 @@ int main(int argc,char* argv[])
     {
         hisilicon::dev::svp::init(g_yolov5_info.cfg_file);
         g_chn->yolov5_start(g_yolov5_info.model_file);
+    }
+
+    //vo
+    get_vo_info();
+    printf("vo info\n");
+    printf("\tenable:%d\n",g_vo_info.enable);
+    printf("\tintf_type:%s\n",g_vo_info.intf_type);
+    printf("\tintf_sync:%s\n",g_vo_info.intf_sync);
+    if(g_vo_info.enable)
+    {
+        g_chn->vo_start(g_vo_info.intf_type,g_vo_info.intf_sync);
     }
 
     g_thread_run = true;

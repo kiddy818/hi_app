@@ -3,6 +3,7 @@
 #include <rtsp/server.h>
 #include <rtsp/stream/stream_manager.h>
 #include <rtmp/session_manager.h>
+#include <lt8618sx.h>
 
 namespace hisilicon{namespace dev{
 
@@ -133,6 +134,12 @@ namespace hisilicon{namespace dev{
             m_snap->stop();
         }
 
+        if(m_vo)
+        {
+            m_vo->stop();
+            m_vo = nullptr;
+        }
+
         m_osd_date_main->stop();
         m_osd_date_sub->stop();
 
@@ -204,6 +211,7 @@ namespace hisilicon{namespace dev{
         osd::init();
         vi::init();
         vi_isp::init_hs_mode(LANE_DIVIDE_MODE_0);
+        vo::init();
 
         return true;
     }
@@ -549,6 +557,54 @@ namespace hisilicon{namespace dev{
         }
     }
 
+    bool chn::vo_start(const char* intf_type,const char* intf_sync)
+    {
+        if(!m_is_start)
+        {
+            return false;
+        }
+
+        if(strcmp(intf_type,"BT1120") == 0
+                && strcmp(intf_sync,"1080P60") == 0)
+        {
+            m_vo = std::make_shared<vo_bt1120>(1920,1080,60,0,m_vi_ptr);
+        }
+        else
+        {
+            DEV_WRITE_LOG_ERROR("invalid param,intf_type:%s,intf_sync:%s",intf_type,intf_sync);
+            return false;
+        }
+
+        if(!m_vo->start())
+        {
+            DEV_WRITE_LOG_ERROR("vo start failed");
+            m_vo = nullptr;
+            return false;
+        }
+
+        //demo板子用了lt8618sx,bt1120->hdmi
+        int fd = open("/dev/lt8618sx", O_RDONLY);
+        if(fd > -1)
+        {
+            td_u32 lt_mode = OT_VO_OUT_1080P60;
+            if(ioctl(fd,LT_CMD_SETMODE,&lt_mode) < 0)
+            {
+                DEV_WRITE_LOG_ERROR("lt8618sx set mode failed");
+            }
+            close(fd);
+        }
+
+        return true;
+    }
+
+    void chn::vo_stop()
+    {
+        if(m_vo)
+        {
+            m_vo->stop();
+            m_vo = nullptr;
+        }
+    }
 }}//namespace
 
 

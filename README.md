@@ -11,6 +11,7 @@
 7. Mp4文件保存(使用海思中间件HiXuanyuanV100R001C01SPC020中的mp4库)
 8. 抓拍JPG
 9. Yolov5(通过rtsp视频验证)
+10. vo(BT1120 1080p@60)
 
 当前支持的sensor为: 
 1. OS04A10,OS04A10_WDR,OS08A20(for 3519DV500),OS08A20_WDR(for 3519DV500)
@@ -21,16 +22,17 @@
                    |-------->jpg保存
                    |
                    |
-                   |                   |--------->venc sub(固定720 x576)-------->rtsp stream2
-                   |                   |
+                   |                    |---------------->venc sub(固定720 x576)-------->rtsp stream2
+                   |                    |
             (和vi相同分辨率)      (和vi相同分辨率)
 mipi/vi-------->vpss grp(0)-------->vpss chn(0)---------->venc main(分辨率大小由venc.json中指定,例如1920x1080)--------->rtsp stream1
-                   |                                         |
-                   |                                         |-------->mp4保存
+                   |                    |                     |
+                   |                    |                     |-------->mp4保存
+                   |                    |
+                   |                    |---------------->vo
                    |
-                   |
-                   |      vpss缩放至(640x640)
-                   |------->vpss chn(1)---------->yolov5-------->rtsp stream3
+                   |               vpss缩放至(640x640)
+                   |--------------->vpss chn(1)---------->yolov5-------->rtsp stream3
 
 ```
 
@@ -95,6 +97,22 @@ cd /opt/ceanic/bin
 |  ----            | ----                                                                                  |
 | name             | sensor类型,当前支持"OS04A10","OS04A10_WDR","OS08A20","OS08A20_WDR"                    |
 
+##### vo.json
+```
+{
+   "vo" : {
+      "enable" : 0,
+      "intf_sync" : "1080P60",
+      "intf_type" : "BT1120"
+   }
+}
+```
+|  类型            | 说明                                                                                  |
+|  ----            | ----                                                                                  |
+| enable           | 1:启用 0:不启用                                                                       |
+| intf_type        | 当前支持"BT1120"                                                                      |
+| intf_sync        | 当前支持"1080P60"                                                                     |
+
 ##### venc.json
 ```
 {
@@ -150,7 +168,7 @@ cd /opt/ceanic/bin
 ```
 |  类型            | 说明                                                                                  |
 |  ----            | ----                                                                                  |
-| enable           | 1:启用 0:启用                                                                         |
+| enable           | 1:启用 0:不启用                                                                       |
 | mode             | 0:aibnr 1:aidrc 2:ai3dnr                                                              |
 | model_file       | 模型文件绝对路径，需要和mode中的类型匹配                                              |
 
@@ -166,7 +184,7 @@ cd /opt/ceanic/bin
 ```
 |  类型            | 说明                                                                                  |
 |  ----            | ----                                                                                  |
-| enable           | 1:启用 0:启用                                                                         |
+| enable           | 1:启用 0:不启用                                                                       |
 | dir_path         | scene使用的配置目录路径                                                               |
 | mode             | scene mode序号(见config_scenemode.ini)                                                |
 
@@ -181,7 +199,7 @@ cd /opt/ceanic/bin
 ```
 |  类型            | 说明                                                                                  |
 |  ----            | ----                                                                                  |
-| enable           | 1:启用 0:启用,只有AVBR编码才有效                                                      |
+| enable           | 1:启用 0:不启用,只有AVBR编码才有效                                                    |
 | file             | 编码自适应使用的文件路径                                                              |
 
 ##### mp4_save.json
@@ -195,7 +213,7 @@ cd /opt/ceanic/bin
 ```
 |  类型            | 说明                                                                                  |
 |  ----            | ----                                                                                  |
-| enable           | 1:启用 0:启用                                                                         |
+| enable           | 1:启用 0:不启用                                                                       |
 | file             | mp4保存路径                                                                           |
 
 ##### jpg_save.json
@@ -211,7 +229,7 @@ cd /opt/ceanic/bin
 ```
 |  类型            | 说明                                                                                  |
 |  ----            | ----                                                                                  |
-| enable           | 1:启用 0:启用                                                                         |
+| enable           | 1:启用 0:不启用                                                                       |
 | quality          | JPG图像质量[1,99]                                                                     |
 | interval         | 抓拍间隔(秒)                                                                          |
 | dir_path         | 保存目录路径                                                                          |
@@ -229,7 +247,7 @@ cd /opt/ceanic/bin
 ```
 |  类型            | 说明                                                                                  |
 |  ----            | ----                                                                                  |
-| enable           | 1:启用 0:启用                                                                         |
+| enable           | 1:启用 0:不启用                                                                       |
 | model_file       | 模型文件路径                                                                          |
 | cfg_file         | acl配置文件路径                                                                       |
 
