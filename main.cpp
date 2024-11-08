@@ -854,8 +854,16 @@ int main(int argc,char* argv[])
         ceanic::rtmp::session_manager::instance()->create_session(chn,1,g_net_service_info.rtmp_sub_url);
     }
 
+    //jpg save
+    get_jpg_save_info();
+    printf("jpg save info\n");
+    printf("\tenable:%d\n",g_jpg_save_info.enable);
+    printf("\tquality:%d\n",g_jpg_save_info.quality);
+    printf("\tinterval:%d\n",g_jpg_save_info.interval);
+    printf("\tdir_path:%s\n",g_jpg_save_info.dir_path);
+
     //chn init
-    hisilicon::dev::chn::init();
+    hisilicon::dev::chn::init(g_jpg_save_info.enable ? true : false);
 
     //vi
     get_vi_info();
@@ -925,14 +933,6 @@ int main(int argc,char* argv[])
     {
         g_chn->start_save(g_mp4_save_info.file);
     }
-
-    //jpg save
-    get_jpg_save_info();
-    printf("jpg save info\n");
-    printf("\tenable:%d\n",g_jpg_save_info.enable);
-    printf("\tquality:%d\n",g_jpg_save_info.quality);
-    printf("\tinterval:%d\n",g_jpg_save_info.interval);
-    printf("\tdir_path:%s\n",g_jpg_save_info.dir_path);
 
     //yolov5
     get_yolov5_info();

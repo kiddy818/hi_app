@@ -640,3 +640,8 @@ sudo docker run -it -v /home/mjj/work/docker_shared:/home/mjj/work/docker_shared
 ```
 
 2. 其他和非docker环境一样
+
+##### 网络发送前的编码延时情况(OS082A20 4K@30 编码)
+1. VI_OFFLIE_VPSS_OFFLINE 主码流的延时为90ms左右
+2. VI_ONLINE_VPSS_OFFLINE 主码流的延时为58ms左右
+3. VI_ONLINE_VPSS_ONLINE  主码流的延时为32ms左右

@@ -201,9 +201,9 @@ namespace hisilicon{namespace dev{
         }
     }
 
-    bool chn::init()
+    bool chn::init(bool jpg_snap_enabled)
     {
-        if(!sys::init())
+        if(!sys::init(jpg_snap_enabled))
         {
             return false;
         }
@@ -268,6 +268,15 @@ namespace hisilicon{namespace dev{
 
         for(int i = 0; i < head->nalu_count; i++)
         {
+            if(stream == 0 && 
+                    i == 0)
+            {
+                td_u64 cur_pts;
+                ss_mpi_sys_get_cur_pts(&cur_pts);
+                int delay_ms = (cur_pts / 1000) - head->nalu[i].timestamp;
+                DEV_WRITE_LOG_DEBUG("venc main stream %dms delayed",delay_ms);
+            }
+
             head->nalu[i].data += 4;//remove 00 00 00 01
             head->nalu[i].size -= 4;
             head->nalu[i].timestamp *= 90;

@@ -4,7 +4,7 @@
 
 namespace hisilicon{namespace dev{
 
-    bool sys::init()
+    bool sys::init(bool jpg_snap_enabled)
     {
         ot_vb_cfg vb_cfg;
         td_s32 ret;
@@ -52,9 +52,17 @@ namespace hisilicon{namespace dev{
 
         ot_vi_vpss_mode vi_vpss_mode;
         memset(&vi_vpss_mode,0,sizeof(vi_vpss_mode));
-        for(int i = 0; i < OT_VI_MAX_PIPE_NUM; i++)
+        if(jpg_snap_enabled)
         {
-            vi_vpss_mode.mode[i] = OT_VI_OFFLINE_VPSS_OFFLINE;
+            vi_vpss_mode.mode[0] = OT_VI_ONLINE_VPSS_OFFLINE;
+            for(int i = 1; i < OT_VI_MAX_PIPE_NUM; i++)
+            {
+                vi_vpss_mode.mode[i] = OT_VI_OFFLINE_VPSS_OFFLINE;
+            }
+        }
+        else
+        {
+            vi_vpss_mode.mode[0] = OT_VI_ONLINE_VPSS_ONLINE;
         }
         ret = ss_mpi_sys_set_vi_vpss_mode(&vi_vpss_mode);
         if(ret != TD_SUCCESS)

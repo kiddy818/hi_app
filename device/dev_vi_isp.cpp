@@ -448,6 +448,13 @@ namespace hisilicon{namespace dev{
             return false;
         }
 
+        const ot_low_delay_info low_delay_info = { TD_TRUE, 200, TD_FALSE };
+        ret = ss_mpi_vpss_set_chn_low_delay(m_vpss_grp, m_vpss_chn, &low_delay_info);
+        if (ret != TD_SUCCESS)
+        {
+            DEV_WRITE_LOG_ERROR("ss_mpi_vpss_set_chn_low_delay failed with %#x", ret);
+        }
+
         m_is_start = true;
         return true;
     }
