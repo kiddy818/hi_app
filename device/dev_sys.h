@@ -8,7 +8,7 @@ namespace hisilicon{namespace dev{
     class sys
     {
         public:
-            static bool init(bool jpg_snap_enabled);
+            static bool init(ot_vi_vpss_mode_type mode);
             static void release();
 
             static ot_venc_chn alloc_venc_chn();

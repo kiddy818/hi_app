@@ -63,7 +63,7 @@ namespace hisilicon{namespace dev{
 
             bool trigger_jpg(const char* file,int quality,const char* str_info);
 
-            static bool init(bool jpg_snap_enabled);
+            static bool init(ot_vi_vpss_mode_type mode);
             static void release();
 
             static void start_capture(bool enable);

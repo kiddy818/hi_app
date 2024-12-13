@@ -201,9 +201,9 @@ namespace hisilicon{namespace dev{
         }
     }
 
-    bool chn::init(bool jpg_snap_enabled)
+    bool chn::init(ot_vi_vpss_mode_type mode)
     {
-        if(!sys::init(jpg_snap_enabled))
+        if(!sys::init(mode))
         {
             return false;
         }

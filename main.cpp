@@ -862,8 +862,25 @@ int main(int argc,char* argv[])
     printf("\tinterval:%d\n",g_jpg_save_info.interval);
     printf("\tdir_path:%s\n",g_jpg_save_info.dir_path);
 
+    //aiisp
+    get_aiisp_info();
+    printf("aiisp info\n");
+    printf("\tenable:%d\n",g_aiisp_info.enable);
+    printf("\tmode:%d\n",g_aiisp_info.mode);
+    printf("\tmodel_file:%s\n",g_aiisp_info.model_file);
+
     //chn init
-    hisilicon::dev::chn::init(g_jpg_save_info.enable ? true : false);
+    ot_vi_vpss_mode_type mode = OT_VI_ONLINE_VPSS_ONLINE;
+    if(g_aiisp_info.enable)
+    {
+        mode = OT_VI_OFFLINE_VPSS_OFFLINE;
+    }
+    else if(g_jpg_save_info.enable)
+    {
+        mode = OT_VI_ONLINE_VPSS_OFFLINE;
+    }
+
+    hisilicon::dev::chn::init(mode);
 
     //vi
     get_vi_info();
@@ -902,11 +919,6 @@ int main(int argc,char* argv[])
     }
 
     //aiisp
-    get_aiisp_info();
-    printf("aiisp info\n");
-    printf("\tenable:%d\n",g_aiisp_info.enable);
-    printf("\tmode:%d\n",g_aiisp_info.mode);
-    printf("\tmodel_file:%s\n",g_aiisp_info.model_file);
     if(g_aiisp_info.enable)
     {
         g_chn->aiisp_start(g_aiisp_info.model_file,g_aiisp_info.mode);
