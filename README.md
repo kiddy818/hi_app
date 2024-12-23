@@ -651,8 +651,13 @@ sudo docker run -it -v /home/mjj/work/docker_shared:/home/mjj/work/docker_shared
 1. 不开启aiisp,只开启yolov5,一帧的svp_acl_mdl_execute()耗时在27ms
 2. 开启aiisp(aibnr_model_denoise_priority.bin),再开启yolov5,一帧的svp_acl_mdl_execute()耗时在40ms
 ###### aiisp资源: 
-1. 只开启aiisp(aibnr_model_denoise_priority.bin),cat /proc/umap/aiisp中,station: 87%
-2. 同时开启aiisp(aibnr_model_denoise_priority.bin)和yolov5,cat /proc/umap/aiisp中,station: 99%
+1. 只开启aiisp(aibnr_model_denoise_priority.bin):  
+    cat /proc/umap/aiisp中,station: 87%  
+    cat /proc/umap/vi中,vi_pipe_status信息中,frame_rate为30  
+
+2. 同时开启aiisp(aibnr_model_denoise_priority.bin)和yolov5:  
+    cat /proc/umap/aiisp中,station: 99%  
+    cat /proc/umap/vi中,vi_pipe_status信息中,frame_rate为18  
 
 引用自"ISP 开发参考.pdf"章节5 FAQ
 > AIISP和用户推理任务都会占用 NPU 性能， NPU 会根据处理任务的优先级高低进行任
