@@ -952,6 +952,10 @@ int main(int argc,char* argv[])
     printf("\tenable:%d\n",g_yolov5_info.enable);
     printf("\tmodel_file:%s\n",g_yolov5_info.model_file);
     printf("\tcfg_file:%s\n",g_yolov5_info.cfg_file);
+    if(g_aiisp_info.enable && g_yolov5_info.enable)
+    {
+        printf("Warning:ai power is shared by aiisp and yolov5,which both are enabled!\n");
+    }
     if(g_yolov5_info.enable)
     {
         hisilicon::dev::svp::init(g_yolov5_info.cfg_file);

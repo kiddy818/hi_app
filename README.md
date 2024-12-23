@@ -645,3 +645,7 @@ sudo docker run -it -v /home/mjj/work/docker_shared:/home/mjj/work/docker_shared
 1. VI_OFFLIE_VPSS_OFFLINE 主码流的延时为90ms左右
 2. VI_ONLINE_VPSS_OFFLINE 主码流的延时为58ms左右
 3. VI_ONLINE_VPSS_ONLINE  主码流的延时为32ms左右
+
+##### aiisp和yolov5共享AI算力,以3519DV500为例(AI算力2.5T):
+1. 不开启aiisp,只开启yolov5,一帧的svp_acl_mdl_execute()耗时在27ms
+2. 开启aiisp(aibnr_model_denoise_priority.bin),再开启yolov5,一帧的svp_acl_mdl_execute()耗时在40ms
