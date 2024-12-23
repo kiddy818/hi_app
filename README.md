@@ -653,3 +653,9 @@ sudo docker run -it -v /home/mjj/work/docker_shared:/home/mjj/work/docker_shared
 ###### aiisp资源: 
 1. 只开启aiisp(aibnr_model_denoise_priority.bin),cat /proc/umap/aiisp中,station: 87%
 2. 同时开启aiisp(aibnr_model_denoise_priority.bin)和yolov5,cat /proc/umap/aiisp中,station: 99%
+
+引用自"ISP 开发参考.pdf"章节5 FAQ
+> AIISP和用户推理任务都会占用 NPU 性能， NPU 会根据处理任务的优先级高低进行任
+> 务调度和抢占，数值越小优先级越高（AIISP 的优先级默认为 1 ，推理任务默认优先级为3)
+
+可以通过svp_acl_mdl_config_attr修改优先级
