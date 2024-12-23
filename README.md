@@ -659,7 +659,7 @@ sudo docker run -it -v /home/mjj/work/docker_shared:/home/mjj/work/docker_shared
     cat /proc/umap/aiisp中,station: 99%  
     cat /proc/umap/vi中,vi_pipe_status信息中,frame_rate为18  
 
-引用自"ISP 开发参考.pdf"章节5 FAQ
+引用自"AIISP 开发参考.pdf"章节5 FAQ
 > AIISP和用户推理任务都会占用 NPU 性能， NPU 会根据处理任务的优先级高低进行任
 > 务调度和抢占，数值越小优先级越高（AIISP 的优先级默认为 1 ，推理任务默认优先级为3)
 
