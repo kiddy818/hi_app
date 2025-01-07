@@ -32,6 +32,7 @@ namespace hisilicon{namespace dev{
         m_rgn_chn_attr.attr.overlay_chn.dst = OT_RGN_ATTACH_JPEG_MAIN;
 
         m_rgn_h = sys::alloc_rgn_handle();
+        printf("rgn handle:%d\n",m_rgn_h);
     }
 
     osd::~osd()
@@ -100,6 +101,7 @@ namespace hisilicon{namespace dev{
         ss_mpi_rgn_detach_from_chn(m_rgn_h, &src_chn);
         ss_mpi_rgn_destroy(m_rgn_h); 
 
+         sys::free_rgn_handle(m_rgn_h);
         m_is_start = false;
     }
 

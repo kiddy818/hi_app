@@ -97,13 +97,40 @@ namespace hisilicon{namespace dev{
         return g_free_venc_chn++;
     }
 
-    ot_rgn_handle sys::alloc_rgn_handle()
+    static std::mutex g_rgn_mu;
+    static bool g_rgn_inited = false;
+    static bool g_rgn_flag[OT_RGN_HANDLE_MAX];
+    void sys::free_rgn_handle(ot_rgn_handle hdl)
     {
-        static std::mutex g_rgn_mu;
-        static ot_rgn_handle g_free_rgn = 0;
-
         std::unique_lock<std::mutex> lock(g_rgn_mu);
-        return g_free_rgn++;
+
+        if(hdl >=0 && hdl < OT_RGN_HANDLE_MAX)
+        {
+            g_rgn_flag[hdl] = false;
+        }
     }
 
+    ot_rgn_handle sys::alloc_rgn_handle()
+    {
+        std::unique_lock<std::mutex> lock(g_rgn_mu);
+        if(!g_rgn_inited)
+        {
+            g_rgn_inited = true;
+            for(int i = 0; i < OT_RGN_HANDLE_MAX; i++)
+            {
+                g_rgn_flag[i] = false;
+            }
+        }
+
+        for(int i = 0; i < OT_RGN_HANDLE_MAX; i++)
+        {
+            if(!g_rgn_flag[i])
+            {
+                g_rgn_flag[i] = true;
+                return (ot_rgn_handle)i;
+            }
+        }
+
+        return OT_INVALID_HANDLE;
+    }
 }}//namespace
