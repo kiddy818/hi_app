@@ -127,7 +127,6 @@ function insert_ko()
     insmod ot_vfmw.ko
     insmod ot_rc.ko
     insmod ot_venc.ko
-    insmod ot_venc_svr.ko
     insmod ot_h264e.ko
     insmod ot_h265e.ko
     insmod ot_jpege.ko
@@ -153,12 +152,16 @@ function insert_ko()
     insmod ot_pm.ko
     insert_security_subsys
 
-    #insert_gyro
+    # insert_gyro
+
+    insmod ot_user_proc.ko    # insmod ot_user_proc if psfm is needed.
 }
 
 function remove_ko()
 {
-    #remove_gyro
+    rmmod ot_user_proc        # rmmod ot_user_proc if psfm is needed.
+
+    # remove_gyro
     remove_security_subsys
     rmmod ot_pm
     rmmod ot_uvc
@@ -181,7 +184,6 @@ function remove_ko()
     rmmod ot_jpege
     rmmod ot_h265e
     rmmod ot_h264e
-    rmmod ot_venc_svr
     rmmod ot_venc
     rmmod ot_rc
     rmmod ot_vfmw
