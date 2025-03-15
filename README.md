@@ -648,8 +648,8 @@ sudo docker run -it -v /home/mjj/work/docker_shared:/home/mjj/work/docker_shared
 
 ##### aiisp和yolov5共享AI算力,以3519DV500为例(AI算力2.5T),OS082A20(VI 4k@30):
 ###### yolov5资源: 
-1. 不开启aiisp,只开启yolov5,一帧的svp_acl_mdl_execute()耗时在27ms
-2. 开启aiisp(aibnr_model_denoise_priority.bin),再开启yolov5,一帧的svp_acl_mdl_execute()耗时在40ms
+1.  不开启aiisp,只开启yolov5,一帧的svp_acl_mdl_execute()耗时在27ms
+2.  开启aiisp(aibnr_model_denoise_priority.bin),再开启yolov5,一帧的svp_acl_mdl_execute()耗时在40ms
 ###### aiisp资源: 
 1. 只开启aiisp(aibnr_model_denoise_priority.bin):  
     cat /proc/umap/aiisp中,station: 87%  
@@ -664,3 +664,45 @@ sudo docker run -it -v /home/mjj/work/docker_shared:/home/mjj/work/docker_shared
 > 务调度和抢占，数值越小优先级越高（AIISP 的优先级默认为 1 ，推理任务默认优先级为3)
 
 可以通过svp_acl_mdl_config_attr修改优先级
+
+#### ddr测试
+如果ddr型号未在兼容列表里，需要测试稳定性，测试方法整理如下:
+1.  首先需要确保能烧录uboot
+2.  参考"\ReleaseDoc\zh\02.only for reference\Hardware\Hi3519DV500 DDR DQ窗口查看方法及结果分析.pdf" 文档,运行ddr training,确保ddr窗口符合要求
+```
+//uboot下运行
+
+//参考文档，打开ddr寄存器控制,如下为3519dv500下的例子
+mw 0x110200a0 0x2
+
+//结果需要符合文档中的窗口要求
+ddr dataeye
+```
+3.  uboot下使用mtest命令测试，mtest默认未开启，开启方法:
+
+    1.  make ARCH=arm CROSS_COMPILE=aarch64-v01c01-linux-gnu- menuconfig
+
+    2.  Command line interface--->Memory commands--->[*] memtest
+```
+//uboot下使用mtest命令,如下命令运行10分钟以上时间，确保未有报错信息
+mtest 0x42000000 0x440000
+```
+
+4.  如果能进入kernle,可以使用开源工具memtester测试稳定性
+    1.  在https://pyropus.ca./software/memtester/下载最新版本，当前最新版本为memtester-4.7.1.tar.gz
+
+    2.  解压后修改conf-cc和conf-ld两个文件，将两个文件中的cc改为3519dv500使用的交叉编译器
+    ```
+    //conf-cc第一行修改为
+    aarch64-v01c01-linux-gnu-gcc -O2 -DPOSIX -D_POSIX_C_SOURCE=200809L -D_FILE_OFFSET_BITS=64 -DTEST_NARROW_WRITES -c
+
+    //conf-ld第一行修改为
+    aarch64-v01c01-linux-gnu-gcc -s
+    ```
+    3.  make生成memtester文件，把该文件复制到板子,测试命令如下:
+    ```
+    //memtester <memory> [runs]
+    //以下测试为申请100M,循环测试10次
+    ./memtester 100M 10
+    ```
+
