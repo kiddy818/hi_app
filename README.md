@@ -668,25 +668,26 @@ sudo docker run -it -v /home/mjj/work/docker_shared:/home/mjj/work/docker_shared
 ##### ddr测试
 如果ddr型号未在兼容列表里，需要测试稳定性，测试方法整理如下:
 1.  首先需要确保能烧录uboot
+
 2.  参考"\ReleaseDoc\zh\02.only for reference\Hardware\Hi3519DV500 DDR DQ窗口查看方法及结果分析.pdf" 文档,运行ddr training,确保ddr窗口符合要求
-```
-//uboot下运行
+    ```
+    //uboot下运行
 
-//参考文档，打开ddr寄存器控制,如下为3519dv500下的例子
-mw 0x110200a0 0x2
+    //参考文档，打开ddr寄存器控制,如下为3519dv500下的例子
+    mw 0x110200a0 0x2
 
-//结果需要符合文档中的窗口要求
-ddr dataeye
-```
+    //结果需要符合文档中的窗口要求
+    ddr dataeye
+    ```
 3.  uboot下使用mtest命令测试，mtest默认未开启，开启方法:
 
     1.  make ARCH=arm CROSS_COMPILE=aarch64-v01c01-linux-gnu- menuconfig
 
     2.  Command line interface--->Memory commands--->[*] memtest
-```
-//uboot下使用mtest命令,如下命令运行10分钟以上时间，确保未有报错信息
-mtest 0x42000000 0x440000
-```
+    ```
+    //uboot下使用mtest命令,如下命令运行10分钟以上时间，确保未有报错信息
+    mtest 0x42000000 0x440000
+    ```
 
 4.  如果能进入kernle,可以使用开源工具memtester测试稳定性
     1.  在https://pyropus.ca./software/memtester/下载最新版本，当前最新版本为memtester-4.7.1.tar.gz
@@ -705,4 +706,7 @@ mtest 0x42000000 0x440000
     //以下测试为申请100M,循环测试10次
     ./memtester 100M 10
     ```
+
+5.  如果条件允许，除了常温条件，还需要在低温和高温环境下测试。
+
 
