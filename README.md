@@ -665,7 +665,7 @@ sudo docker run -it -v /home/mjj/work/docker_shared:/home/mjj/work/docker_shared
 
 可以通过svp_acl_mdl_config_attr修改优先级
 
-#### ddr测试
+##### ddr测试
 如果ddr型号未在兼容列表里，需要测试稳定性，测试方法整理如下:
 1.  首先需要确保能烧录uboot
 2.  参考"\ReleaseDoc\zh\02.only for reference\Hardware\Hi3519DV500 DDR DQ窗口查看方法及结果分析.pdf" 文档,运行ddr training,确保ddr窗口符合要求
