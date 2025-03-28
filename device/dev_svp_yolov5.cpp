@@ -38,8 +38,8 @@ static std::vector<std::string> g_yolov5_class_str = {"person", "bicycle", "car"
         m_vpss_chn_attr.dynamic_range             = OT_DYNAMIC_RANGE_SDR8;
         m_vpss_chn_attr.pixel_format              = OT_PIXEL_FORMAT_YVU_SEMIPLANAR_420;
         m_vpss_chn_attr.compress_mode             = OT_COMPRESS_MODE_NONE;
-        //m_vpss_chn_attr.aspect_ratio.mode         = OT_ASPECT_RATIO_NONE;
-        m_vpss_chn_attr.aspect_ratio.mode         = OT_ASPECT_RATIO_AUTO;
+        m_vpss_chn_attr.aspect_ratio.mode         = OT_ASPECT_RATIO_NONE;
+        //m_vpss_chn_attr.aspect_ratio.mode         = OT_ASPECT_RATIO_AUTO;
 
         m_vpss_chn_attr.frame_rate.src_frame_rate = -1;
         m_vpss_chn_attr.frame_rate.dst_frame_rate = -1;
