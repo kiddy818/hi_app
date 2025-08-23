@@ -314,11 +314,18 @@ namespace hisilicon{namespace dev{
             return false;
         }
 
+        ret = ot_scene_pause(TD_FALSE);
+        if(ret != TD_SUCCESS)
+        {
+            return false;
+        }
+
         return true;
     }
 
     void chn::scene_release()
     {
+        ot_scene_pause(TD_TRUE);
         ot_scene_deinit();
     }
 
