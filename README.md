@@ -102,13 +102,15 @@ vlc连接方法:媒体->打开网络串流->输入RTSP URL
 
 
 #### RTMP
-rtmp功能默认不开启,需要修改/opt/ceanic/etc/net_service.json文件 
+1.  rtmp功能默认不开启,需要修改/opt/ceanic/etc/net_service.json文件,enable修改为1
+2.  rtmp当前只支持h264,需要修改/opt/ceanic/etc/venc.json中编码类型为h264
 
 ##### RTMP测试流程
 1. ubuntu下启动nginx测试服务器程序
 2. 修改net_service.json中enable为1
-3. 运行设备程序ceanic_app,运行成功的话,设备会connect到nginx并发布视频(发布的视频url在net_service.json中设置) 
-4. pc端运行vlc,输入url,从nginx拉流，观看视频 
+3. 修改venc.json中H264_CBR(或H264_VBR)
+4. 运行设备程序ceanic_app,运行成功的话,设备会connect到nginx,并发布视频(发布的视频url在net_service.json中设置) 
+5. pc端运行vlc,输入url,从nginx拉流，观看视频 
 
 ##### RTMP测试服务器(nginx)搭建(ubuntu20.04)
 1. 按照如下命令编译nginx,需要注意的是运行nginx, -C 后面的参赛需要是全路径
