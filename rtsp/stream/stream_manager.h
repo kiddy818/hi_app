@@ -10,15 +10,25 @@ namespace ceanic{namespace rtsp{
 
     typedef std::shared_ptr<stream_stock> stream_ptr;
 
+    struct stream_ops
+    {
+        bool (*request_i_frame_fun)(int32_t chn,int32_t stream);
+        bool (*get_stream_head_fun)(int32_t chn,int32_t stream,ceanic::util::media_head* mh);
+    };
+
     class stream_manager
     {
         public:
-            bool get_stream(int chn,int stream_id, stream_ptr& stream);
-            bool del_stream(int chn,int stream_id);
+            bool register_stream_ops(stream_ops ops);
+            bool request_i_frame(int32_t chn,int32_t stream_id);
+            bool get_stream_head(int32_t chn,int32_t stream_id,ceanic::util::media_head* mh);
+
+            bool get_stream(int32_t chn,int32_t stream_id, stream_ptr& stream);
+            bool del_stream(int32_t chn,int32_t stream_id);
 
             static stream_manager* instance();
 
-            bool process_data(int chn,int stream_id,util::stream_head* head,const char*buf,int len);
+            bool process_data(int32_t chn,int32_t stream_id,util::stream_head* head,const char*buf,int32_t len);
 
         private:
             bool start_stream_check();
@@ -34,6 +44,7 @@ namespace ceanic{namespace rtsp{
 
             bool m_stream_checking;
             std::thread m_thread;
+            stream_ops m_ops;
     };
 
 }}//namespace

@@ -2,15 +2,12 @@
 #include <dlfcn.h>
 #include <map>
 #include <util/std.h>
-#include <device/dev_chn.h>
 
 namespace ceanic{namespace rtsp{
 
-    stream_stock::stream_stock(int chn,int stream_id)
-        :m_chn(chn),m_stream_id(stream_id)
+    stream_stock::stream_stock(int32_t chn,int32_t stream_id)
+        :stream(chn,stream_id)
     {
-        memset(&m_media_head,0,sizeof(m_media_head));
-        m_media_head.vdec = util::STREAM_ENCODE_H264;
     }
 
     stream_stock::~stream_stock()
@@ -40,38 +37,7 @@ namespace ceanic{namespace rtsp{
         }
     }
 
-    bool stream_stock::get_stream_type(int* stream_type)
-    {
-        if(!is_start())
-        {
-            return false;
-        }
-
-        *stream_type = 1;
-        return true;
-    }
-
-    bool stream_stock::request_i_frame()
-    {
-        if(m_is_start)
-        {
-            return hisilicon::dev::chn::request_i_frame(m_chn,m_stream_id);
-        }
-
-        return false;
-    }
-
-    bool stream_stock::get_stream_head(util::media_head* mh)
-    {
-        if(!m_is_start)
-        {
-            return false;
-        }
-
-        return hisilicon::dev::chn::get_stream_head(m_chn,m_stream_id,mh);
-    }
-
-    void stream_stock::process_data(util::stream_head* head,const char* buf,int len)
+    void stream_stock::process_data(util::stream_head* head,const char* buf,int32_t len)
     {
         time_t now = time(NULL);
         if(now != m_last_stream_time)
@@ -87,7 +53,7 @@ namespace ceanic{namespace rtsp{
             return ;
         }
 
-        post_stream_to_observer(head,buf,len);
+        post_stream_to_observer(shared_from_this(),head,buf,len);
     }
 
 }}//namespace

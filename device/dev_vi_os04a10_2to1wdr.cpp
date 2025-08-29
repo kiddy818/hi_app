@@ -48,7 +48,7 @@ namespace hisilicon{namespace dev{
         m_pipes.clear();
         m_pipes.push_back(0);
         m_pipes.push_back(1);
-        for(int i = 0; i < m_pipes.size(); i++)
+        for(uint32_t i = 0; i < m_pipes.size(); i++)
         {
             m_fusion_grp_attr.pipe_id[i] = m_pipes[i];
         }

@@ -2,21 +2,23 @@
 #include <session.h>
 #include <request.h>
 #include <stream_video_handler.h>
+#include <stream_audio_handler.h>
 #include <h264_rtp_serialize.h>
 #include <h265_rtp_serialize.h>
-#include <mjpeg_rtp_serialize.h>
+#include <pcmu_rtp_serialize.h>
+#include <aac_rtp_serialize.h>
 #include <rtp_udp_session.h>
 #include <rtp_tcp_session.h>
 #include <rtsp_log.h>
 
 namespace ceanic{namespace rtsp{
 
-    short rtsp_request_handler::udp_base_port = 5000;
+    int16_t rtsp_request_handler::udp_base_port = 5000;
     std::mutex rtsp_request_handler::udp_port_mutex;
 
-    bool rtsp_request_handler::bind_udp_port(short port)
+    bool rtsp_request_handler::bind_udp_port(int16_t port)
     {
-        int s = socket(AF_INET, SOCK_DGRAM, 0);
+        int32_t s = socket(AF_INET, SOCK_DGRAM, 0);
         bool ret = false;
 
         struct sockaddr_in svr_addr;
@@ -24,7 +26,7 @@ namespace ceanic{namespace rtsp{
         svr_addr.sin_family = AF_INET;
         svr_addr.sin_port = htons(port);
         svr_addr.sin_addr.s_addr = htonl(INADDR_ANY);    
-        int len = sizeof(svr_addr);
+        int32_t len = sizeof(svr_addr);
         if (bind(s,(sockaddr*)&svr_addr, len) == 0)
         {
             ret = true;
@@ -35,11 +37,11 @@ namespace ceanic{namespace rtsp{
         return ret;
     }
 
-    short rtsp_request_handler::get_udp_port()
+    int16_t rtsp_request_handler::get_udp_port()
     {
         std::unique_lock<std::mutex> lock(udp_port_mutex);
 
-        short port = udp_base_port;
+        int16_t port = udp_base_port;
 
         while (!bind_udp_port(port)
                 || !bind_udp_port(port + 1))
@@ -86,12 +88,19 @@ namespace ceanic{namespace rtsp{
         {
             m_video_handler->stop();
             m_stream->unregister_stream_observer(m_video_handler);
-            m_video_handler.reset();
+            m_video_handler = nullptr;
+        }
+
+        if(m_audio_handler)
+        {
+            m_audio_handler->stop();
+            m_stream->unregister_stream_observer(m_audio_handler);
+            m_audio_handler = nullptr;
         }
 
         stream_manager::instance()->del_stream(m_stream->chn(),m_stream->stream_id());
 
-        m_stream.reset();
+        m_stream = nullptr;
     }
 
     bool rtsp_request_handler::get_channel(std::string& uri, int& chn)
@@ -102,8 +111,8 @@ namespace ceanic{namespace rtsp{
 
         const char *p = uri.c_str()+pos+1;
 
-        int ch;
-        int ret = 0;
+        int32_t ch;
+        int32_t ret = 0;
         if (sscanf(p,"stream%d",&ch)== 1) {
             chn = ch-1;
             ret = (chn >= 0);
@@ -120,7 +129,7 @@ namespace ceanic{namespace rtsp{
         std::cout << "------------rtsp request-------------" << std::endl;
         std::cout << "method: " << req.method << std::endl;
         std::cout << "uri: " << req.uri << std::endl;
-        for (unsigned int i = 0; i < req.headers.size(); i++)
+        for (unsigned int32_t i = 0; i < req.headers.size(); i++)
         {
             std::cout << req.headers[i].name << ":  " << req.headers[i].value << std::endl;
         }
@@ -199,7 +208,7 @@ namespace ceanic{namespace rtsp{
         sess.send_packet_n(str.c_str(), str.size());
     }
 
-    unsigned int rtsp_request_handler::get_session_no()
+    uint32_t rtsp_request_handler::get_session_no()
     {
         srand(time(NULL));
         return rand() % 99999999;
@@ -207,7 +216,7 @@ namespace ceanic{namespace rtsp{
 
     bool rtsp_request_handler::get_seq_id(const request& req, int& seq)
     {
-        for (unsigned int i = 0; i < req.headers.size(); i++)
+        for (uint32_t i = 0; i < req.headers.size(); i++)
         {
             if (strcasecmp(req.headers[i].name.c_str(),"CSeq") == 0)
             {
@@ -240,7 +249,7 @@ namespace ceanic{namespace rtsp{
             return;
         }
 
-        if (!m_stream->get_stream_head(&m_mh))
+        if(!stream_manager::instance()->get_stream_head(m_stream->chn(),m_stream->stream_id(),&m_mh))
         {
             send_faild(sess);
             return;
@@ -255,22 +264,17 @@ namespace ceanic{namespace rtsp{
         sdp_desc += "t=0 0\r\n";
 
         sdp_desc += "a=range:npt= 0-\r\n";
-        if (m_mh.vdec == util::STREAM_ENCODE_H264)
+        if (m_mh.video_info.vcode == util::STREAM_VIDEO_ENCODE_H264)
         {
             sdp_desc += "m=video 0 RTP/AVP 96\r\n";
             sdp_desc += "c=IN IP4 0.0.0.0\r\n";
             sdp_desc += "a=rtpmap:96 H264/90000\r\n";
         }
-        else if (m_mh.vdec == util::STREAM_ENCODE_H265)
+        else if (m_mh.video_info.vcode == util::STREAM_VIDEO_ENCODE_H265)
         {
             sdp_desc += "m=video 0 RTP/AVP 96\r\n";
             sdp_desc += "c=IN IP4 0.0.0.0\r\n";
             sdp_desc += "a=rtpmap:96 H265/90000\r\n";
-        }
-        else if (m_mh.vdec == util::STREAM_ENCODE_MJPEG)
-        {
-            sdp_desc += "m=video 0 RTP/AVP 26\r\n";
-            sdp_desc += "c=IN IP4 0.0.0.0\r\n";
         }
         else
         {
@@ -278,6 +282,25 @@ namespace ceanic{namespace rtsp{
             return;
         }
         sdp_desc = sdp_desc + std::string("a=control:") + req.uri + std::string("/video\r\n");
+
+        if(m_mh.audio_info.acode == util::STREAM_AUDIO_ENCODE_G711U)
+        {
+            sdp_desc += "m=audio 0 RTP/AVP 0\r\n";
+            sdp_desc += "c=IN IP4 0.0.0.0\r\n";
+            sdp_desc += "a=rtpmap:0 pcmu/8000/1\r\n";
+            sdp_desc = sdp_desc + std::string("a=control:") + req.uri + std::string("/audio\r\n");
+        }
+        else if(m_mh.audio_info.acode == util::STREAM_AUDIO_ENCODE_AAC)
+        {
+            sdp_desc += "m=audio 0 RTP/AVP 97\r\n";
+            sdp_desc += "c=IN 0.0.0.0\r\n";
+            sdp_desc = sdp_desc + "a=rtpmap:97 mpeg4-generic/" + std::to_string(m_mh.audio_info.sample_rate) + "/" + std::to_string(m_mh.audio_info.chn) + "\r\n";
+            sdp_desc = sdp_desc + std::string("a=control:") + req.uri + std::string("/audio\r\n");
+
+            std::string str_audio_cfg;
+            aac_rtp_serialize::get_config(1/*profile AACLC*/,m_mh.audio_info.sample_rate,m_mh.audio_info.chn,str_audio_cfg);
+            sdp_desc += "a=fmtp:97 stream_type=5;profile-level-id=1;mode=AAC-hbr;sizeLength=13;indexLength=3;config=" + str_audio_cfg + ";constantDuration=1024\r\n";
+        }
 
         sdp_desc += "\r\n";
 
@@ -305,7 +328,7 @@ namespace ceanic{namespace rtsp{
         transport.client_port[0] = 6000;
         transport.client_port[1] = 6001;
 
-        for (unsigned int i = 0; i < req.headers.size(); i++)
+        for (uint32_t i = 0; i < req.headers.size(); i++)
         {
             if (strcasecmp(req.headers[i].name.c_str(),"Transport") == 0)
             {
@@ -316,7 +339,7 @@ namespace ceanic{namespace rtsp{
                 {
                     q = q + strlen("client_port=");
 
-                    int p1, p2;
+                    int32_t p1, p2;
                     if (sscanf(q,"%d-%d",&p1,&p2) == 2)
                     {
                         transport.client_port[0] = p1;
@@ -364,8 +387,8 @@ namespace ceanic{namespace rtsp{
         get_transport(req, transport, sess);
 
         std::string transport_str;
-        short server_port = transport.client_port[0];
-        int interleaved = is_video ? 0 : 2;
+        int16_t server_port = transport.client_port[0];
+        int32_t interleaved = is_video ? 0 : 2;
 
         if (transport.mode == UDP_MODE)
         {
@@ -437,30 +460,43 @@ namespace ceanic{namespace rtsp{
 
         if (is_video)
         {
-            if (m_mh.vdec == util::STREAM_ENCODE_H264)
+            //96,97,48000等值需和describe中的值匹配
+            if (m_mh.video_info.vcode == util::STREAM_VIDEO_ENCODE_H264)
             {
                 rtp_serialize = rtp_serialize_ptr(new h264_rtp_serialize(96));
             }
-            else if(m_mh.vdec == util::STREAM_ENCODE_H265)
+            else if(m_mh.video_info.vcode == util::STREAM_VIDEO_ENCODE_H265)
             {
                 rtp_serialize = rtp_serialize_ptr(new h265_rtp_serialize(96));
             }
-            else if (m_mh.vdec == util::STREAM_ENCODE_MJPEG)
-            {
-                rtp_serialize = rtp_serialize_ptr(new mjpeg_rtp_serialize());
-            }
             else 
             {
+                RTSP_WRITE_LOG_ERROR("unsupported vdec code:%d",m_mh.video_info.vcode);
+                send_faild(sess);
+                return;
             }
             m_video_handler = stream_handler_ptr(new stream_video_handler(rtp_session, rtp_serialize));
             m_stream->register_stream_observer(m_video_handler);
         }
         else
         {
-            //TODO
+            if(m_mh.audio_info.acode == util::STREAM_AUDIO_ENCODE_G711U)
+            {
+                rtp_serialize = rtp_serialize_ptr(new pcmu_rtp_serialize());
+            }
+            else if(m_mh.audio_info.acode == util::STREAM_AUDIO_ENCODE_AAC)
+            {
+                rtp_serialize = rtp_serialize_ptr(new aac_rtp_serialize(97,m_mh.audio_info.sample_rate));
+            }
+            else
+            {
+                RTSP_WRITE_LOG_ERROR("unsupported adec code:%d",m_mh.audio_info.acode);
+                send_faild(sess);
+                return;
+            }
+            m_audio_handler = stream_handler_ptr(new stream_audio_handler(rtp_session,rtp_serialize));
+            m_stream->register_stream_observer(m_audio_handler);
         }
-
-        m_stream->request_i_frame();
 
         m_state = RTSP_STATE_SETUPED;
     }
@@ -492,7 +528,12 @@ namespace ceanic{namespace rtsp{
             m_video_handler->start();
         }
 
-        m_stream->request_i_frame();
+        if(m_audio_handler)
+        {
+            m_audio_handler->start();
+        }
+
+        stream_manager::instance()->request_i_frame(m_stream->chn(),m_stream->stream_id());
     }
 
     void rtsp_request_handler::process_method_teardown(const request& req, session& sess)

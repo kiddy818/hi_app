@@ -6,16 +6,16 @@
 namespace ceanic{namespace rtsp{
 
     class stream_handler
-        :public stream_observer
+        :public ceanic::util::stream_observer
     {
         public:
             stream_handler();
 
             virtual ~stream_handler();
 
-            void on_stream_come(util::stream_head* head, const char* buf, int len);
+            void on_stream_come(util::stream_obj_ptr sobj,util::stream_head* head, const char* buf, int32_t len);
 
-            void on_stream_error(int errno);
+            void on_stream_error(util::stream_obj_ptr sobj,int32_t errno);
 
             virtual bool start() = 0;
 
@@ -38,7 +38,7 @@ namespace ceanic{namespace rtsp{
             time_t m_beg;
 
         protected:
-            virtual bool process_stream(util::stream_head* head, const char* data, int len) = 0;
+            virtual bool process_stream(util::stream_obj_ptr sobj,util::stream_head* head, const char* data, int32_t len) = 0;
     };
 
     typedef std::shared_ptr<stream_handler> stream_handler_ptr; 

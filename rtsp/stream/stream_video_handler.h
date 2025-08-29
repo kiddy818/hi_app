@@ -21,7 +21,7 @@ namespace ceanic{namespace rtsp{
             int& get_rtcp_timeout();
 
         protected:
-            virtual bool process_stream(util::stream_head* head, const char* data, int len);
+            virtual bool process_stream(util::stream_obj_ptr sobj,util::stream_head* head, const char* data, int32_t len);
 
         protected:
             rtp_session_ptr m_rtp_session;

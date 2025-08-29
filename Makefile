@@ -3,6 +3,12 @@ CXX:=$(CROSS)g++
 STRIP=$(CROSS)strip
 CXXFLAGS += -std=c++17
 
+#关闭初始化顺序警告
+CXXFLAGS += -Wno-reorder
+
+#关闭changed in GCC 7.1警告
+CXXFLAGS += -Wno-psabi
+
 THIRD_LIBRARY_PATH=./thirdlibrary
 INC_PATH += -I./
 INC_PATH += -I./util/
@@ -26,7 +32,9 @@ LIBPATH += -L./
 LIBPATH += -L./log
 
 SRCXX += main.cpp
-SRCXX += json/jsoncpp.cpp
+SRCXX += json/json_reader.cpp
+SRCXX += json/json_writer.cpp
+SRCXX += json/json_value.cpp
 
 #log
 SRCXX += log/ceanic_log.cpp
@@ -42,12 +50,15 @@ SRCXX += rtsp/stream/stream_handler.cpp
 SRCXX += rtsp/stream/stream_manager.cpp
 SRCXX += rtsp/stream/stream_stock.cpp
 SRCXX += rtsp/stream/stream_video_handler.cpp
+SRCXX += rtsp/stream/stream_audio_handler.cpp
 SRCXX += rtsp/rtp_session/rtp_session.cpp
 SRCXX += rtsp/rtp_session/rtp_tcp_session.cpp
 SRCXX += rtsp/rtp_session/rtp_udp_session.cpp
 SRCXX += rtsp/rtp_serialize/h264_rtp_serialize.cpp
 SRCXX += rtsp/rtp_serialize/h265_rtp_serialize.cpp
-SRCXX += rtsp/rtp_serialize/mjpeg_rtp_serialize.cpp
+SRCXX += rtsp/rtp_serialize/rtp_serialize.cpp
+SRCXX += rtsp/rtp_serialize/pcmu_rtp_serialize.cpp
+SRCXX += rtsp/rtp_serialize/aac_rtp_serialize.cpp
 SRCXX += rtsp/rtp_serialize/rtp_serialize.cpp
 
 #rtmp
@@ -129,19 +140,25 @@ PROG_OBJ= $(SRC:.c=.o)
 DEVICE_OBJ= $(DEVICE_SRC:.cpp=.o)
 
 $(target):$(PROGXX_OBJ) $(PROG_OBJ) $(DEVICE_OBJ)
-	$(CXX) $^ -o $@ $(INC_PATH) $(LIBPATH) $(LIBS) $(CFLAGS) -lpthread
+	@echo "LD $(target)"
+	@$(CXX) $^ -o $@ $(INC_PATH) $(LIBPATH) $(LIBS) $(CFLAGS) -lpthread
 
 %.o:%.cpp
-	$(CXX) -c -o  $@ $< $(INC_PATH) $(CFLAGS) $(CXXFLAGS)
+	@echo "CXX $<"
+	@$(CXX) -c -o  $@ $< $(INC_PATH) $(CFLAGS) $(CXXFLAGS)
 
 %.o:%.c
-	$(CC) -c -o  $@ $< $(INC_PATH) $(CFLAGS)
+	@echo "CC $<"
+	@$(CC) -c -o  $@ $< $(INC_PATH) $(CFLAGS)
 
 device_clean:
 	-rm $(DEVICE_OBJ)
 
 clean:
 	-rm $(target) $(PROG_OBJ) $(PROGXX_OBJ) $(DEVICE_OBJ)
+
+strip:
+	$(STRIP) $(target)
 
 install:
 	cp $(target) /home/mjj/work/nfs/3519dv500/020/

@@ -31,15 +31,15 @@ namespace ceanic{namespace rtsp{
 
         std::string method;
         std::string uri;
-        int version_major;
-        int version_minor;
+        int32_t version_major;
+        int32_t version_minor;
         std::vector<header> headers;
 
         bool head_flag;
-        int content_len;
+        int32_t content_len;
         char * data;
-        int data_capacity;
-        int data_len;
+        int32_t data_capacity;
+        int32_t data_len;
     };
 
 }}//namespace

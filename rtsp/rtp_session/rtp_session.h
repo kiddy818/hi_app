@@ -14,15 +14,15 @@ namespace ceanic{namespace rtsp{
 
             virtual ~rtp_session();
 
-            virtual bool send_packet(rtp_packet* packet) = 0;
+            virtual bool send_packet(rtp_packet_t* packet) = 0;
 
-            virtual int& rtcp_timeout()
+            virtual int32_t & rtcp_timeout()
             {
                 return m_rtcp_timeout;
             }
 
         protected:
-            int m_rtcp_timeout;
+            int32_t m_rtcp_timeout;
     };
 
     typedef std::shared_ptr<rtp_session> rtp_session_ptr;

@@ -7,7 +7,7 @@
 
 namespace ceanic{namespace rtsp{
 
-    rtsp_server::rtsp_server(short port)
+    rtsp_server::rtsp_server(int16_t port)
         :m_listen_s(-1), m_port(port), m_is_run(false)
     {
     }
@@ -34,14 +34,14 @@ namespace ceanic{namespace rtsp{
         }
 
         /*reuse addr*/
-        int reuse_addr = 1;
-        int res = setsockopt(m_listen_s, SOL_SOCKET, SO_REUSEADDR,(char*)&reuse_addr, sizeof(reuse_addr));
+        int32_t reuse_addr = 1;
+        int32_t res = setsockopt(m_listen_s, SOL_SOCKET, SO_REUSEADDR,(char*)&reuse_addr, sizeof(reuse_addr));
         if (res != 0)
         {
             std::cerr << "reuse address failed" << std::endl;
         }
 
-        int buf_size = 128 * 1024;
+        int32_t buf_size = 128 * 1024;
         res = setsockopt(m_listen_s, SOL_SOCKET, SO_SNDBUF,(char*)&buf_size, sizeof(int));
         if (res != 0)
         {
@@ -49,7 +49,7 @@ namespace ceanic{namespace rtsp{
         }
 
         /*disable nagle*/
-        int no_delay = 1;
+        int32_t no_delay = 1;
         res = setsockopt(m_listen_s, IPPROTO_TCP, TCP_NODELAY,&no_delay, sizeof(no_delay));
         if (res != 0)
         {
@@ -62,7 +62,7 @@ namespace ceanic{namespace rtsp{
         server_addr.sin_family = AF_INET;
         server_addr.sin_port = htons(m_port);
         server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-        int server_len = sizeof(server_addr);
+        int32_t server_len = sizeof(server_addr);
         if ((res = bind(m_listen_s,(struct sockaddr*)&server_addr, server_len)) != 0)
         {
             std::cerr << "bind failed" << std::endl;
@@ -95,16 +95,16 @@ namespace ceanic{namespace rtsp{
     void rtsp_server::on_run()
     {
         struct sockaddr_in client_addr;
-        int client_len = sizeof(client_addr);
+        int32_t client_len = sizeof(client_addr);
 
         fd_set fread;
         fd_set ftemp;
-        int max_fds = m_listen_s;
+        int32_t max_fds = m_listen_s;
 
         FD_ZERO(&fread);
         FD_SET(m_listen_s,&fread);
 
-        int result;
+        int32_t result;
         char buf[4096];
         std::list<session_ptr>::iterator it;
         time_t last_timeout_tm = time(NULL);
@@ -177,7 +177,7 @@ namespace ceanic{namespace rtsp{
             if (FD_ISSET(m_listen_s,&ftemp))
             {
                 /*client connect*/
-                int s = accept(m_listen_s,(struct sockaddr*)&client_addr,(socklen_t *)&client_len);
+                int32_t s = accept(m_listen_s,(struct sockaddr*)&client_addr,(socklen_t *)&client_len);
                 if (s == -1)
                 {
                     if (errno == EINTR)
@@ -191,7 +191,7 @@ namespace ceanic{namespace rtsp{
                 RTSP_WRITE_LOG_INFO("remote ip:%s,socket:%d connected",ip,s);
 
                 /*set nonblock*/
-                int val = fcntl(s, F_GETFL, 0);
+                int32_t val = fcntl(s, F_GETFL, 0);
                 fcntl(s, F_SETFL, val | O_NONBLOCK);
 
                 session_ptr sess(new rtsp_session(s, MAX_SESSION_TIMEOUT + 3));
@@ -214,10 +214,10 @@ namespace ceanic{namespace rtsp{
 
             for (it = m_session_ptrs.begin();it != m_session_ptrs.end(); it++)
             {
-                int s = (*it)->socket();
+                int32_t s = (*it)->socket();
                 if (FD_ISSET(s,&ftemp))
                 {
-                    int recv_len = read(s, buf, 4096);
+                    int32_t recv_len = read(s, buf, 4096);
                     if (recv_len <= 0)
                     {
                         /*client close*/

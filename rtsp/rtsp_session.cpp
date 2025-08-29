@@ -3,7 +3,7 @@
 
 namespace ceanic{namespace rtsp{
 
-    rtsp_session::rtsp_session(int s, int timeout)
+    rtsp_session::rtsp_session(int32_t s, int32_t timeout)
         :session(s, timeout)
     {
     }
@@ -20,7 +20,7 @@ namespace ceanic{namespace rtsp{
         }
     }
 
-    int rtsp_session::get_session_timeout()
+    int32_t rtsp_session::get_session_timeout()
     {
         return m_timeout;
     }
@@ -37,7 +37,7 @@ namespace ceanic{namespace rtsp{
         }
     }
 
-    int rtsp_session::get_rtcp_timeout()
+    int32_t rtsp_session::get_rtcp_timeout()
     {
         stream_handler_ptr sh;
         if (m_handler.get_video_handle(sh))
@@ -82,9 +82,9 @@ namespace ceanic{namespace rtsp{
         m_timeout = MAX_SESSION_TIMEOUT;
     }
 
-    std::optional<bool> rtsp_session::handle_read(const char* data, int len)
+    std::optional<bool> rtsp_session::handle_read(const char* data, int32_t len)
     {
-        int left = len;
+        int32_t left = len;
         std::optional<bool> result;
         while (left > 0)
         {

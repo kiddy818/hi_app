@@ -14,7 +14,7 @@ namespace ceanic{namespace stream_save{
             virtual bool open() = 0;
             virtual void close() = 0;
             virtual bool is_open() = 0;
-            virtual bool input_data(ceanic::util::stream_head* head,const char* buf,int len) = 0;
+            virtual bool input_data(ceanic::util::stream_head* head,const char* buf,int32_t len) = 0;
     };
 
 }}//namespace

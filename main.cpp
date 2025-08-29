@@ -720,8 +720,8 @@ static void thread_1s()
         if(g_jpg_save_info.enable 
                 && cur_tm % g_jpg_save_info.interval == 0)
         {
-            char snap_file[255];
-            sprintf(snap_file,"%s/snap%d.jpg",g_jpg_save_info.dir_path,cur_tm);
+            char snap_file[512];
+            sprintf(snap_file,"%s/snap%d.jpg",g_jpg_save_info.dir_path,(uint32_t)cur_tm);
             g_chn->trigger_jpg(snap_file,g_jpg_save_info.quality,"抓拍测试");
         }
     }
@@ -840,6 +840,10 @@ int main(int argc,char* argv[])
     printf("\trtmp enable:%d\n",g_net_service_info.rtmp_enable);
     printf("\trtmp main url:%s\n",g_net_service_info.rtmp_main_url);
     printf("\trtmp sub url:%s\n",g_net_service_info.rtmp_sub_url);
+    ceanic::rtsp::stream_ops ops;
+    ops.request_i_frame_fun = hisilicon::dev::chn::request_i_frame;
+    ops.get_stream_head_fun = hisilicon::dev::chn::get_stream_head;
+    ceanic::rtsp::stream_manager::instance()->register_stream_ops(ops);
     ceanic::rtsp::rtsp_server rs(g_net_service_info.rtsp_port);
     if(!rs.run())
     {

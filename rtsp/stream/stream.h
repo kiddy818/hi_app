@@ -6,11 +6,13 @@
 namespace ceanic{namespace rtsp{
 
     class stream
-        :public stream_post
+        :public ceanic::util::stream_obj
+        ,public ceanic::util::stream_post
+        ,public std::enable_shared_from_this<stream>
     {
         public:
-            stream()
-                :m_is_start(false), m_per_sec_len(0)
+            stream(int32_t chn,int32_t stream_id)
+                :stream_obj("rtsp_stream",chn,stream_id),m_is_start(false), m_per_sec_len(0)
             {
             }
 
@@ -37,7 +39,7 @@ namespace ceanic{namespace rtsp{
                 return m_is_start;
             }
 
-            int per_sec_len()
+            int32_t per_sec_len()
             {
                 return m_is_start ? m_per_sec_len : 0;
             }
@@ -49,7 +51,7 @@ namespace ceanic{namespace rtsp{
 
         protected:
             bool m_is_start;
-            unsigned int m_per_sec_len;
+            uint32_t m_per_sec_len;
             time_t m_last_stream_time;
     };
 

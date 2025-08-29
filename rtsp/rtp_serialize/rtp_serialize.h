@@ -13,20 +13,20 @@ namespace ceanic{namespace rtsp{
     class rtp_serialize
     {
         public:
-            explicit rtp_serialize(int payload);
+            explicit rtp_serialize(int32_t payload);
 
             virtual ~rtp_serialize();
 
-            virtual bool serialize(util::stream_head& head, const char* buf, int len, rtp_session_ptr rs) = 0;
+            virtual bool serialize(util::stream_head& head, const char* buf, int32_t len, rtp_session_ptr rs) = 0;
 
         protected:
-            unsigned int get_random32();
-            unsigned short get_ramdom16();
+            uint32_t get_random32();
+            uint16_t get_ramdom16();
 
         protected:
-            int m_payload;
-            unsigned short m_seq;
-            unsigned int m_ssrc;
+            int32_t m_payload;
+            uint16_t m_seq;
+            uint32_t m_ssrc;
     };
 
     typedef std::shared_ptr<rtp_serialize> rtp_serialize_ptr;

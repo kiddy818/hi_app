@@ -1,16 +1,10 @@
 #include <util/std.h>
 #include <rtmp/session.h>
+#include <rtmp/rtmp_log.h>
 
 namespace ceanic{namespace rtmp{
 
 #define RTMP_HEAD_SIZE   (sizeof(RTMPPacket)+RTMP_MAX_HEADER_SIZE)
-
-    typedef struct
-    {
-        uint32_t len;
-        uint32_t timestamp;
-        int32_t type;
-    }_head;
 
     session::session(std::string url)
         :m_url(url),m_bstart(false),m_sps_size(0),m_pps_size(0)
@@ -34,7 +28,7 @@ namespace ceanic{namespace rtmp{
         m_rtmp = RTMP_Alloc();
         if(m_rtmp == NULL)
         {
-            fprintf(stderr,"RTMP_ALLOC() failed\n");
+            RTMP_WRITE_LOG_ERROR("RTMP_ALLOC() failed");
             return false;
         }
 
@@ -42,10 +36,10 @@ namespace ceanic{namespace rtmp{
         m_rtmp->Link.timeout = 5;
         m_rtmp->Link.lFlags |= RTMP_LF_LIVE;
         
-        int ret = RTMP_SetupURL(m_rtmp,(char*)m_url.c_str());
+        int32_t ret = RTMP_SetupURL(m_rtmp,(char*)m_url.c_str());
         if(!ret)
         {
-            fprintf(stderr,"RTMP_SetupURL() failed\n");
+            RTMP_WRITE_LOG_ERROR("RTMP_SetupURL() failed");
             RTMP_Free(m_rtmp);
             return false;
         }
@@ -57,7 +51,7 @@ namespace ceanic{namespace rtmp{
         ret = RTMP_Connect(m_rtmp,NULL);
         if(!ret)
         {
-            fprintf(stderr,"RTMP_Connect() failed\n");
+            RTMP_WRITE_LOG_ERROR("RTMP_Connect() failed");
             RTMP_Free(m_rtmp);
             return false;
         }
@@ -65,15 +59,15 @@ namespace ceanic{namespace rtmp{
         ret = RTMP_ConnectStream(m_rtmp,0);
         if(!ret)
         {
-            fprintf(stderr,"RTMP_ConnectStream() failed\n");
+            RTMP_WRITE_LOG_ERROR("RTMP_ConnectStream() failed");
             RTMP_Close(m_rtmp);
             RTMP_Free(m_rtmp);
             return false;
         }
 
-        fprintf(stdout,"Rtmp_Connect success\n");
+        RTMP_WRITE_LOG_INFO("Rtmp_Connect success");
         m_bstart = true;
-        m_thread = std::thread(&session::on_process_nalu,this);
+        m_thread = std::thread(&session::on_process,this);
         return true;
     }
 
@@ -99,6 +93,38 @@ namespace ceanic{namespace rtmp{
         return m_bstart;
     }
 
+    bool session::input_audio_frame(const uint8_t* data,uint32_t len,uint32_t timestamp)
+    {
+        if(!m_bstart)
+        {
+            return false;
+        }
+
+        timestamp &= 0xffffff;
+
+        if(!RTMP_IsConnected(m_rtmp))
+        {
+            RTMP_WRITE_LOG_ERROR("not connected");
+            return false;
+        }
+
+        if((uint32_t)m_sbuf.get_remain_len() < len + sizeof(_head))
+        {
+            RTMP_WRITE_LOG_ERROR("overflow");
+            return false;
+        }
+
+        _head head;
+        head.len = len;
+        head.timestamp = timestamp;
+        head.type = 0;
+
+        m_sbuf.input_data(&head,sizeof(head));
+        m_sbuf.input_data((char*)data,len);
+
+        return true;
+    }
+
     bool session::input_one_nalu(const uint8_t* data,uint32_t len,uint32_t timestamp)
     {
         if(!m_bstart)
@@ -106,11 +132,12 @@ namespace ceanic{namespace rtmp{
             return false;
         }
 
-        //if timestamp > 0xffffff,librtmp will print "WARNING: Larger timestamp than 24-bit"
+        //if timestamp > 0xffffff,librtmp will print32_t "WARNING: Larger timestamp than 24-bit"
         timestamp &= 0xffffff;
 
         if(!RTMP_IsConnected(m_rtmp))
         {
+            RTMP_WRITE_LOG_ERROR("not connected");
             return false;
         }
 
@@ -119,13 +146,13 @@ namespace ceanic{namespace rtmp{
                 || data[2] != 0x00
                 || data[3] != 0x01)
         {
-            fprintf(stderr,"invalid nalu start(%02x,%02x,%02x,%02x)\n",data[0],data[1],data[2],data[3]);
+            RTMP_WRITE_LOG_ERROR("invalid nalu start(%02x,%02x,%02x,%02x)",data[0],data[1],data[2],data[3]);
             return false;
         }
 
         data += 4;
         len -= 4;
-        int type = data[0] & 0x1f;
+        int32_t type = data[0] & 0x1f;
 
         std::unique_lock<std::mutex> lock(m_sbuf_mu);
         switch(type)
@@ -159,8 +186,9 @@ namespace ceanic{namespace rtmp{
             case 1://p
             case 5://I
                 {
-                    if(m_sbuf.get_remain_len() < len + sizeof(_head))
+                    if((uint32_t)m_sbuf.get_remain_len() < len + sizeof(_head))
                     {
+                        RTMP_WRITE_LOG_ERROR("overflow");
                         return false;
                     }
                     _head head;
@@ -185,6 +213,7 @@ namespace ceanic{namespace rtmp{
 
             default:
                 {
+                    RTMP_WRITE_LOG_ERROR("unsupport nalu type:%d",type);
                     return false;
                 }
         }
@@ -192,26 +221,78 @@ namespace ceanic{namespace rtmp{
         return true;
     }
 
-    void session::on_process_nalu()
+    bool session::process_audio(_head* head,uint8_t* data)
+    {
+        uint8_t* body = data + RTMP_HEAD_SIZE;
+        int32_t i = 0; 
+        body[i++] = 0xAF;
+        body[i++] = 0x01;
+
+        if(!send_packet(false,data,RTMP_HEAD_SIZE + 2 + head->len,head->timestamp))
+        {
+            RTMP_WRITE_LOG_ERROR("send packet failed");
+            return false;
+        }
+
+        return true;
+    }
+
+    bool session::process_video(_head* head,uint8_t* data)
+    {
+        bool key_frame = (head->type == 0x5);
+        uint8_t* body = data + RTMP_HEAD_SIZE;
+
+        int32_t i = 0; 
+        body[i++] = key_frame ? 0x17 : 0x27;
+        body[i++] = 0x01;// AVC NALU   
+        body[i++] = 0x00;  
+        body[i++] = 0x00;  
+        body[i++] = 0x00;  
+        body[i++] = (head->len >> 24) & 0xff;  
+        body[i++] = (head->len >> 16) & 0xff;  
+        body[i++] = (head->len >> 8) & 0xff;  
+        body[i++] = (head->len) & 0xff;
+
+        if(!send_packet(true,data,RTMP_HEAD_SIZE + 9 + head->len,head->timestamp))
+        {
+            RTMP_WRITE_LOG_ERROR("send packet failed");
+            return false;
+        }
+
+        return true;
+    }
+
+    void session::on_process()
     {
         util::dybuf dbuf;
         bool key_sended = false;
-        bool metedata_sended = false;
+        //bool metedata_sended = false;
 
         while(m_bstart)
         {
             bool data_ready = false;
             _head head;
+            bool is_video = false;
 
             {
                 std::unique_lock<std::mutex> lock(m_sbuf_mu);
                 if(m_sbuf.copy_data(&head,sizeof(head))
-                        && (head.len + sizeof(head)) <= m_sbuf.get_stream_len())
+                        && (head.len + sizeof(head)) <= (uint32_t)m_sbuf.get_stream_len())
                 {
-                    dbuf.reset_if(RTMP_HEAD_SIZE + 9 + head.len);
-
                     m_sbuf.get_data(&head,sizeof(head));
-                    m_sbuf.get_data(dbuf.pointer() + RTMP_HEAD_SIZE + 9,head.len);
+                    is_video = (head.type != 0);
+
+                    if(is_video)
+                    {
+                        dbuf.reset_if(RTMP_HEAD_SIZE + 9 + head.len);
+                        m_sbuf.get_data(dbuf.pointer() + RTMP_HEAD_SIZE + 9,head.len);
+                    }
+                    else 
+                    {
+                        dbuf.reset_if(RTMP_HEAD_SIZE + 2 + head.len);
+                        m_sbuf.get_data(dbuf.pointer() + RTMP_HEAD_SIZE + 2,head.len);
+                    }
+
                     data_ready = true;
                 }
             }
@@ -226,7 +307,7 @@ namespace ceanic{namespace rtmp{
 
             if(!key_sended && !key_frame)
             {
-                printf("[%s]: wait for i frame\n",__FUNCTION__);
+                RTMP_WRITE_LOG_INFO("wait for i frame");
                 continue;
             }
 
@@ -239,28 +320,20 @@ namespace ceanic{namespace rtmp{
             }
 #endif
 
-            uint8_t* body = (uint8_t*)dbuf.pointer() + RTMP_HEAD_SIZE;
-            int i = 0; 
-            body[i++] = key_frame ? 0x17 : 0x27;
-            body[i++] = 0x01;// AVC NALU   
-            body[i++] = 0x00;  
-            body[i++] = 0x00;  
-            body[i++] = 0x00;  
-            body[i++] = (head.len >> 24) & 0xff;  
-            body[i++] = (head.len >> 16) & 0xff;  
-            body[i++] = (head.len >> 8) & 0xff;  
-            body[i++] = (head.len) & 0xff;
-
-            if(key_frame)
+            if(is_video)
             {
-                send_sps_pps(head.timestamp);
-                key_sended = true;
+                if(key_frame)
+                {
+                    send_sps_pps(head.timestamp);
+                    send_aac_spec(head.timestamp);
+                    key_sended = true;
+                }
+
+                process_video(&head,(uint8_t*)dbuf.pointer());
             }
-
-            if(!send_packet((uint8_t*)dbuf.pointer(),RTMP_HEAD_SIZE + 9 + head.len,head.timestamp))
+            else
             {
-                printf("[%s]: send packet failed\n",__FUNCTION__);
-                break;
+                process_audio(&head,(uint8_t*)dbuf.pointer());
             }
         }
     }
@@ -290,9 +363,27 @@ namespace ceanic{namespace rtmp{
 
         packet->m_nBodySize = (char*)ptr - packet->m_body;
 
-        int ret = RTMP_SendPacket(m_rtmp, packet, 0);
+        int32_t ret = RTMP_SendPacket(m_rtmp, packet, 0);
 
         return ret ? true : false;
+    }
+
+    bool session::send_aac_spec(uint32_t timestamp)
+    {
+        uint8_t body[1024];
+        uint8_t profile = 1;//AACLC
+        uint8_t object_type = profile + 1;
+        uint8_t sample_frequency_idx = 4;//44100
+        uint8_t channel_configuration = 2; //stereo
+
+        int32_t i = RTMP_HEAD_SIZE;
+        body[i++] = 0xAF;
+        body[i++] = 0x00;
+        body[i++] = (object_type << 3) | (sample_frequency_idx >> 1);
+        body[i++] = ((sample_frequency_idx & 0x01) << 7) | (channel_configuration << 3);
+
+        send_packet(false,body,i,timestamp);
+        return true;
     }
 
     bool session::send_sps_pps(uint32_t timestamp)
@@ -309,7 +400,7 @@ namespace ceanic{namespace rtmp{
         uint32_t pps_len = m_pps_size;
 
         /*AVC head*/
-        int i = RTMP_HEAD_SIZE;
+        int32_t i = RTMP_HEAD_SIZE;
         body[i++] = 0x17;
         body[i++] = 0x00;
         body[i++] = 0x00;
@@ -338,24 +429,24 @@ namespace ceanic{namespace rtmp{
         i += pps_len;
 
         /*send rtmp packet*/
-        send_packet(body,i,timestamp);
+        send_packet(true,body,i,timestamp);
         return true;
     }
 
-    bool session::send_packet(const uint8_t* data,uint32_t len,uint32_t timestamp)
+    bool session::send_packet(bool is_video,const uint8_t* data,uint32_t len,uint32_t timestamp)
     {
         RTMPPacket* packet = (RTMPPacket*)data;
         memset(packet,0,RTMP_HEAD_SIZE);
         packet->m_body = (char *)packet + RTMP_HEAD_SIZE;
         packet->m_nBodySize = len - RTMP_HEAD_SIZE;
         packet->m_hasAbsTimestamp = 0;
-        packet->m_packetType = RTMP_PACKET_TYPE_VIDEO;
+        packet->m_packetType = is_video ? RTMP_PACKET_TYPE_VIDEO : RTMP_PACKET_TYPE_AUDIO;
         packet->m_nInfoField2 = m_rtmp->m_stream_id;
         packet->m_nChannel = 0x04;
         packet->m_headerType = RTMP_PACKET_SIZE_LARGE;
         packet->m_nTimeStamp = timestamp;
 
-        int ret = 0;
+        int32_t ret = 0;
         if(RTMP_IsConnected(m_rtmp))
         {
             ret = RTMP_SendPacket(m_rtmp,packet,0);

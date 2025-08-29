@@ -2,7 +2,7 @@
 
 namespace ceanic{namespace rtsp{
 
-    h264_rtp_serialize::h264_rtp_serialize(int payload)
+    h264_rtp_serialize::h264_rtp_serialize(int32_t payload)
         :rtp_serialize(payload)
     {
     }
@@ -13,48 +13,55 @@ namespace ceanic{namespace rtsp{
 
     void h264_rtp_serialize::process_nalu(util::nalu_t*nalu,rtp_session_ptr rs)
     {
-        rtp_packet packet;
-        RTP_FIXED_HEADER* rtp_hdr = (RTP_FIXED_HEADER*)packet.data;
-        int max_data_len = MAX_PACKET_LEN - sizeof(RTP_FIXED_HEADER);
+        rtp_packet_t packet;
+        RTP_FIXED_HEADER* rtp_hdr = packet.phdr;
+        uint32_t max_data_len = MAX_PACKET_LEN - sizeof(RTP_FIXED_HEADER);
+        uint8_t* nalu_data = (uint8_t*)nalu->data + 4;//ignore 00 00 00 01
+        uint32_t nalu_size = nalu->size - 4;//ignore 00 00 00 01
+        uint32_t nalu_timestamp = nalu->time_stamp * 90;
 
         memset(rtp_hdr,0,12); 
         rtp_hdr->version = 2;
         rtp_hdr->payload = m_payload;
         rtp_hdr->marker = 0;
         rtp_hdr->ssrc = htonl(m_ssrc);
-        rtp_hdr->timestamp = htonl(nalu->timestamp);
+        rtp_hdr->timestamp = htonl(nalu_timestamp);
 
-        if(nalu->size <= max_data_len)
+        if(nalu_size <= max_data_len)
         {
             //signal nlau packet
-            rtp_hdr->seq_no = htons(m_seq ++);
+            rtp_hdr->seq_no = htons(m_seq++);
             rtp_hdr->marker = 1;
-            memcpy(packet.data + sizeof(RTP_FIXED_HEADER),nalu->data,nalu->size);
-            packet.len = nalu->size + sizeof(RTP_FIXED_HEADER);
+
+            packet.rtp_data_len = nalu_size + sizeof(RTP_FIXED_HEADER);
+            packet.outside_cnt = 1;
+            packet.outside_info[0].len = nalu_size;
+            packet.outside_info[0].data = nalu_data;
+            packet._inter_len = TCP_TAG_SIZE + sizeof(RTP_FIXED_HEADER);
 
             rs->send_packet(&packet);
             return ;
         }
 
         //fu
-        char nal_head = nalu->data[0]; // NALU 头
-        const char* data = nalu->data + 1;
-        int left = nalu->size - 1;
+        uint32_t fu_head_size = 2;
+        max_data_len -= fu_head_size;
+        uint8_t nal_head = nalu_data[0];
+        uint8_t* data = nalu_data + 1;
+        uint32_t left = nalu_size - 1;
         bool is_start = true;
-        bool is_end;
+        bool is_end = false;
 
+        uint8_t* fu_buf = packet._inter_buf + TCP_TAG_SIZE + sizeof(RTP_FIXED_HEADER);
         while (left > 0) 
         {
-            int size = std::min(max_data_len - 2, left);
+            uint32_t size = std::min(max_data_len, left);
             is_end = (size == left);
 
-            // 构建 FU 头
-            char* fu_buf = packet.data + sizeof(RTP_FIXED_HEADER);
             fu_buf[0] = (nal_head & 0xE0) | 28; // FU indicator
             fu_buf[1] = (nal_head & 0x1f); // FU header
             if (is_start) 
             {
-                assert(is_end == false);
                 fu_buf[1] |= 0x80;
             }
             if (is_end) 
@@ -62,11 +69,14 @@ namespace ceanic{namespace rtsp{
                 fu_buf[1] |= 0x40;
             }
 
-            rtp_hdr->seq_no = htons(m_seq ++);
+            rtp_hdr->seq_no = htons(m_seq++);
             rtp_hdr->marker = is_end ? 1 : 0;
-            memcpy(fu_buf + 2, data, size);
 
-            packet.len = sizeof(RTP_FIXED_HEADER) + size + 2;
+            packet.rtp_data_len = sizeof(RTP_FIXED_HEADER) + fu_head_size + size;
+            packet.outside_cnt = 1;
+            packet.outside_info[0].len = size;
+            packet.outside_info[0].data = data;
+            packet._inter_len = TCP_TAG_SIZE + sizeof(RTP_FIXED_HEADER) + fu_head_size;
 
             rs->send_packet(&packet);
 
@@ -76,17 +86,17 @@ namespace ceanic{namespace rtsp{
         }
     }
 
-    bool h264_rtp_serialize::serialize(util::stream_head& head,const char* buf,int len,rtp_session_ptr rs)
+    bool h264_rtp_serialize::serialize(util::stream_head& head,const char* buf,int32_t len,rtp_session_ptr rs)
     {
         if(head.type != STREAM_NALU_SLICE)
         {
             return false;
         }
 
-        int nalu_type;
-        for(int i = 0; i < head.nalu_count; i++)
+        uint8_t nalu_type;
+        for(uint32_t i = 0; i < head.nalu_count; i++)
         {
-            nalu_type = head.nalu[i].data[0] & 0x1f;
+            nalu_type = head.nalu[i].data[4] & 0x1f;
             if(nalu_type == 0x7/*sps*/
                     || nalu_type == 0x8/*pps*/
                     || nalu_type == 0x1/*p*/

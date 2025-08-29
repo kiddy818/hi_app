@@ -22,7 +22,7 @@ namespace ceanic{namespace rtmp{
             void delete_session(int32_t chn,int32_t stream_id,std::string url);
             void delete_session(int32_t chn,int32_t stream_id);
 
-            void process_data(int32_t chn,int32_t stream_id,util::stream_head* head);
+            void process_data(int32_t chn,int32_t stream_id,util::stream_head* head,uint8_t* buf,int32_t len);
 
         private:
             session_manager();

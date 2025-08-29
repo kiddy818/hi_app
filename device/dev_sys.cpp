@@ -104,7 +104,7 @@ namespace hisilicon{namespace dev{
     {
         std::unique_lock<std::mutex> lock(g_rgn_mu);
 
-        if(hdl >=0 && hdl < OT_RGN_HANDLE_MAX)
+        if(hdl < OT_RGN_HANDLE_MAX)
         {
             g_rgn_flag[hdl] = false;
         }
