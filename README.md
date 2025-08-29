@@ -93,8 +93,7 @@ rtsp://192.168.10.98/stream1
 //sub stream
 rtsp://192.168.10.98/stream2  
 
-//yolov5 stream(需要配置文件中开启yolov5)
-//因为性能限制，yolov5的帧率在8-12之间，如果使用vlc连接yolov5视频，需要开大vlc缓存(建议开到2000ms) 
+//yolov5 stream(需要配置文件/opt/ceanic/yolov5/yolov5.json中开启yolov5)
 rtsp://192.168.10.98/stream3
 ```
 ##### VLC连接RTSP
