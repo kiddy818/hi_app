@@ -180,4 +180,14 @@ tail ../logs/access.log
 3. 打开vlc->媒体->打开网络串流->输入RTMP URL
 ![avatar](doc/rtmp_open.jpg)
 
+#### 配置文件说明
+[配置文件说明](doc/set.md)
 
+#### 调试记录
+[调试记录](doc/debug_log.md)
+
+#### 合作交流
+联系方式:   
+深圳思尼克技术有限公司   
+jiajun.ma@ceanic.com   
+马佳君  
