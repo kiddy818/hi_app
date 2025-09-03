@@ -127,6 +127,9 @@ LIBS += $(THIRD_LIBRARY_PATH)/hisilicon_mp4/lib/libuproc.a
 LIBS += $(THIRD_LIBRARY_PATH)/hisilicon_mp4/lib/libmwlog.a
 LIBS += $(MPI_LIBS) $(REL_LIB)/libsecurec.a $(REL_LIB)/libss_mpi_snap.a
 
+LIBS += $(THIRD_LIBRARY_PATH)/sensor/os04a10/libsns_os04a10.a
+LIBS += $(THIRD_LIBRARY_PATH)/sensor/os08a20/libsns_os08a20.a
+
 LIBS+= -Wl,--end-group
 
 LIBS+= -Wl,-gc-sections
@@ -161,5 +164,5 @@ strip:
 	$(STRIP) $(target)
 
 install:
-	cp $(target) /home/mjj/work/nfs/3519dv500/020/
+	cp $(target) /home/mjj/work/nfs/3519dv500/021/
 
