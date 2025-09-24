@@ -13,6 +13,7 @@ namespace hisilicon{namespace dev{
 
             static ot_venc_chn alloc_venc_chn();
             static ot_rgn_handle alloc_rgn_handle();
+            static void free_rgn_handle(ot_rgn_handle hdl);
     };
 
 }}//namespace
