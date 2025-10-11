@@ -1,7 +1,7 @@
 # 3516(3519)dv500_app
 
 #### 介绍
-海思3519dv500(3516dv500) demo(基于021 glibc sdk),可以在官方开发板上运行,演示如下功能:
+海思3519dv500(3516dv500) demo(基于020/021 glibc sdk),可以在官方开发板上运行,演示如下功能:
 1. H264/H265 rtsp服务 
 2. H264 rtmp服务 
 3. OSD(时间)功能 
@@ -38,6 +38,8 @@ mipi/vi-------->vpss grp(0)-------->vpss chn(0)---------->venc main(分辨率大
 
 
 #### 编译方法
+以下为sdk 021的编译方法，如果是sdk 020,需要修改相应的路径
+
 1. 按照Hi3519DV500_SDK_V2.0.2.1/smp/a55_linux/source/bsp/readme_cn.txt文档编译SDK
 
 2. 按照如下命令，编译app
