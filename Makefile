@@ -90,6 +90,16 @@ DEVICE_SRC += device/dev_std.cpp
 DEVICE_SRC += device/dev_vo.cpp
 DEVICE_SRC += device/dev_vo_bt1120.cpp
 
+#sensor driver os04a10
+INC_PATH += -I../../cbb/isp/include/
+INC_PATH += -I../../cbb/isp/user/3a/include/
+SRC += device/sensor/omnivision_os04a10/os04a10_cmos.c
+SRC += device/sensor/omnivision_os04a10/os04a10_sensor_ctl.c
+
+#sensor driver os08a10
+SRC += device/sensor/omnivision_os08a20/os08a20_cmos.c
+SRC += device/sensor/omnivision_os08a20/os08a20_sensor_ctl.c
+
 #surpport scene
 SCENE_PATH = ../scene_auto
 INC_PATH += -I$(SCENE_PATH)/include
@@ -125,10 +135,31 @@ LIBS += $(THIRD_LIBRARY_PATH)/freetype-2.7.1/lib/libfreetype.a
 LIBS += $(THIRD_LIBRARY_PATH)/hisilicon_mp4/lib/libmp4.a
 LIBS += $(THIRD_LIBRARY_PATH)/hisilicon_mp4/lib/libuproc.a
 LIBS += $(THIRD_LIBRARY_PATH)/hisilicon_mp4/lib/libmwlog.a
-LIBS += $(MPI_LIBS) $(REL_LIB)/libsecurec.a $(REL_LIB)/libss_mpi_snap.a
 
-LIBS += $(THIRD_LIBRARY_PATH)/sensor/os04a10/libsns_os04a10.a
-LIBS += $(THIRD_LIBRARY_PATH)/sensor/os08a20/libsns_os08a20.a
+#for hisilicon mpi libs
+LIBS += $(REL_LIB)/libss_mpi.a
+LIBS += $(REL_LIB)/libss_mpi_sysbind.a
+LIBS += $(REL_LIB)/libss_mpi_sysmem.a
+LIBS += $(REL_LIB)/libss_mpi_ae.a
+LIBS += $(REL_LIB)/libss_mpi_isp.a
+LIBS += $(REL_LIB)/libot_mpi_isp.a
+LIBS += $(REL_LIB)/libss_mpi_awb.a
+LIBS += $(REL_LIB)/libdehaze.a
+LIBS += $(REL_LIB)/libextend_stats.a
+LIBS += $(REL_LIB)/libdrc.a
+LIBS += $(REL_LIB)/libldci.a
+LIBS += $(REL_LIB)/libbnr.a
+LIBS += $(REL_LIB)/libcalcflicker.a
+LIBS += $(REL_LIB)/libacs.a
+LIBS += $(REL_LIB)/libss_mpi_aibnr.a
+LIBS += $(REL_LIB)/libsvp_acl.a
+LIBS += $(REL_LIB)/libprotobuf-c.a
+LIBS += $(REL_LIB)/libfileformat.a
+LIBS += $(REL_LIB)/libss_mpi_km.a
+LIBS += $(REL_LIB)/libss_mpi_ai3dnr.a
+LIBS += $(REL_LIB)/libss_mpi_aidrc.a
+
+LIBS += $(REL_LIB)/libsecurec.a $(REL_LIB)/libss_mpi_snap.a
 
 LIBS+= -Wl,--end-group
 
