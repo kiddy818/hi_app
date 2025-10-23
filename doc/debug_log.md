@@ -1,4 +1,23 @@
 #### 调试记录
+
+##### 单独编译uboot
+uboot目录下运行
+```
+//emmc举例
+1.  cp configs/hi3519dv500_emmc_defconfig .config
+
+//修改menuconfig
+2.  make ARCH=arm CROSS_COMPILE=aarch64-v01c01-linux-gnu- menuconfig
+
+//将config保存为hi3519dv500_emmc_auto_update_defconfig(举例)
+3.  cp .config configs/hi3519dv500_emmc_auto_update_defconfig 
+```
+bsp目录下运行
+```
+make BOOT_MEDIA=emmc LIB_TYPE=glibc CHIP=hi3519dv500 UBOOT_CONFIG=hi3519dv500_emmc_auto_update_defconfig gslboot_build
+```
+bsp/pub/hi3519dv500_emmc_image_glibc/boot_image.bin为最新的uboot
+
 ##### 段错误的处理 
 在资源释放前，如果出现段错误,再重新启动程序，因为上次未正确关闭资源(例如vi,rgn资源未正确关闭)，导致本次资源初始化失败,程序会启动失败。
 可以捕获SIGSEGV信号(段错误信号)，在信号处理中释放资源 
@@ -314,4 +333,5 @@ git checkout v1.0.1
 cp ../zlib-1.2.11/mybuild_aarch64_v01c01_linux_gnu/lib/libz.* bin/gcc/ -Rdp
 make && make install
 ```
+
 
