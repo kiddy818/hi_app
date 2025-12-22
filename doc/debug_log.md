@@ -256,6 +256,20 @@ sudo docker run -it -v /home/mjj/work/docker_shared:/home/mjj/work/docker_shared
 
 5.  如果条件允许，除了常温条件，还需要在低温和高温环境下测试。
 
+##### uboot i2c支持
+1.  打上[补丁](./19duboot_i2c.zip)后，编译时在config文件中打开CONFIG_CMD_I2C选项(见补丁中图片)，即可使用i2c的功能。
+
+2.  有两种方法进行i2c读写。第一是使用代码函数的方法，patch中提供了参考一个sample代码，打开对应的时钟门控、管脚复用。第二种方法是使用i2c命令。使用i2c-0的读写示例步骤如下： 
+    1、打开时钟门控：mw 0x11014280 0x10
+
+    2、配置管脚复用：
+        mw 0x1026006C 0x1101
+        mw 0x10260070 0x1301
+
+    3、使用i2c dev命令初始化对应的i2c，如初始化i2c-0：i2c dev 0   （实际调用的是i2c_init）
+
+    4、使用i2c read命令，读0x6c设备，0x3400寄存器，寄存器位宽为2，数据长度为1，将读到的数据写入0x41000000地址中，则命令为：i2c read 0x6c 0x3400.2 1 0x41000000（注意，0x3100.2表示0x3100寄存器，寄存器位宽为2） 
+
 #### thirdlibrary
 
 ##### freetype-2.7.1交叉编译
