@@ -260,6 +260,7 @@ sudo docker run -it -v /home/mjj/work/docker_shared:/home/mjj/work/docker_shared
 1.  打上[补丁](./19duboot_i2c.zip)后，编译时在config文件中打开CONFIG_CMD_I2C选项(见补丁中图片)，即可使用i2c的功能。
 
 2.  有两种方法进行i2c读写。第一是使用代码函数的方法，patch中提供了参考一个sample代码，打开对应的时钟门控、管脚复用。第二种方法是使用i2c命令。使用i2c-0的读写示例步骤如下： 
+
     1、打开时钟门控：mw 0x11014280 0x10
 
     2、配置管脚复用：
