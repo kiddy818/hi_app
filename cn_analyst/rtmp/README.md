@@ -15,7 +15,7 @@
 - **Purpose:** 用于多摄像头的增强会话管理
 - **Responsibilities:**
   - Track sessions per (camera_id, stream_id, url)
-  - Support URL templates
+  - 支持URL templates
   - Handle connection failures
   - Automatic reconnection
 - **Status:** 尚未实施
@@ -25,7 +25,7 @@
 - **Responsibilities:**
   - Parse template strings
   - Substitute `{camera_id}`, `{stream_name}` variables
-  - 验证 expanded URLs
+  - 验证 扩展的 URLs
 - **Example:** `rtmp://server/live/cam{camera_id}_{stream_name}`
 - **Status:** 尚未实施
 
@@ -34,14 +34,14 @@
 - **Responsibilities:**
   - H.264 → FLV encoding (existing)
   - H.265 → FLV encoding (future)
-  - Codec detection and negotiation
+  - 编解码器 detection and negotiation
 - **Status:** 规划阶段
 
 ### 修改的类
 
 #### `session` （现有）
 - **Changes Required:**
-  - Support codec 抽象
+  - 支持编解码器 抽象
   - Improve error recovery
   - 添加 connection state machine
 - **Backward Compatibility:** Yes
@@ -50,8 +50,8 @@
 #### `session_manager` （现有）
 - **Changes Required:**
   - Use URL templates
-  - Per-camera session tracking
-  - Dynamic session creation
+  - 每摄像头 session tracking
+  - 动态 session creation
 - **Backward Compatibility:** Yes
 - **Status:** 等待重构
 
@@ -106,13 +106,13 @@ camera_id=1, stream_name="sub"
 ## Key 设计 Decisions
 
 ### 1. H.265 支持
-**Challenge:** RTMP spec doesn't officially support H.265  
+**Challenge:** RTMP spec doesn't officially 支持H.265  
 **Options:**
 - **A. Enhanced FLV**: Use Extended VideoTagHeader (Adobe proprietary)
-- **B. WebRTC/SRT**: Alternative protocols (major refactor)
+- **B. WebRTC/SRT**: Alternative protocols (major 重构)
 - **C. H.264 Only**: Transcode H.265→H.264 (CPU intensive)
 
-**Recommended:** Option A (Enhanced FLV) for H.265 support  
+**Recommended:** Option A (Enhanced FLV) for H.265 支持 
 **Status:** 研究阶段, low priority
 
 ### 2. 连接管理
@@ -135,7 +135,7 @@ class connection_manager {
 - Max attempts: 10 (then give up)
 
 ### 3. 多 URL 故障转移
-**Feature:** Support multiple RTMP servers per stream  
+**Feature:** 支持多个 RTMP servers per stream  
 **Behavior:** Try primary, fallback on failure
 
 ```
@@ -164,7 +164,7 @@ class session_pool {
 - [ ] 设计 URL template system
 - [ ] 设计 connection state machine
 - [ ] Plan H.265 support (research)
-- [ ] 编写 unit test stubs
+- [ ] 编写 unit 测试 stubs
 
 ### 阶段 2: 实现ation (第 7 周-8)
 - [ ] 实现 url_template
@@ -206,7 +206,7 @@ class session_pool {
 
 ### Integration 测试s
 - `multi_camera_rtmp_test.cpp`
-  - Push from multiple cameras
+  - Push from 多个 cameras
   - Concurrent sessions
   - Failover testing
 
@@ -249,7 +249,7 @@ std::string url = tmpl.expand(vars);
 ```cpp
 #include "multi_session_manager.h"
 
-auto mgr = multi_session_manager::instance();
+auto mgr = multi_session_manager::实例();
 
 // 创建 session for camera 0, stream 0
 session_config cfg;
@@ -281,7 +281,7 @@ mgr->create_session(cfg);
 ## 迁移指南
 
 ### 应用程序代码
-1. Replace static URLs with templates
+1. Replace 静态 URLs with templates
 2. 将 camera_id and stream_name 添加到 config
 3. Use new session_manager API
 
@@ -319,7 +319,7 @@ mgr->create_session(cfg);
 
 ### Current Issues (Pre-重构ing)
 1. H.264 only (no H.265 support)
-2. Static URL 配置
+2. 静态 URL 配置
 3. No automatic reconnection
 4. Single RTMP server per stream
 5. Manual error recovery
@@ -328,7 +328,7 @@ mgr->create_session(cfg);
 1. ✅ URL templates for 多摄像头
 2. ✅ Automatic reconnection
 3. ✅ Failover support
-4. ✅ Per-camera session tracking
+4. ✅ 每摄像头 session tracking
 5. 🔄 H.265 support (future)
 
 ## 性能考虑
@@ -352,7 +352,7 @@ mgr->create_session(cfg);
 - librtmp buffering: ~200-500ms
 - Network latency: varies
 
-## H.265 Support Research
+## H.265 支持Research
 
 ### Enhanced FLV Format
 ```
@@ -379,7 +379,7 @@ VideoTagHeader (Enhanced):
 - Proprietary extension
 
 ### 实现ation Plan (Future)
-1. Detect encoder codec (H.264 vs H.265)
+1. Detect encoder 编解码器 (H.264 vs H.265)
 2. Use appropriate FLV tag format
 3. Server compatibility check
 4. Fallback to H.264 if unsupported

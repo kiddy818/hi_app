@@ -14,9 +14,9 @@
 #### `stream_router.h/cpp`
 - **Purpose:** 多摄像头流的中央路由
 - **Responsibilities:**
-  - Map (camera_id, stream_id) to stream instances
+  - Map (camera_id, stream_id) to stream 实例
   - URL path to stream resolution
-  - Dynamic stream registration/unregistration
+  - 动态 stream registration/unregistration
 - **Status:** 尚未实施
 
 #### `stream_instance.h/cpp`
@@ -32,7 +32,7 @@
 - **Purpose:** 解析和验证 RTSP URL
 - **Responsibilities:**
   - Parse `/camera/{id}/{stream}` format
-  - Support legacy `/streamN` format
+  - 支持legacy `/streamN` format
   - Extract camera_id and stream_name
 - **Status:** 尚未实施
 
@@ -41,15 +41,15 @@
 #### `stream_manager` （现有）
 - **Changes Required:**
   - Use stream_router internally
-  - 移除 hardcoded stream assumptions
-  - Support dynamic registration
+  - 移除 硬编码的 stream assumptions
+  - 支持动态 registration
 - **Backward Compatibility:** Yes
 - **Status:** 等待重构
 
 #### `rtsp_request_handler` （现有）
 - **Changes Required:**
   - 更新 URL parsing logic
-  - Route requests through stream_router
+  - Route requests 通过 stream_router
   - Handle new URL schemes
 - **Backward Compatibility:** Yes
 - **Status:** 等待重构
@@ -83,32 +83,32 @@ rtsp://ip:port/cam1_sub
 ### 1. 流识别
 **Decision:** Use (camera_id, stream_id) pair as key  
 **Rationale:** Numeric IDs are efficient, string names are user-friendly  
-**实现ation:** Map both numeric and string identifiers
+**实现:** Map both numeric and string identifiers
 
 ### 2. URL 解析策略
-**Decision:** Support multiple URL formats simultaneously  
+**Decision:** 支持多个 URL formats simultaneously  
 **Rationale:** Backward compatibility while enabling new features  
-**实现ation:** Pattern matching with fallback chain
+**实现:** Pattern matching with fallback chain
 
 ### 3. 流生命周期
 **Decision:** Lazy creation on first DESCRIBE request  
 **Rationale:** Reduce resource usage for unused streams  
-**Alternative:** Pre-create all configured streams (more predictable)
+**Alternative:** Pre-创建 all configured streams (more predictable)
 
 ### 4. 观察者模式
 **Decision:** Keep existing 观察者模式  
-**Rationale:** Proven design, supports multiple clients efficiently  
+**Rationale:** Proven 设计, supports 多个 clients efficiently  
 **Enhancement:** 添加 back-pressure handling for slow clients
 
-## 重构ing Checklist
+## 重构检查清单
 
 ### 阶段 1: Preparation (第 4 周)
 - [ ] 设计 stream_router 接口
 - [ ] 设计 stream_instance class
 - [ ] Plan URL parsing strategy
-- [ ] 编写 unit test stubs
+- [ ] 编写 unit 测试 stubs
 
-### 阶段 2: 实现ation (第 5 周-6)
+### 阶段 2: 实现 (第 5 周-6)
 - [ ] 实现 stream_router
 - [ ] 实现 stream_instance
 - [ ] 实现 url_parser
@@ -136,10 +136,10 @@ rtsp://ip:port/cam1_sub
   - Register/unregister streams
   - Lookup by (camera_id, stream_id)
   - Lookup by URL path
-  - Thread safety
+  - 线程 safety
   
 - `stream_instance_test.cpp`
-  - Lifecycle (create, start, stop)
+  - Lifecycle (创建, start, stop)
   - Observer management
   - Configuration
 
@@ -151,13 +151,13 @@ rtsp://ip:port/cam1_sub
 
 ### Integration 测试s
 - `multi_camera_rtsp_test.cpp`
-  - Connect to multiple cameras
-  - Multiple streams per camera
+  - Connect to 多个 cameras
+  - 多个 streams 每摄像头
   - Concurrent clients
   - Stream switching
 
 ### Performance 测试s
-- Throughput (streams/second)
+- 通过put (streams/second)
 - Latency (DESCRIBE to first frame)
 - CPU usage (idle vs. loaded)
 - Memory usage per stream
@@ -181,7 +181,7 @@ rtsp://ip:port/cam1_sub
 #include "stream_router.h"
 #include "stream_instance.h"
 
-// 创建 stream instance
+// 创建 stream 实例
 auto stream_inst = std::make_shared<stream_instance>(
     camera_id,
     stream_id,
@@ -189,7 +189,7 @@ auto stream_inst = std::make_shared<stream_instance>(
 );
 
 // Register with router
-auto router = stream_router::instance();
+auto router = stream_router::实例();
 router->register_stream(stream_inst);
 
 // Also register URL alias
@@ -211,13 +211,13 @@ auto stream = router->get_stream_by_url("/stream1");
 
 ### RTSP Request Flow (更新d)
 ```
-Client                  RTSP Handler           Stream Router          Stream Instance
+Client                  RTSP Handler           Stream Router          Stream 实例
   |                           |                      |                        |
   |--DESCRIBE /camera/0/main->|                      |                        |
   |                           |--get_stream_by_url-->|                        |
   |                           |                      |--find mapping--------->|
   |                           |                      |<-stream_instance-------|
-  |                           |<-stream instance-----|                        |
+  |                           |<-stream 实例-----|                        |
   |                           |                      |                        |
   |                           |--get_stream_head---->|                        |
   |                           |<-SDP info------------|                        |
@@ -237,23 +237,23 @@ Client                  RTSP Handler           Stream Router          Stream Ins
 3. Maintain legacy URL aliases
 
 ### For 测试s
-1. 更新 URLs in test cases
-2. 添加 多摄像头 test scenarios
+1. 更新 URLs in 测试 cases
+2. 添加 多摄像头 测试 scenarios
 3. Verify legacy URL support
 
 ## 已知问题与限制
 
 ### Current Issues (Pre-重构ing)
-1. Hardcoded stream URLs (stream1, stream2, stream3)
+1. 硬编码的 stream URLs (stream1, stream2, stream3)
 2. Single camera assumption
 3. No URL 验证
-4. No dynamic stream creation
+4. No 动态 stream creation
 
 ### Post-重构ing Improvements
 1. ✅ Flexible URL scheme
 2. ✅ Multi-camera support
 3. ✅ URL 验证
-4. ✅ Dynamic stream management
+4. ✅ 动态 stream management
 
 ## 性能考虑
 
@@ -263,21 +263,21 @@ Client                  RTSP Handler           Stream Router          Stream Ins
 - Minimize lock contention
 
 ### 内存使用
-- Stream instances allocated on-demand
+- Stream 实例 allocated on-demand
 - Shared pointers for lifetime management
 - Limit maximum concurrent streams
 
 ### Scalability
-- Support 4 cameras × 4 streams = 16 total streams
+- 支持4 cameras × 4 streams = 16 total streams
 - Each stream supports 10+ concurrent clients
 - Total: 160+ concurrent RTSP sessions
 
 ## 未来增强
 
 ### 阶段 4+
-- Stream aliasing (multiple URLs → same stream)
-- Stream groups (aggregate multiple streams)
-- Dynamic stream transcoding
+- Stream aliasing (多个 URLs → same stream)
+- Stream groups (aggregate 多个 streams)
+- 动态 stream transcoding
 - Adaptive bitrate switching
 
 ## 参考资料
@@ -295,4 +295,4 @@ Client                  RTSP Handler           Stream Router          Stream Ins
 
 **Last 更新d:** 2026-01-04  
 **Status:** Planning Phase  
-**Next 审查:** 第 4 周 实现ation Kickoff
+**Next 审查:** 第 4 周 实现 Kickoff

@@ -14,7 +14,7 @@
 #### `camera_manager.h/cpp`
 - **目的：** 摄像头实例的中央注册表和工厂
 - **职责：**
-  - 创建/销毁 camera instances
+  - 创建/销毁 摄像头实例
   - 跟踪活动摄像头
   - 强制执行摄像头限制
   - 与 resource_manager 协调
@@ -58,25 +58,25 @@
 - **所需更改：**
   - 移除静态 `g_chns[]` 数组
   - 移除 `MAX_CHANNEL = 1` 限制
-  - 添加 camera_id member
-  - Use resource_manager for allocation
-  - Isolate per-camera state
-- **向后兼容性：** Wrapper class for smooth migration
+  - 添加 camera_id 成员
+  - 使用 resource_manager 进行分配
+  - 隔离每个摄像头状态
+- **向后兼容性：** 用于平滑迁移的包装类
 - **状态：** 等待重构 (阶段 2, 第 5 周)
 
 #### `dev_venc` （现有）
 - **所需更改：**
-  - 移除 static `g_vencs` list
-  - Support per-camera VENC capture thread (or improved single thread)
-  - Dynamic VENC allocation through resource_manager
+  - 移除 静态 `g_vencs` 列表
+  - 支持每摄像头 VENC 捕获线程 (或改进的单线程)
+  - 通过 resource_manager 动态 VENC 分配
 - **向后兼容性：** 是
 - **状态：** 等待重构 (阶段 2, 第 7 周)
 
 #### `dev_vi` （现有）
 - **所需更改：**
-  - Support multiple VI instances
-  - Dynamic VI device allocation
-  - Per-camera ISP pipeline
+  - 支持多个 VI 实例
+  - 动态 VI 设备分配
+  - 每摄像头 ISP 管道
 - **向后兼容性：** 是
 - **状态：** 等待重构 (阶段 2, 第 5 周-6)
 
@@ -84,15 +84,15 @@
 
 ### 海思 3519DV500 限制
 ```
-Resource              Total Available    Per Camera Max    Typical Usage
+Resource              Total Available    每摄像头 Max    Typical Usage
 --------------------------------------------------------------------------------
-VI Devices            4                  1                 1 per camera
-VPSS Groups           32                 1-2               1 per camera
-VPSS Channels         128 (4 per grp)    2-4               2-3 per camera
-VENC Channels         16 total           4-8               2-3 per camera
-  ├─ H.265            4-8 channels       2-4               1-2 per camera
-  └─ H.264            8-12 channels      2-6               1-2 per camera
-ISP Pipelines         4                  1                 1 per camera (max 4 cameras)
+VI Devices            4                  1                 1 每摄像头
+VPSS Groups           32                 1-2               1 每摄像头
+VPSS Channels         128 (4 per grp)    2-4               2-3 每摄像头
+VENC Channels         16 total           4-8               2-3 每摄像头
+  ├─ H.265            4-8 channels       2-4               1-2 每摄像头
+  └─ H.264            8-12 channels      2-6               1-2 每摄像头
+ISP Pipelines         4                  1                 1 每摄像头 (max 4 cameras)
 SVP (NNIE) Core       1 (shared)         N/A               Shared for AI
 VB Memory             256-512 MB         64-128 MB         Varies by resolution
 --------------------------------------------------------------------------------
@@ -107,34 +107,34 @@ Recommended:          2-4 cameras with 2-4 streams each
 class resource_manager {
 public:
     // Initialization
-    static bool init(const resource_limits& limits);
-    static void release();
+    静态 bool init(const resource_limits& limits);
+    静态 void release();
     
     // VPSS Group Management
-    static bool allocate_vpss_group(int32_t& grp);
-    static void free_vpss_group(int32_t grp);
-    static bool is_vpss_group_available();
+    静态 bool allocate_vpss_group(int32_t& grp);
+    静态 void free_vpss_group(int32_t grp);
+    静态 bool is_vpss_group_available();
     
     // VENC Channel Management
-    static bool allocate_venc_channel(venc_type type, int32_t& chn);
-    static void free_venc_channel(int32_t chn);
-    static bool is_venc_channel_available(venc_type type);
+    静态 bool allocate_venc_channel(venc_type type, int32_t& chn);
+    静态 void free_venc_channel(int32_t chn);
+    静态 bool is_venc_channel_available(venc_type type);
     
     // VI Device Management
-    static bool allocate_vi_device(int32_t& dev);
-    static void free_vi_device(int32_t dev);
-    static bool is_vi_device_available();
+    静态 bool allocate_vi_device(int32_t& dev);
+    静态 void free_vi_device(int32_t dev);
+    静态 bool is_vi_device_available();
     
     // Query Functions
-    static resource_status get_status();
-    static bool can_create_camera(const camera_config& cfg);
+    静态 resource_status get_status();
+    静态 bool can_create_camera(const camera_config& cfg);
     
 private:
-    static std::map<int32_t, bool> m_vpss_allocated;
-    static std::map<int32_t, bool> m_venc_allocated;
-    static std::map<int32_t, bool> m_vi_allocated;
-    static std::mutex m_mutex;
-    static resource_limits m_limits;
+    静态 std::map<int32_t, bool> m_vpss_allocated;
+    静态 std::map<int32_t, bool> m_venc_allocated;
+    静态 std::map<int32_t, bool> m_vi_allocated;
+    静态 std::mutex m_mutex;
+    静态 resource_limits m_limits;
 };
 ```
 
@@ -160,34 +160,34 @@ struct resource_status {
 class camera_manager {
 public:
     // Initialization
-    static bool init(int32_t max_cameras);
-    static void release();
+    静态 bool init(int32_t max_cameras);
+    静态 void release();
     
     // Camera Lifecycle
-    static std::shared_ptr<camera_instance> create_camera(
+    静态 std::shared_ptr<camera_instance> create_camera(
         const camera_config& cfg
     );
-    static bool destroy_camera(int32_t camera_id);
+    静态 bool destroy_camera(int32_t camera_id);
     
     // Query Functions
-    static std::shared_ptr<camera_instance> get_camera(int32_t camera_id);
-    static std::vector<int32_t> list_cameras();
-    static int32_t get_camera_count();
-    static bool camera_exists(int32_t camera_id);
+    静态 std::shared_ptr<camera_instance> get_camera(int32_t camera_id);
+    静态 std::vector<int32_t> list_cameras();
+    静态 int32_t get_camera_count();
+    静态 bool camera_exists(int32_t camera_id);
     
     // Validation
-    static bool validate_config(const camera_config& cfg);
-    static bool can_create_camera(const camera_config& cfg);
+    静态 bool validate_config(const camera_config& cfg);
+    静态 bool can_create_camera(const camera_config& cfg);
     
 private:
-    static std::map<int32_t, std::shared_ptr<camera_instance>> m_cameras;
-    static std::mutex m_mutex;
-    static int32_t m_max_cameras;
-    static int32_t m_next_camera_id;
+    静态 std::map<int32_t, std::shared_ptr<camera_instance>> m_cameras;
+    静态 std::mutex m_mutex;
+    静态 int32_t m_max_cameras;
+    静态 int32_t m_next_camera_id;
 };
 ```
 
-## Camera Instance 设计
+## Camera 实例 设计
 
 ### 接口
 ```cpp
@@ -241,7 +241,7 @@ private:
     // Resources
     allocated_resources m_resources;
     
-    // Thread safety
+    // 线程 safety
     mutable std::mutex m_mutex;
 };
 ```
@@ -316,7 +316,7 @@ struct stream_config {
 
 ## 重构ing Checklist
 
-### 阶段 1: Core Abstractions (Weeks 1-4)
+### 阶段 1: Core Abstractions （第 1-4 周）
 
 #### 第 2 周: Resource Manager
 - [ ] 设计 resource_manager 接口
@@ -327,7 +327,7 @@ struct stream_config {
 - [ ] 编写 unit tests
 - [ ] Integration testing
 
-#### 第 3 周: Camera Manager & Instance
+#### 第 3 周: Camera Manager & 实例
 - [ ] 设计 camera_manager 接口
 - [ ] 设计 camera_instance class
 - [ ] 实现 camera lifecycle
@@ -344,11 +344,11 @@ struct stream_config {
 - [ ] 编写 unit tests
 - [ ] Integration testing
 
-### 阶段 2: Multi-Camera Support (Weeks 5-8)
+### 阶段 2: Multi-Camera Support （第 5-8 周）
 
 #### 第 5 周: 移除 MAX_CHANNEL
 - [ ] 移除 `#define MAX_CHANNEL 1`
-- [ ] Replace `g_chns[]` array with camera_manager
+- [ ] Replace `g_chns[]` 数组 with camera_manager
 - [ ] 更新 all references
 - [ ] 重构 initialization in main.cpp
 - [ ] 测试 with 单摄像头 (regression)
@@ -361,8 +361,8 @@ struct stream_config {
 - [ ] 测试 配置 loading
 
 #### 第 7 周: Multi-VENC Capture
-- [ ] 重构 VENC capture thread
-- [ ] Support multiple cameras
+- [ ] 重构 VENC capture 线程
+- [ ] 支持多个 cameras
 - [ ] 测试 concurrent encoding
 - [ ] Performance optimization
 
@@ -387,7 +387,7 @@ struct stream_config {
 - 创建/销毁 cameras
 - Camera lookup
 - Limit enforcement
-- Thread safety
+- 线程 safety
 
 **camera_instance_test.cpp**
 - Lifecycle (start/stop)
@@ -421,7 +421,7 @@ struct stream_config {
 - Encoding latency (<50ms)
 - CPU usage (<80% on quad-core)
 - Memory usage (<512MB total)
-- Startup time (<5 seconds per camera)
+- Startup time (<5 seconds 每摄像头)
 
 **测试 Scenarios:**
 - 1 camera, 4 streams
@@ -452,7 +452,7 @@ std::shared_ptr<hisilicon::dev::chn> g_chn;
 g_chn = std::make_shared<hisilicon::dev::chn>("OS04A10", "H264_CBR", 0);
 
 // New way
-camera_manager::init(4);  // Support up to 4 cameras
+camera_manager::init(4);  // 支持up to 4 cameras
 camera_config cfg = load_camera_config(0);
 auto camera = camera_manager::create_camera(cfg);
 ```
@@ -466,16 +466,16 @@ Once all tests pass with new 实现:
 ## 已知问题与限制
 
 ### Current Issues (Pre-重构ing)
-1. `MAX_CHANNEL = 1` hardcoded
-2. Static `g_chn` global variable
-3. Static `g_chns[]` array
+1. `MAX_CHANNEL = 1` 硬编码的
+2. 静态 `g_chn` global variable
+3. 静态 `g_chns[]` 数组
 4. 否 resource tracking
 5. 否 多摄像头 support
 
 ### Post-重构ing Improvements
-1. ✅ Dynamic camera allocation
+1. ✅ 动态 camera 分配
 2. ✅ Resource manager enforces limits
-3. ✅ Per-camera 配置
+3. ✅ 每摄像头 配置
 4. ✅ Independent camera lifecycle
 5. ✅ Scalable to hardware limits (4 cameras)
 
@@ -485,12 +485,12 @@ Once all tests pass with new 实现:
 - Target: <80% on quad-core ARMv8
 - VI/VPSS: Hardware accelerated
 - VENC: Hardware accelerated
-- ISP: Hardware pipeline
-- Software overhead: <10% per camera
+- ISP: Hardware 管道
+- Software overhead: <10% 每摄像头
 
 ### 内存使用
 - Target: <512MB total
-- Per camera: ~64-128MB (varies by resolution)
+- 每摄像头: ~64-128MB (varies by resolution)
 - VB pools: Pre-allocated based on config
 - Stream buffers: Shared pointers (minimal copy)
 
@@ -498,11 +498,11 @@ Once all tests pass with new 实现:
 - VI capture: <10ms
 - VPSS processing: <10ms
 - VENC encoding: <30ms
-- Total camera to encoded: <50ms
+- Total camera to 编码的: <50ms
 
 ## 硬件绑定
 
-### VI → VPSS → VENC Pipeline
+### VI → VPSS → VENC 管道
 ```cpp
 // Bind VI to VPSS
 ot_mpp_chn src_chn = {OT_ID_VI, vi_dev, vi_chn};
@@ -534,9 +534,9 @@ Camera 3:
 
 ### 阶段 4+
 - Hot-plug camera support
-- Dynamic resolution switching
+- 动态 resolution switching
 - Hardware failover (camera swap)
-- Advanced ISP tuning per camera
+- Advanced ISP tuning 每摄像头
 - ROI (Region of Interest) encoding
 - Smart encoding (save bandwidth)
 
