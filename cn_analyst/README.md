@@ -1,315 +1,315 @@
-# Code Analysis Directory
+# 代码分析目录
 
-This directory contains comprehensive analysis and refactoring documentation for the HiSilicon video application codebase.
+本目录包含海思视频应用代码库的综合分析和重构文档。
 
-## Contents
+## 目录内容
 
-### Main Documentation
+### 主要文档
 
-- **[ANALYSIS.md](./ANALYSIS.md)**: Comprehensive analysis of the current codebase
-  - RTSP module architecture and functionality
-  - RTMP module architecture and functionality
-  - Device module architecture and functionality
-  - Current system limitations
-  - Multi-camera support analysis
-  - Proposed architecture design
-  - Detailed refactoring requirements
+- **[ANALYSIS.md](./ANALYSIS.md)**: 当前代码库的综合分析
+  - RTSP 模块架构和功能
+  - RTMP 模块架构和功能
+  - 设备模块架构和功能
+  - 当前系统限制
+  - 多摄像头支持分析
+  - 提议的架构设计
+  - 详细的重构需求
 
-- **[REFACTORING_ROADMAP.md](./REFACTORING_ROADMAP.md)**: Detailed refactoring plan
-  - 16-week implementation timeline
-  - Phase-by-phase breakdown
-  - Prioritized action items
-  - Code examples and snippets
-  - Success metrics
-  - Risk mitigation strategies
+- **[REFACTORING_ROADMAP.md](./REFACTORING_ROADMAP.md)**: 详细的重构计划
+  - 16 周的实施时间表
+  - 分阶段细分
+  - 优先级行动事项
+  - 代码示例和片段
+  - 成功指标
+  - 风险缓解策略
 
-### Subdirectories
+### 子目录
 
 #### `rtsp/`
-Placeholder directory for refactored RTSP module code. Will contain:
-- Stream router implementation
-- Stream instance management
-- Enhanced URL parsing
-- Dynamic stream registration
+重构的 RTSP 模块代码的占位目录。将包含：
+- 流路由实现
+- 流实例管理
+- 增强的 URL 解析
+- 动态流注册
 
-**Status:** Unpopulated (awaiting refactoring)
+**状态：** 未填充（等待重构）
 
 #### `rtmp/`
-Placeholder directory for refactored RTMP module code. Will contain:
-- Multi-session improvements
-- URL template support
-- Enhanced error handling
-- H.265 support investigation
+重构的 RTMP 模块代码的占位目录。将包含：
+- 多会话改进
+- URL 模板支持
+- 增强的错误处理
+- H.265 支持研究
 
-**Status:** Unpopulated (awaiting refactoring)
+**状态：** 未填充（等待重构）
 
 #### `device/`
-Placeholder directory for refactored device module code. Will contain:
-- Camera manager implementation
-- Camera instance abstraction
-- Resource manager
-- Multi-camera support
+重构的设备模块代码的占位目录。将包含：
+- 摄像头管理器实现
+- 摄像头实例抽象
+- 资源管理器
+- 多摄像头支持
 
-**Status:** Unpopulated (awaiting refactoring)
+**状态：** 未填充（等待重构）
 
-## Key Findings
+## 关键发现
 
-### Current State
-- **Single Camera Only**: MAX_CHANNEL = 1 hardcoded
-- **Static Configuration**: JSON file-based with restart required
-- **Fixed Stream URLs**: stream1, stream2, stream3 only
-- **Tight Coupling**: Channel class manages too many responsibilities
+### 当前状态
+- **仅单摄像头**：MAX_CHANNEL = 1 硬编码
+- **静态配置**：基于 JSON 文件，需要重启
+- **固定流 URL**：仅支持 stream1、stream2、stream3
+- **紧耦合**：Channel 类管理过多职责
 
-### Target State
-- **Multi-Camera Support**: 2-4 cameras simultaneously
-- **Dynamic Configuration**: Runtime camera/stream creation
-- **Flexible URLs**: /camera/{id}/{stream} scheme
-- **Modular Design**: Separated concerns with plugin system
+### 目标状态
+- **多摄像头支持**：同时支持 2-4 个摄像头
+- **动态配置**：运行时创建摄像头/流
+- **灵活的 URL**：/camera/{id}/{stream} 方案
+- **模块化设计**：通过插件系统分离关注点
 
-## Architecture Diagrams
+## 架构图
 
-### Current Architecture
+### 当前架构
 ```
-Application (Single Camera)
+应用程序（单摄像头）
     ↓
-  chn (Channel)
-    ├─ VI (Sensor)
-    ├─ VPSS (Processing)
-    ├─ VENC (Encoding)
-    └─ Features (OSD, AIISP, etc.)
+  chn（通道）
+    ├─ VI（传感器）
+    ├─ VPSS（处理）
+    ├─ VENC（编码）
+    └─ 特性（OSD、AIISP 等）
     ↓
-Stream Distribution (Observer Pattern)
-    ├─ RTSP Server
-    ├─ RTMP Sessions
-    ├─ MP4 Recorder
-    └─ JPEG Snapshot
+流分发（观察者模式）
+    ├─ RTSP 服务器
+    ├─ RTMP 会话
+    ├─ MP4 录制
+    └─ JPEG 快照
 ```
 
-### Proposed Architecture
+### 提议的架构
 ```
-Application Manager
+应用程序管理器
     ↓
-Camera Manager
-    ├─ Camera Instance 0
+摄像头管理器
+    ├─ 摄像头实例 0
     │   ├─ VI/VPSS/VENC
-    │   └─ Stream Instances []
-    ├─ Camera Instance 1
+    │   └─ 流实例 []
+    ├─ 摄像头实例 1
     │   ├─ VI/VPSS/VENC
-    │   └─ Stream Instances []
-    └─ Camera Instance N
+    │   └─ 流实例 []
+    └─ 摄像头实例 N
         ├─ VI/VPSS/VENC
-        └─ Stream Instances []
+        └─ 流实例 []
     ↓
-Stream Router
+流路由器
     ↓
-Service Layer
-    ├─ RTSP Service
-    ├─ RTMP Service
-    └─ Recording Service
+服务层
+    ├─ RTSP 服务
+    ├─ RTMP 服务
+    └─ 录制服务
 ```
 
-## Critical Refactoring Points
+## 关键重构要点
 
-### 1. Remove MAX_CHANNEL Limitation
-**Priority:** High  
-**Effort:** Medium  
-**Impact:** Enables multiple camera support
+### 1. 移除 MAX_CHANNEL 限制
+**优先级：** 高  
+**工作量：** 中  
+**影响：** 启用多摄像头支持
 
 ```cpp
-// Before
+// 之前
 #define MAX_CHANNEL 1
 static std::shared_ptr<chn> g_chns[MAX_CHANNEL];
 
-// After
-// Dynamic allocation through camera_manager
+// 之后
+// 通过 camera_manager 动态分配
 ```
 
-### 2. Implement Camera Manager
-**Priority:** High  
-**Effort:** High  
-**Impact:** Core abstraction for multi-camera
+### 2. 实现摄像头管理器
+**优先级：** 高  
+**工作量：** 高  
+**影响：** 多摄像头的核心抽象
 
-### 3. Stream Router
-**Priority:** High  
-**Effort:** Medium  
-**Impact:** Flexible URL mapping and stream distribution
+### 3. 流路由器
+**优先级：** 高  
+**工作量：** 中  
+**影响：** 灵活的 URL 映射和流分发
 
-### 4. Resource Manager
-**Priority:** High  
-**Effort:** High  
-**Impact:** Prevents resource exhaustion, validates configurations
+### 4. 资源管理器
+**优先级：** 高  
+**工作量：** 高  
+**影响：** 防止资源耗尽，验证配置
 
-### 5. Configuration System
-**Priority:** Medium  
-**Effort:** High  
-**Impact:** Unified multi-camera configuration
+### 5. 配置系统
+**优先级：** 中  
+**工作量：** 高  
+**影响：** 统一的多摄像头配置
 
-### 6. Feature Plugin System
-**Priority:** Medium  
-**Effort:** High  
-**Impact:** Modular, per-camera feature control
+### 6. 特性插件系统
+**优先级：** 中  
+**工作量：** 高  
+**影响：** 模块化的单摄像头特性控制
 
-## Implementation Phases
+## 实施阶段
 
-### Phase 1: Foundation (Weeks 1-4)
-- Resource manager
-- Camera manager
-- Stream router
-- **Goal:** Core abstractions without breaking changes
+### 阶段 1：基础（第 1-4 周）
+- 资源管理器
+- 摄像头管理器
+- 流路由器
+- **目标：** 核心抽象，无破坏性更改
 
-### Phase 2: Multi-Camera (Weeks 5-8)
-- Remove MAX_CHANNEL limit
-- Dual camera configuration
-- Multi-VENC capture
-- **Goal:** 2+ cameras working simultaneously
+### 阶段 2：多摄像头（第 5-8 周）
+- 移除 MAX_CHANNEL 限制
+- 双摄像头配置
+- 多 VENC 捕获
+- **目标：** 2+ 摄像头同时工作
 
-### Phase 3: Advanced Features (Weeks 9-12)
-- Feature plugin system
-- Dynamic reconfiguration
-- RESTful API (optional)
-- **Goal:** Production-ready features
+### 阶段 3：高级特性（第 9-12 周）
+- 特性插件系统
+- 动态重新配置
+- RESTful API（可选）
+- **目标：** 生产就绪特性
 
-### Phase 4: Optimization (Weeks 13-16)
-- Performance profiling
-- Code optimization
-- Stress testing
-- **Goal:** Production hardening
+### 阶段 4：优化（第 13-16 周）
+- 性能分析
+- 代码优化
+- 压力测试
+- **目标：** 生产强化
 
-## Testing Strategy
+## 测试策略
 
-### Unit Tests
-- Resource allocation/deallocation
-- Camera lifecycle management
-- Stream routing logic
-- Configuration validation
+### 单元测试
+- 资源分配/释放
+- 摄像头生命周期管理
+- 流路由逻辑
+- 配置验证
 
-### Integration Tests
-- Single camera (regression)
-- Dual camera
-- Four camera maximum
-- All feature combinations
+### 集成测试
+- 单摄像头（回归测试）
+- 双摄像头
+- 四摄像头最大值
+- 所有特性组合
 
-### Performance Tests
-- CPU usage (target: <80%)
-- Memory usage (target: <512MB)
-- Frame rate stability (30fps per camera)
-- Latency (<100ms RTSP)
+### 性能测试
+- CPU 使用率（目标：<80%）
+- 内存使用（目标：<512MB）
+- 帧率稳定性（每个摄像头 30fps）
+- 延迟（RTSP <100ms）
 
-### Stress Tests
-- 7-day continuous operation
-- Maximum RTSP clients
-- Network interruptions
-- Resource exhaustion
+### 压力测试
+- 7 天连续运行
+- 最大 RTSP 客户端
+- 网络中断
+- 资源耗尽
 
-## Success Metrics
+## 成功指标
 
-### Functional
-- ✅ Support 2-4 cameras simultaneously
-- ✅ Independent camera configuration
-- ✅ Dynamic stream creation/deletion
-- ✅ Multi-camera RTSP URLs
-- ✅ Multi-camera RTMP support
+### 功能性
+- ✅ 同时支持 2-4 个摄像头
+- ✅ 独立的摄像头配置
+- ✅ 动态流创建/删除
+- ✅ 多摄像头 RTSP URL
+- ✅ 多摄像头 RTMP 支持
 
-### Performance
-- ✅ 30fps per camera (1080p)
-- ✅ <100ms RTSP latency
-- ✅ <80% CPU usage (quad-core)
-- ✅ <512MB memory
-- ✅ 99.9% uptime
+### 性能
+- ✅ 每个摄像头 30fps（1080p）
+- ✅ RTSP 延迟 <100ms
+- ✅ CPU 使用率 <80%（四核）
+- ✅ 内存 <512MB
+- ✅ 99.9% 正常运行时间
 
-### Quality
-- ✅ Zero critical bugs
-- ✅ <0.1% frame drop
-- ✅ Automatic recovery
-- ✅ Complete documentation
-- ✅ Comprehensive tests
+### 质量
+- ✅ 零严重错误
+- ✅ <0.1% 丢帧率
+- ✅ 自动恢复
+- ✅ 完整的文档
+- ✅ 全面的测试
 
-## Usage
+## 使用指南
 
-### For Developers
-1. Read `ANALYSIS.md` for complete understanding
-2. Review `REFACTORING_ROADMAP.md` for implementation plan
-3. Follow phase-by-phase implementation
-4. Write tests for each component
-5. Update documentation as you go
+### 开发者
+1. 阅读 `ANALYSIS.md` 以全面了解
+2. 查看 `REFACTORING_ROADMAP.md` 了解实施计划
+3. 遵循分阶段实施
+4. 为每个组件编写测试
+5. 边做边更新文档
 
-### For Reviewers
-1. Check architecture alignment with ANALYSIS.md
-2. Verify refactoring follows ROADMAP priorities
-3. Ensure backward compatibility maintained
-4. Review test coverage
-5. Validate performance targets
+### 审查者
+1. 检查架构是否与 ANALYSIS.md 一致
+2. 验证重构是否遵循 ROADMAP 优先级
+3. 确保保持向后兼容性
+4. 审查测试覆盖率
+5. 验证性能目标
 
-## Dependencies
+## 依赖项
 
-### Hardware
-- HiSilicon 3519DV500 chip
-- Multiple camera sensors (OS04A10, OS08A20)
-- Development board
+### 硬件
+- 海思 3519DV500 芯片
+- 多个摄像头传感器（OS04A10、OS08A20）
+- 开发板
 
-### Software
-- HiSilicon MPP SDK V2.0.2.1
-- C++17 compiler
+### 软件
+- 海思 MPP SDK V2.0.2.1
+- C++17 编译器
 - librtmp
 - jsoncpp
 - log4cpp
 
-## Related Documents
+## 相关文档
 
-### In Repository
-- `/README.md`: Main project README
-- `/doc/set.md`: Configuration guide
-- `/doc/debug_log.md`: Debug information
+### 仓库内
+- `/README.md`：主项目 README
+- `/doc/set.md`：配置指南
+- `/doc/debug_log.md`：调试信息
 
-### External
-- HiSilicon MPP SDK documentation
+### 外部
+- 海思 MPP SDK 文档
 - RTSP RFC 2326
 - RTP RFC 3984 (H.264)
-- RTMP specification
+- RTMP 规范
 
-## Contributing
+## 贡献指南
 
-When contributing refactored code:
+在贡献重构代码时：
 
-1. **Place in appropriate subdirectory**
-   - `cn_analyst/rtsp/` for RTSP refactoring
-   - `cn_analyst/rtmp/` for RTMP refactoring
-   - `cn_analyst/device/` for device refactoring
+1. **放置在适当的子目录**
+   - `cn_analyst/rtsp/` 用于 RTSP 重构
+   - `cn_analyst/rtmp/` 用于 RTMP 重构
+   - `cn_analyst/device/` 用于设备重构
 
-2. **Follow coding standards**
-   - C++17 style
-   - Consistent naming conventions
-   - Comprehensive comments
-   - Unit tests required
+2. **遵循编码标准**
+   - C++17 风格
+   - 一致的命名约定
+   - 全面的注释
+   - 需要单元测试
 
-3. **Update documentation**
-   - Update ANALYSIS.md if architecture changes
-   - Update ROADMAP.md progress
-   - Document new APIs
+3. **更新文档**
+   - 如架构更改则更新 ANALYSIS.md
+   - 更新 ROADMAP.md 进度
+   - 文档化新 API
 
-4. **Test thoroughly**
-   - Unit tests for new code
-   - Integration tests for interactions
-   - Performance benchmarks
+4. **全面测试**
+   - 新代码的单元测试
+   - 交互的集成测试
+   - 性能基准测试
 
-## Contact
+## 联系方式
 
-For questions about this analysis:
-- Review the issue tracker
-- Check existing documentation
-- Consult with team leads
+关于此分析的问题：
+- 查看问题跟踪器
+- 检查现有文档
+- 咨询团队负责人
 
-## Version History
+## 版本历史
 
-- **v1.0** (2026-01-04): Initial analysis and roadmap
-  - Complete architecture analysis
-  - Detailed refactoring plan
-  - Multi-camera design
+- **v1.0**（2026-01-04）：初始分析和路线图
+  - 完整的架构分析
+  - 详细的重构计划
+  - 多摄像头设计
 
-## License
+## 许可证
 
-Same as main project.
+与主项目相同。
 
 ---
 
-**Note:** This directory contains analysis and planning documentation. Actual refactored code will be placed in the subdirectories once implementation begins.
+**注意：** 本目录包含分析和规划文档。实际重构代码将在实施开始后放置在子目录中。
