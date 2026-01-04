@@ -1,415 +1,414 @@
-# Codebase Analysis: RTSP, RTMP, and Device Modules
+# 代码库分析：RTSP、RTMP 和设备模块
 
-## Executive Summary
+## 执行摘要
 
-This document provides a comprehensive analysis of the HiSilicon 3519DV500 video application's architecture, focusing on the `rtsp`, `rtmp`, and `device` directories. The analysis identifies the current design limitations for multi-camera support and proposes a refactored architecture optimized for scalability and modularity.
+本文档提供海思 3519DV500 视频应用架构的综合分析，重点关注 `rtsp`、`rtmp` 和 `device` 目录。分析识别了当前设计在多摄像头支持方面的限制，并提出了针对可扩展性和模块化优化的重构架构。
 
-**Current Status**: Single camera support (MAX_CHANNEL = 1)  
-**Target Goal**: Multi-camera and multi-stream support with improved modularity
-
----
-
-## 1. Current Architecture Analysis
-
-### 1.1 RTSP Module (`rtsp/`)
-
-#### Purpose
-The RTSP module implements a complete RTSP (Real-Time Streaming Protocol) server for streaming video over network.
-
-#### Key Components
-
-**Server Layer:**
-- `server.h/cpp`: Main RTSP server implementation
-  - Uses select-based event loop for handling multiple client connections
-  - Listens on configurable port (default: 554)
-  - Manages session lifecycle and timeout handling
-  - Single-threaded server design with fd_set for multiplexing
-
-- `session.h/cpp`: Base session class for connection management
-  - Abstract base class defining session interface
-  - Handles socket operations and timeouts
-  - Provides idle processing hooks
-
-- `rtsp_session.h/cpp`: RTSP-specific session implementation
-  - Handles RTSP protocol parsing and request processing
-  - Manages session timeout (MAX_SESSION_TIMEOUT + 3)
-  - Integrates with rtsp_request_handler for protocol handling
-
-**Protocol Layer:**
-- `request.h`: RTSP request structure definition
-- `request_parser.h/cpp`: RTSP protocol parser
-- `rtsp_request_handler.h/cpp`: Request processing and response generation
-  - Handles DESCRIBE, SETUP, PLAY, TEARDOWN, PAUSE methods
-  - Manages RTP session creation and teardown
-
-**Stream Management:**
-- `stream/stream_manager.h/cpp`: Central stream registry and dispatcher
-  - Singleton pattern for global stream management
-  - Maps (chn, stream_id) pairs to stream_stock objects
-  - Implements stream health checking (5-second timeout)
-  - Callbacks to device layer via function pointers
-
-- `stream/stream_stock.h/cpp`: Stream buffer and observer pattern implementation
-  - Maintains list of observers (RTSP clients) for each stream
-  - Buffers stream data and distributes to all observers
-  - Tracks last stream timestamp for health monitoring
-
-- `stream/stream_handler.h/cpp`: Base handler for stream processing
-- `stream/stream_video_handler.h/cpp`: Video stream handler
-- `stream/stream_audio_handler.h/cpp`: Audio stream handler
-
-**RTP Layer:**
-- `rtp_session/`: RTP session implementations
-  - `rtp_session.h/cpp`: Base RTP session
-  - `rtp_tcp_session.h/cpp`: RTP over TCP (interleaved)
-  - `rtp_udp_session.h/cpp`: RTP over UDP
-
-- `rtp_serialize/`: Codec-specific RTP packetizers
-  - `h264_rtp_serialize.h/cpp`: H.264 RTP packetization
-  - `h265_rtp_serialize.h/cpp`: H.265/HEVC RTP packetization
-  - `aac_rtp_serialize.h/cpp`: AAC audio RTP packetization
-  - `pcmu_rtp_serialize.h/cpp`: PCMU audio RTP packetization
-
-#### Current Limitations
-1. **Single Server Instance**: Only one RTSP server can run
-2. **Static Stream Mapping**: Hardcoded URLs (stream1, stream2, stream3)
-3. **Channel Limitation**: Tied to MAX_CHANNEL = 1
-4. **Stream ID Convention**: Fixed IDs (0=main, 1=sub, 2=ai)
-5. **No Dynamic Stream Creation**: Streams must be pre-registered
-
-#### Interaction with Other Modules
-- Receives encoded video data from `device/venc` via observer pattern
-- Uses callback functions to request I-frames and query stream metadata
-- Independent of transport (TCP/UDP) through abstraction layers
+**当前状态**：单摄像头支持（MAX_CHANNEL = 1）  
+**目标**：多摄像头和多流支持，改进模块化
 
 ---
 
-### 1.2 RTMP Module (`rtmp/`)
+## 1. 当前架构分析
 
-#### Purpose
-The RTMP module provides video streaming to RTMP servers (e.g., nginx-rtmp) for live broadcasting.
+### 1.1 RTSP 模块（`rtsp/`）
 
-#### Key Components
+#### 用途
+RTSP 模块实现完整的 RTSP（实时流协议）服务器，用于通过网络流式传输视频。
 
-**Session Management:**
-- `session.h/cpp`: RTMP client session implementation
-  - Connects to remote RTMP server (push mode only)
-  - Manages connection lifecycle (connect, stream, disconnect)
-  - Handles H.264 video encoding to FLV format
-  - Processes SPS/PPS NAL units separately
-  - AAC audio support
-  - Uses librtmp for protocol implementation
+#### 关键组件
 
-- `session_manager.h/cpp`: Multi-session coordinator
-  - Manages multiple RTMP push sessions
-  - Maps (chn, stream_id, url) tuples to session instances
-  - Distributes stream data to all active sessions
-  - Handles session creation and cleanup
+**服务器层：**
+- `server.h/cpp`：主 RTSP 服务器实现
+  - 使用基于 select 的事件循环处理多个客户端连接
+  - 监听可配置端口（默认：554）
+  - 管理会话生命周期和超时处理
+  - 单线程服务器设计，使用 fd_set 进行多路复用
 
-**Data Flow:**
-- Receives NAL units from device/venc via observer pattern
-- Buffers data in circular buffer (stream_buf)
-- Separate thread processes and sends data to RTMP server
-- Wait for I-frame before starting transmission
-- Sends SPS/PPS before each I-frame
-- Sends AAC spec before audio frames
+- `session.h/cpp`：连接管理的基础会话类
+  - 定义会话接口的抽象基类
+  - 处理套接字操作和超时
+  - 提供空闲处理钩子
 
-#### Current Limitations
-1. **H.264 Only**: RTMP only supports H.264 (not H.265)
-2. **Push Only**: No RTMP server/pull capability
-3. **Static Configuration**: URLs configured via JSON file
-4. **Limited Error Recovery**: Connection failures require manual restart
-5. **Single Stream per Session**: One URL per (chn, stream_id) pair
+- `rtsp_session.h/cpp`：RTSP 特定会话实现
+  - 处理 RTSP 协议解析和请求处理
+  - 管理会话超时（MAX_SESSION_TIMEOUT + 3）
+  - 集成 rtsp_request_handler 进行协议处理
 
-#### Dependencies
-- librtmp: External RTMP protocol library
-- stream_buf: Circular buffer utility
-- Tightly coupled to device module for stream data
+**协议层：**
+- `request.h`：RTSP 请求结构定义
+- `request_parser.h/cpp`：RTSP 协议解析器
+- `rtsp_request_handler.h/cpp`：请求处理和响应生成
+  - 处理 DESCRIBE、SETUP、PLAY、TEARDOWN、PAUSE 方法
+  - 管理 RTP 会话的创建和拆除
+
+**流管理：**
+- `stream/stream_manager.h/cpp`：中央流注册表和分发器
+  - 单例模式的全局流管理
+  - 将（chn，stream_id）对映射到 stream_stock 对象
+  - 实现流健康检查（5 秒超时）
+  - 通过函数指针回调到设备层
+
+- `stream/stream_stock.h/cpp`：流缓冲区和观察者模式实现
+  - 维护每个流的观察者列表（RTSP 客户端）
+  - 缓冲流数据并分发给所有观察者
+  - 跟踪最后一个流时间戳以进行健康监控
+
+- `stream/stream_handler.h/cpp`：流处理的基础处理器
+- `stream/stream_video_handler.h/cpp`：视频流处理器
+- `stream/stream_audio_handler.h/cpp`：音频流处理器
+
+**RTP 层：**
+- `rtp_session/`：RTP 会话实现
+  - `rtp_session.h/cpp`：基础 RTP 会话
+  - `rtp_tcp_session.h/cpp`：RTP over TCP（交错）
+  - `rtp_udp_session.h/cpp`：RTP over UDP
+
+- `rtp_serialize/`：编解码器特定的 RTP 打包器
+  - `h264_rtp_serialize.h/cpp`：H.264 RTP 打包
+  - `h265_rtp_serialize.h/cpp`：H.265/HEVC RTP 打包
+  - `aac_rtp_serialize.h/cpp`：AAC 音频 RTP 打包
+  - `pcmu_rtp_serialize.h/cpp`：PCMU 音频 RTP 打包
+
+#### 当前限制
+1. **单一服务器实例**：只能运行一个 RTSP 服务器
+2. **静态流映射**：硬编码 URL（stream1、stream2、stream3）
+3. **通道限制**：绑定到 MAX_CHANNEL = 1
+4. **流 ID 约定**：固定 ID（0=主码流，1=子码流，2=AI 码流）
+5. **无动态流创建**：流必须预先注册
+
+#### 与其他模块的交互
+- 通过观察者模式从 `device/venc` 接收编码视频数据
+- 使用回调函数请求 I 帧并查询流元数据
+- 通过抽象层独立于传输（TCP/UDP）
 
 ---
 
-### 1.3 Device Module (`device/`)
+### 1.2 RTMP 模块（`rtmp/`）
 
-#### Purpose
-The device module interfaces with HiSilicon hardware for video capture, encoding, and processing.
+#### 用途
+RTMP 模块提供向 RTMP 服务器（例如 nginx-rtmp）的视频流推送以进行直播。
 
-#### Key Components
+#### 关键组件
 
-**System Management:**
-- `dev_sys.h/cpp`: System initialization and resource allocation
-  - VB (Video Buffer) pool management
-  - System binding management
-  - Channel allocation (VI, VPSS, VENC)
+**会话管理：**
+- `session.h/cpp`：RTMP 客户端会话实现
+  - 连接到远程 RTMP 服务器（仅推送模式）
+  - 管理连接生命周期（连接、流、断开）
+  - 处理 H.264 视频编码为 FLV 格式
+  - 单独处理 SPS/PPS NAL 单元
+  - AAC 音频支持
+  - 使用 librtmp 进行协议实现
 
-**Video Input (VI):**
-- `dev_vi.h/cpp`: Base VI (Video Input) class
-  - Abstract interface for different sensors
-  - VPSS (Video Processing SubSystem) integration
-  - Frame rate and resolution management
+- `session_manager.h/cpp`：多会话协调器
+  - 管理多个 RTMP 推送会话
+  - 将（chn，stream_id，url）元组映射到会话实例
+  - 将流数据分发到所有活动会话
+  - 处理会话创建和清理
 
-- Sensor Implementations:
-  - `dev_vi_os04a10_liner.h/cpp`: OS04A10 linear mode (2688x1520@30fps)
-  - `dev_vi_os04a10_2to1wdr.h/cpp`: OS04A10 WDR mode
-  - `dev_vi_os08a20_liner.h/cpp`: OS08A20 linear mode (3840x2160@30fps)
-  - `dev_vi_os08a20_2to1wdr.h/cpp`: OS08A20 WDR mode
+**数据流：**
+- 通过观察者模式从 device/venc 接收 NAL 单元
+- 在循环缓冲区（stream_buf）中缓冲数据
+- 单独的线程处理数据并发送到 RTMP 服务器
+- 等待 I 帧再开始传输
+- 在每个 I 帧之前发送 SPS/PPS
+- 在音频帧之前发送 AAC 规范
 
-- `dev_vi_isp.h/cpp`: ISP (Image Signal Processing) configuration
-  - AE (Auto Exposure), AWB (Auto White Balance)
-  - 3A algorithm integration
+#### 当前限制
+1. **仅 H.264**：RTMP 仅支持 H.264（不支持 H.265）
+2. **仅推送**：无 RTMP 服务器/拉取功能
+3. **静态配置**：通过 JSON 文件配置 URL
+4. **有限的错误恢复**：连接失败需要手动重启
+5. **每个会话单流**：每个（chn，stream_id）对一个 URL
 
-**Video Encoding (VENC):**
-- `dev_venc.h/cpp`: Video encoder management
-  - H.264/H.265 encoding support
-  - CBR (Constant Bit Rate) and AVBR (Adaptive Variable Bit Rate)
-  - Implements observer pattern as stream_post
-  - Single capture thread for all encoders (select-based)
-  - Bound to VPSS output channels
+#### 依赖项
+- librtmp：外部 RTMP 协议库
+- stream_buf：循环缓冲区工具
+- 与设备模块紧密耦合以获取流数据
 
-**Channel Management:**
-- `dev_chn.h/cpp`: High-level channel orchestrator
-  - Combines VI, VPSS, VENC, OSD into single channel
-  - Static array of channels: `g_chns[MAX_CHANNEL]`
-  - **Critical Limitation**: MAX_CHANNEL = 1
-  - Manages scene auto, AIISP, rate auto features
-  - Implements stream_observer interface
+---
 
-**Additional Features:**
-- `dev_osd.h/cpp`: On-Screen Display (timestamp overlay)
-- `dev_snap.h/cpp`: JPEG snapshot capture
-- `dev_vo.h/cpp`, `dev_vo_bt1120.h/cpp`: Video output support
-- `dev_svp.h/cpp`, `dev_svp_yolov5.h/cpp`: AI inference (YOLOv5)
+### 1.3 设备模块（`device/`）
 
-**Sensor Drivers:**
-- `sensor/omnivision_os04a10/`: OS04A10 sensor driver (C code)
-- `sensor/omnivision_os08a20/`: OS08A20 sensor driver (C code)
+#### 用途
+设备模块与海思硬件接口进行视频捕获、编码和处理。
 
-#### Current Limitations
-1. **Single Channel**: `MAX_CHANNEL = 1` hardcoded
-2. **Static Configuration**: All settings via JSON files
-3. **Fixed Stream IDs**: 0=main, 1=sub, 2=ai
-4. **Tight Coupling**: chn class manages too many responsibilities
-5. **Global State**: Singleton patterns and static arrays
-6. **No Dynamic Reconfiguration**: Requires restart for changes
+#### 关键组件
 
-#### Interaction Flow
+**系统管理：**
+- `dev_sys.h/cpp`：系统初始化和资源分配
+  - VB（视频缓冲区）池管理
+  - 系统绑定管理
+  - 通道分配（VI、VPSS、VENC）
+
+**视频输入（VI）：**
+- `dev_vi.h/cpp`：基础 VI（视频输入）类
+  - 不同传感器的抽象接口
+  - VPSS（视频处理子系统）集成
+  - 帧率和分辨率管理
+
+- 传感器实现：
+  - `dev_vi_os04a10_liner.h/cpp`：OS04A10 线性模式（2688x1520@30fps）
+  - `dev_vi_os04a10_2to1wdr.h/cpp`：OS04A10 WDR 模式
+  - `dev_vi_os08a20_liner.h/cpp`：OS08A20 线性模式（3840x2160@30fps）
+  - `dev_vi_os08a20_2to1wdr.h/cpp`：OS08A20 WDR 模式
+
+- `dev_vi_isp.h/cpp`：ISP（图像信号处理）配置
+  - AE（自动曝光）、AWB（自动白平衡）
+  - 3A 算法集成
+
+**视频编码（VENC）：**
+- `dev_venc.h/cpp`：视频编码器管理
+  - H.264/H.265 编码支持
+  - CBR（恒定比特率）和 AVBR（自适应可变比特率）
+  - 实现观察者模式作为 stream_post
+  - 所有编码器的单一捕获线程（基于 select）
+  - 绑定到 VPSS 输出通道
+
+**通道管理：**
+- `dev_chn.h/cpp`：高级通道协调器
+  - 将 VI、VPSS、VENC、OSD 组合到单个通道中
+  - 静态通道数组：`g_chns[MAX_CHANNEL]`
+  - **关键限制**：MAX_CHANNEL = 1
+  - 管理场景自动、AIISP、速率自动特性
+  - 实现 stream_observer 接口
+
+**附加特性：**
+- `dev_osd.h/cpp`：屏幕显示（时间戳叠加）
+- `dev_snap.h/cpp`：JPEG 快照捕获
+- `dev_vo.h/cpp`、`dev_vo_bt1120.h/cpp`：视频输出支持
+- `dev_svp.h/cpp`、`dev_svp_yolov5.h/cpp`：AI 推理（YOLOv5）
+
+**传感器驱动：**
+- `sensor/omnivision_os04a10/`：OS04A10 传感器驱动（C 代码）
+- `sensor/omnivision_os08a20/`：OS08A20 传感器驱动（C 代码）
+
+#### 当前限制
+1. **单通道**：`MAX_CHANNEL = 1` 硬编码
+2. **静态配置**：所有设置通过 JSON 文件
+3. **固定流 ID**：0=主码流，1=子码流，2=AI 码流
+4. **紧耦合**：chn 类管理过多职责
+5. **全局状态**：单例模式和静态数组
+6. **无动态重新配置**：更改需要重启
+
+#### 交互流
 ```
-Sensor → VI → VPSS → VENC → Observer Pattern → RTSP/RTMP/MP4/SNAP
+传感器 → VI → VPSS → VENC → 观察者模式 → RTSP/RTMP/MP4/SNAP
                  ↓
-               AIISP (optional)
+               AIISP（可选）
                  ↓
-               VO (optional)
+               VO（可选）
 ```
 
 ---
 
-## 2. Current System Architecture Diagram
+## 2. 当前系统架构图
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        Application Layer                         │
+│                        应用层                                    │
 │  ┌─────────────┐  ┌──────────────┐  ┌────────────────────────┐ │
-│  │   main.cpp  │  │ Config Files │  │  Signal Handlers       │ │
-│  │  (1 camera) │  │  (JSON)      │  │  (SIGINT/SIGTERM)      │ │
+│  │   main.cpp  │  │  配置文件    │  │  信号处理器             │ │
+│  │  (1个摄像头) │  │  (JSON)      │  │  (SIGINT/SIGTERM)      │ │
 │  └──────┬──────┘  └──────────────┘  └────────────────────────┘ │
 └─────────┼───────────────────────────────────────────────────────┘
           │
           ├─────────────────────┬──────────────────────┬──────────────────┐
           ▼                     ▼                      ▼                  ▼
 ┌─────────────────┐   ┌──────────────────┐  ┌──────────────────┐  ┌─────────────┐
-│  RTSP Server    │   │  RTMP Sessions   │  │  Device Channel  │  │  Features   │
-│  (Port 554)     │   │  (Push to nginx) │  │  (MAX_CHANNEL=1) │  │             │
+│  RTSP 服务器    │   │  RTMP 会话       │  │  设备通道        │  │  特性       │
+│  (端口 554)     │   │  (推送到 nginx)  │  │  (MAX_CHANNEL=1) │  │             │
 ├─────────────────┤   ├──────────────────┤  ├──────────────────┤  ├─────────────┤
-│ • rtsp_server   │   │ • session_mgr    │  │ • chn class      │  │ • MP4 Save  │
-│ • Multiple      │   │ • Multiple URLs  │  │ • VI (sensor)    │  │ • JPEG Snap │
-│   clients       │   │   per stream     │  │ • VPSS (scale)   │  │ • Scene     │
-│ • TCP select()  │   ├──────────────────┤  │ • VENC (encode)  │  │ • AIISP     │
-├─────────────────┤   │ Data Flow:       │  │ • OSD (time)     │  │ • YOLOv5    │
-│ Stream Manager: │   │ H264/AAC → FLV   │  ├──────────────────┤  │ • VO Output │
-│ • stream_stock  │   │ → librtmp →      │  │ Stream Observer  │  └─────────────┘
-│ • stream1 (0,0) │   │   RTMP Server    │  │ Pattern:         │
-│ • stream2 (0,1) │   └──────────────────┘  │ ┌──────────────┐ │
-│ • stream3 (0,2) │                          │ │ on_stream_   │ │
-│ • Observer list │                          │ │   come()     │ │
+│ • rtsp_server   │   │ • session_mgr    │  │ • chn 类         │  │ • MP4 保存  │
+│ • 多个客户端    │   │ • 每个流多个 URL │  │ • VI (传感器)    │  │ • JPEG 快照 │
+│ • TCP select()  │   │                  │  │ • VPSS (缩放)    │  │ • 场景      │
+├─────────────────┤   ├──────────────────┤  │ • VENC (编码)    │  │ • AIISP     │
+│ 流管理器：      │   │ 数据流：         │  │ • OSD (时间)     │  │ • YOLOv5    │
+│ • stream_stock  │   │ H264/AAC → FLV   │  ├──────────────────┤  │ • VO 输出   │
+│ • stream1 (0,0) │   │ → librtmp →      │  │ 流观察者模式：   │  └─────────────┘
+│ • stream2 (0,1) │   │   RTMP 服务器    │  │ ┌──────────────┐ │
+│ • stream3 (0,2) │   └──────────────────┘  │ │ on_stream_   │ │
+│ • 观察者列表    │                          │ │   come()     │ │
 ├─────────────────┤                          │ └──────────────┘ │
-│ RTP Sessions:   │                          │ Notifies:        │
-│ • TCP/UDP       │                          │ • RTSP streams   │
-│ • H264/H265/AAC │◄─────────────────────────┤ • RTMP sessions  │
-└─────────────────┘                          │ • MP4 recorder   │
+│ RTP 会话：      │                          │ 通知：           │
+│ • TCP/UDP       │                          │ • RTSP 流        │
+│ • H264/H265/AAC │◄─────────────────────────┤ • RTMP 会话      │
+└─────────────────┘                          │ • MP4 录制器     │
                                              └──────────────────┘
                                                       │
                                                       ▼
                                              ┌──────────────────┐
-                                             │ HiSilicon MPP    │
-                                             │ (Hardware)       │
+                                             │ 海思 MPP         │
+                                             │ (硬件)           │
                                              ├──────────────────┤
-                                             │ • VI (capture)   │
-                                             │ • VPSS (process) │
-                                             │ • VENC (encode)  │
-                                             │ • VO (output)    │
+                                             │ • VI (捕获)      │
+                                             │ • VPSS (处理)    │
+                                             │ • VENC (编码)    │
+                                             │ • VO (输出)      │
                                              │ • SVP (AI)       │
                                              └──────────────────┘
 ```
 
-**Key Observations:**
-1. Single camera channel (chn=0) feeds all streams
-2. Stream differentiation by stream_id only (0=main, 1=sub, 2=ai)
-3. Observer pattern enables 1-to-N distribution
-4. RTSP and RTMP modules are independent consumers
-5. Configuration is static and file-based
+**关键观察：**
+1. 单个摄像头通道（chn=0）馈送所有流
+2. 流仅通过 stream_id 区分（0=主，1=子，2=AI）
+3. 观察者模式实现 1 对多分发
+4. RTSP 和 RTMP 模块是独立的消费者
+5. 配置是静态的且基于文件
 
 ---
 
-## 3. Multi-Camera Support Limitations
+## 3. 多摄像头支持限制
 
-### 3.1 Current Multi-Stream Support
+### 3.1 当前多流支持
 
-**What Works:**
-- ✅ Single camera with multiple encoded streams (main, sub, ai)
-- ✅ Multiple RTSP clients can connect to each stream
-- ✅ Multiple RTMP destinations per stream
-- ✅ Different resolutions/bitrates per stream (via VPSS)
+**可行的：**
+- ✅ 单摄像头具有多个编码流（主、子、AI）
+- ✅ 多个 RTSP 客户端可以连接到每个流
+- ✅ 每个流多个 RTMP 目标
+- ✅ 每个流不同的分辨率/比特率（通过 VPSS）
 
-**What Doesn't Work:**
-- ❌ Multiple physical cameras (MAX_CHANNEL = 1)
-- ❌ Independent camera configurations
-- ❌ Dynamic stream creation/deletion
-- ❌ Per-camera feature toggles (AIISP, YOLOv5)
-- ❌ Scalable resource allocation
+**不可行的：**
+- ❌ 多个物理摄像头（MAX_CHANNEL = 1）
+- ❌ 独立的摄像头配置
+- ❌ 动态流创建/删除
+- ❌ 每个摄像头特性切换（AIISP、YOLOv5）
+- ❌ 可扩展的资源分配
 
-### 3.2 Identified Bottlenecks
+### 3.2 识别的瓶颈
 
-#### Code-Level Constraints
+#### 代码级约束
 
-1. **Hard-coded Channel Limit**
+1. **硬编码的通道限制**
    ```cpp
    // device/dev_chn.h
    #define MAX_CHANNEL 1
    static std::shared_ptr<chn> g_chns[MAX_CHANNEL];
    ```
 
-2. **Global Singleton State**
+2. **全局单例状态**
    ```cpp
    // main.cpp
-   std::shared_ptr<hisilicon::dev::chn> g_chn;  // Single global channel
+   std::shared_ptr<hisilicon::dev::chn> g_chn;  // 单个全局通道
    ```
 
-3. **Static Configuration Arrays**
+3. **静态配置数组**
    ```cpp
    static venc_t g_venc_info[MAX_CHANNEL];
    static vi_t g_vi_info[MAX_CHANNEL];
    ```
 
-4. **VENC Capture Thread**
+4. **VENC 捕获线程**
    ```cpp
    // device/dev_venc.cpp
-   static std::list<venc_ptr> g_vencs;  // All encoders in single list
-   static std::thread g_capture_thread; // One thread for all
+   static std::list<venc_ptr> g_vencs;  // 单个列表中的所有编码器
+   static std::thread g_capture_thread; // 所有编码器的一个线程
    ```
 
-5. **Stream Manager Limitations**
+5. **流管理器限制**
    ```cpp
    // rtsp/stream/stream_manager.cpp
-   // No enforcement of channel limits, but assumes single channel
+   // 没有强制通道限制，但假设单通道
    ```
 
-#### Resource Allocation Issues
+#### 资源分配问题
 
-1. **VB Pool**: Single shared pool for all channels
-2. **ISP**: One ISP pipeline per VI device
-3. **VPSS Groups**: Limited number of groups (typically 16-32)
-4. **VENC Channels**: Limited hardware encoders (8-16 depending on chip)
-5. **Scene/AIISP**: Global configuration, not per-channel
+1. **VB 池**：所有通道的单个共享池
+2. **ISP**：每个 VI 设备一个 ISP 管线
+3. **VPSS 组**：有限数量的组（通常为 16-32）
+4. **VENC 通道**：有限的硬件编码器（8-16，取决于芯片）
+5. **场景/AIISP**：全局配置，而非每通道
 
-### 3.3 Multi-Camera Scenarios
+### 3.3 多摄像头场景
 
-**Scenario 1: Dual Camera System**
-- Camera 1: OS04A10, 2688x1520@30fps, H.264
-  - Main stream (1920x1080@30fps) → RTSP stream1
-  - Sub stream (720x576@30fps) → RTSP stream2
-- Camera 2: OS08A20, 3840x2160@30fps, H.265
-  - Main stream (3840x2160@30fps) → RTSP stream3
-  - Sub stream (1920x1080@30fps) → RTSP stream4
+**场景 1：双摄像头系统**
+- 摄像头 1：OS04A10，2688x1520@30fps，H.264
+  - 主流（1920x1080@30fps）→ RTSP stream1
+  - 子流（720x576@30fps）→ RTSP stream2
+- 摄像头 2：OS08A20，3840x2160@30fps，H.265
+  - 主流（3840x2160@30fps）→ RTSP stream3
+  - 子流（1920x1080@30fps）→ RTSP stream4
 
-**Current Blockers:**
+**当前阻碍：**
 1. MAX_CHANNEL = 1
-2. g_chn is single instance
-3. Static resource allocation
-4. Fixed stream URL mapping
+2. g_chn 是单例
+3. 静态资源分配
+4. 固定流 URL 映射
 
 ---
 
-## 4. Proposed Architecture for Multi-Camera Support
+## 4. 多摄像头支持的提议架构
 
-### 4.1 Design Principles
+### 4.1 设计原则
 
-1. **Scalability**: Support N cameras with M streams each
-2. **Modularity**: Loosely coupled components
-3. **Configurability**: Runtime configuration changes
-4. **Resource Management**: Dynamic allocation based on availability
-5. **Backward Compatibility**: Maintain existing APIs where possible
+1. **可扩展性**：支持 N 个摄像头，每个有 M 个流
+2. **模块化**：松耦合组件
+3. **可配置性**：运行时配置更改
+4. **资源管理**：基于可用性的动态分配
+5. **向后兼容性**：尽可能保持现有 API
 
-### 4.2 Refactored Architecture Diagram
+### 4.2 重构架构图
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                     Application Layer (Refactored)                      │
+│                     应用层（重构后）                                     │
 │  ┌─────────────────┐  ┌──────────────────┐  ┌────────────────────────┐│
-│  │  Application    │  │  Configuration   │  │  Resource Manager      ││
-│  │  Manager        │  │  Manager         │  │  (VB/VPSS/VENC pools)  ││
-│  │  - Lifecycle    │  │  - Dynamic load  │  │  - Allocation tracking ││
-│  │  - Multi-thread │  │  - Validation    │  │  - Hardware limits     ││
+│  │  应用程序       │  │  配置            │  │  资源管理器             ││
+│  │  管理器         │  │  管理器          │  │  (VB/VPSS/VENC 池)     ││
+│  │  - 生命周期     │  │  - 动态加载      │  │  - 分配跟踪            ││
+│  │  - 多线程       │  │  - 验证          │  │  - 硬件限制            ││
 │  └─────────────────┘  └──────────────────┘  └────────────────────────┘│
 └─────────────────────────────────────────────────────────────────────────┘
            │                       │                         │
            ├───────────────────────┼─────────────────────────┤
            ▼                       ▼                         ▼
 ┌──────────────────────┐  ┌──────────────────────┐  ┌──────────────────────┐
-│  Streaming Services  │  │  Camera Manager      │  │  Feature Manager     │
-│  (Service Layer)     │  │  (Device Layer)      │  │  (Plugin System)     │
+│  流服务              │  │  摄像头管理器        │  │  特性管理器          │
+│  (服务层)            │  │  (设备层)            │  │  (插件系统)          │
 ├──────────────────────┤  ├──────────────────────┤  ├──────────────────────┤
-│ RTSP Service:        │  │ Camera Registry:     │  │ Feature Registry:    │
-│ • Multi-instance     │  │ • camera_instance[]  │  │ • Per-camera enable  │
-│ • Dynamic URLs       │  │ • MAX_CAMERA_NUM=16  │  │ • AIISP (per VI)     │
-│ • /camera/<id>/<st>  │  │                      │  │ • YOLOv5 (per cam)   │
-│                      │  │ Camera Instance:     │  │ • OSD (per stream)   │
-│ RTMP Service:        │  │ ┌────────────────┐  │  │ • Scene (per VI)     │
-│ • URL templates      │  │ │ camera_id      │  │  │ • MP4/SNAP (per st)  │
+│ RTSP 服务：          │  │ 摄像头注册表：       │  │ 特性注册表：         │
+│ • 多实例             │  │ • camera_instance[]  │  │ • 每摄像头启用       │
+│ • 动态 URL           │  │ • MAX_CAMERA_NUM=16  │  │ • AIISP（每 VI）     │
+│ • /camera/<id>/<st>  │  │                      │  │ • YOLOv5（每摄像头）│
+│                      │  │ 摄像头实例：         │  │ • OSD（每流）        │
+│ RTMP 服务：          │  │ ┌────────────────┐  │  │ • 场景（每 VI）      │
+│ • URL 模板           │  │ │ camera_id      │  │  │ • MP4/SNAP（每流）   │
 │ • <cam>/<stream>     │  │ │ vi_instance    │  │  └──────────────────────┘
 │                      │  │ │ vpss_grp       │  │
-│ Stream Router:       │  │ │ venc_list[]    │  │
-│ • Maps (cam, st) →   │  │ │ stream_list[]  │  │
+│ 流路由器：           │  │ │ venc_list[]    │  │
+│ • 映射（cam，st）→   │  │ │ stream_list[]  │  │
 │   stream_stock       │  │ │ feature_ctx    │  │
-│ • Observer registry  │  │ └────────────────┘  │
+│ • 观察者注册表       │  │ └────────────────┘  │
 └──────────────────────┘  └──────────────────────┘
            │                        │
            └────────────┬───────────┘
                         ▼
            ┌────────────────────────────┐
-           │   Stream Distribution      │
-           │   (Pub-Sub Pattern)        │
+           │   流分发                   │
+           │   (发布-订阅模式)          │
            ├────────────────────────────┤
-           │ • stream_stock per stream  │
-           │ • Multi-consumer support   │
-           │ • Back-pressure handling   │
+           │ • 每流 stream_stock        │
+           │ • 多消费者支持             │
+           │ • 背压处理                 │
            └────────────────────────────┘
                         │
                         ▼
            ┌────────────────────────────┐
-           │   HiSilicon HAL            │
-           │   (Hardware Abstraction)   │
+           │   海思 HAL                 │
+           │   (硬件抽象)               │
            ├────────────────────────────┤
-           │ • Multi-VI support         │
-           │ • VPSS group pooling       │
-           │ • VENC channel allocation  │
-           │ • Resource arbitration     │
+           │ • 多 VI 支持               │
+           │ • VPSS 组池化              │
+           │ • VENC 通道分配            │
+           │ • 资源仲裁                 │
            └────────────────────────────┘
 ```
 
-### 4.3 Key Architectural Changes
+### 4.3 关键架构更改
 
-#### 4.3.1 Camera Abstraction Layer
+#### 4.3.1 摄像头抽象层
 
-**New Classes:**
+**新类：**
 ```cpp
 // camera_manager.h
 class camera_instance {
@@ -431,15 +430,15 @@ class camera_manager {
 };
 ```
 
-**Benefits:**
-- Dynamic camera creation/deletion
-- Independent camera lifecycles
-- Per-camera configuration isolation
-- Scalable to hardware limits
+**优势：**
+- 动态摄像头创建/删除
+- 独立的摄像头生命周期
+- 每摄像头配置隔离
+- 可扩展到硬件限制
 
-#### 4.3.2 Stream Abstraction
+#### 4.3.2 流抽象
 
-**New Classes:**
+**新类：**
 ```cpp
 // stream_instance.h
 class stream_instance {
@@ -463,15 +462,15 @@ class stream_router {
 };
 ```
 
-**Benefits:**
-- Dynamic stream creation per camera
-- Flexible stream naming
-- Independent stream configuration
-- Stream lifecycle management
+**优势：**
+- 每个摄像头动态流创建
+- 灵活的流命名
+- 独立的流配置
+- 流生命周期管理
 
-#### 4.3.3 Resource Manager
+#### 4.3.3 资源管理器
 
-**New Classes:**
+**新类：**
 ```cpp
 // resource_manager.h
 class resource_manager {
@@ -494,22 +493,22 @@ class resource_manager {
 };
 ```
 
-**Benefits:**
-- Centralized resource tracking
-- Prevents over-allocation
-- Validates configurations before creation
-- Hardware limits enforced
+**优势：**
+- 集中式资源跟踪
+- 防止过度分配
+- 在创建前验证配置
+- 强制执行硬件限制
 
-#### 4.3.4 RTSP URL Scheme
+#### 4.3.4 RTSP URL 方案
 
-**Current:**
+**当前：**
 ```
 rtsp://ip:port/stream1   → (chn=0, stream_id=0)
 rtsp://ip:port/stream2   → (chn=0, stream_id=1)
 rtsp://ip:port/stream3   → (chn=0, stream_id=2)
 ```
 
-**Proposed:**
+**提议：**
 ```
 rtsp://ip:port/camera/0/main    → (camera_id=0, stream="main")
 rtsp://ip:port/camera/0/sub     → (camera_id=0, stream="sub")
@@ -522,17 +521,17 @@ rtsp://ip:port/cam0_sub
 rtsp://ip:port/cam1_main
 ```
 
-**Benefits:**
-- Intuitive URL structure
-- Self-documenting camera/stream mapping
-- Supports arbitrary stream names
-- Backward compatibility via aliases
+**优势：**
+- 直观的 URL 结构
+- 自文档化的摄像头/流映射
+- 支持任意流名称
+- 通过别名保持向后兼容
 
-#### 4.3.5 Configuration Structure
+#### 4.3.5 配置结构
 
-**Current:** Multiple JSON files (vi.json, venc.json, etc.)
+**当前：** 多个 JSON 文件（vi.json、venc.json 等）
 
-**Proposed:** Unified configuration with per-camera sections
+**提议：** 具有每摄像头部分的统一配置
 
 ```json
 {
@@ -587,56 +586,56 @@ rtsp://ip:port/cam1_main
 }
 ```
 
-### 4.4 Migration Strategy
+### 4.4 迁移策略
 
-**Phase 1: Abstraction Layer (Non-breaking)**
-- Introduce camera_manager and camera_instance classes
-- Wrap existing g_chn in camera_instance
-- Keep MAX_CHANNEL = 1 initially
-- Refactor access through camera_manager
+**阶段 1：抽象层（无破坏性）**
+- 引入 camera_manager 和 camera_instance 类
+- 将现有 g_chn 包装在 camera_instance 中
+- 最初保持 MAX_CHANNEL = 1
+- 通过 camera_manager 重构访问
 
-**Phase 2: Multi-Channel Support**
-- Increase MAX_CHANNEL to 4-8
-- Implement dynamic camera creation
-- Update main.cpp to create multiple cameras
-- Test with 2-camera setup
+**阶段 2：多通道支持**
+- 将 MAX_CHANNEL 增加到 4-8
+- 实现动态摄像头创建
+- 更新 main.cpp 以创建多个摄像头
+- 使用双摄像头设置进行测试
 
-**Phase 3: Stream Refactoring**
-- Implement stream_instance and stream_router
-- Refactor stream_manager to use stream_router
-- Update RTSP URL parsing for new scheme
-- Maintain backward compatibility
+**阶段 3：流重构**
+- 实现 stream_instance 和 stream_router
+- 重构 stream_manager 以使用 stream_router
+- 更新 RTSP URL 解析为新方案
+- 保持向后兼容性
 
-**Phase 4: Configuration Migration**
-- Implement unified configuration format
-- Add config validation and migration tool
-- Support both old and new config formats
-- Update documentation
+**阶段 4：配置迁移**
+- 实现统一配置格式
+- 添加配置验证和迁移工具
+- 支持旧的和新的配置格式
+- 更新文档
 
-**Phase 5: Feature Plugins**
-- Extract OSD, AIISP, YOLOv5 into plugins
-- Implement per-camera feature management
-- Add runtime enable/disable support
+**阶段 5：特性插件**
+- 将 OSD、AIISP、YOLOv5 提取为插件
+- 实现每摄像头特性管理
+- 添加运行时启用/禁用支持
 
 ---
 
-## 5. Refactoring Action Items
+## 5. 重构行动事项
 
-### 5.1 High Priority (Core Multi-Camera Support)
+### 5.1 高优先级（核心多摄像头支持）
 
-#### Device Module Refactoring
+#### 设备模块重构
 
-**Item 1: Remove MAX_CHANNEL Hardcoding**
-- **File:** `device/dev_chn.h`
-- **Change:** Replace `#define MAX_CHANNEL 1` with dynamic limit
-- **Impact:** Enables multiple channel instances
-- **Effort:** Medium
-- **Dependencies:** Must update all array accesses
+**事项 1：移除 MAX_CHANNEL 硬编码**
+- **文件：** `device/dev_chn.h`
+- **更改：** 用动态限制替换 `#define MAX_CHANNEL 1`
+- **影响：** 启用多个通道实例
+- **工作量：** 中等
+- **依赖项：** 必须更新所有数组访问
 
-**Item 2: Create camera_manager Class**
-- **File:** New `device/camera_manager.h/cpp`
-- **Purpose:** Central registry for camera instances
-- **Interface:**
+**事项 2：创建 camera_manager 类**
+- **文件：** 新建 `device/camera_manager.h/cpp`
+- **目的：** 摄像头实例的中央注册表
+- **接口：**
   ```cpp
   class camera_manager {
       static bool init(int max_cameras);
@@ -645,10 +644,10 @@ rtsp://ip:port/cam1_main
       static std::shared_ptr<camera_instance> get_camera(int camera_id);
   };
   ```
-- **Effort:** High
-- **Dependencies:** Requires camera_instance class
+- **工作量：** 高
+- **依赖项：** 需要 camera_instance 类
 
-**Item 3: Refactor chn Class → camera_instance**
+**事项 3：重构 chn 类 → camera_instance**
 - **File:** `device/dev_chn.h/cpp` → `device/camera_instance.h/cpp`
 - **Changes:**
   - Remove global static `g_chns[]` array
@@ -670,7 +669,7 @@ rtsp://ip:port/cam1_main
 
 **Item 5: Multi-Camera VENC Capture**
 - **File:** `device/dev_venc.cpp`
-- **Current:** Single static thread and venc list
+- **当前：** Single static thread and venc list
 - **Change:** One thread per camera or improved select loop
 - **Consideration:** Thread overhead vs. complexity
 - **Effort:** Medium
@@ -708,7 +707,7 @@ rtsp://ip:port/cam1_main
 
 **Item 10: H.265 Support Investigation**
 - **File:** `rtmp/session.cpp`
-- **Current:** H.264 only
+- **当前：** H.264 only
 - **Challenge:** RTMP spec doesn't officially support H.265
 - **Options:** FLV extended format or alternative container
 - **Effort:** High (requires protocol research)
@@ -727,7 +726,7 @@ rtsp://ip:port/cam1_main
 **Item 12: Feature Plugin System**
 - **Files:** New `feature/feature_plugin.h` (interface)
 - **Plugins:** osd_plugin, aiisp_plugin, yolov5_plugin
-- **Benefits:**
+- **优势：**
   - Per-camera feature control
   - Runtime enable/disable
   - Reduced coupling
@@ -752,7 +751,7 @@ rtsp://ip:port/cam1_main
 
 **Item 15: Thread Pool for VENC Capture**
 - **Replace:** Multiple threads or single thread per camera
-- **Benefits:** Better CPU utilization
+- **优势：** Better CPU utilization
 - **Effort:** Medium
 
 **Item 16: Zero-Copy Optimization**
