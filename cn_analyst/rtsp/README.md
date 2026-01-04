@@ -1,18 +1,18 @@
-# RTSP Module Refactoring
+# RTSP 模块重构
 
-This directory will contain the refactored RTSP module implementation for multi-camera support.
+本目录将包含用于多摄像头支持的重构 RTSP 模块实现。
 
 ## Status
 
-**Current Status:** Unpopulated - Awaiting Implementation  
-**Target Completion:** Phase 2-3 (Weeks 4-9)
+**当前状态：** 未填充 - 等待实施  
+**目标完成：** 阶段 2-3（第 4-9 周）
 
-## Planned Components
+## 计划组件
 
-### Core Classes
+### 核心类
 
 #### `stream_router.h/cpp`
-- **Purpose:** Central routing for multi-camera streams
+- **Purpose:** 多摄像头流的中央路由
 - **Responsibilities:**
   - Map (camera_id, stream_id) to stream instances
   - URL path to stream resolution
@@ -20,7 +20,7 @@ This directory will contain the refactored RTSP module implementation for multi-
 - **Status:** Not yet implemented
 
 #### `stream_instance.h/cpp`
-- **Purpose:** Encapsulate individual stream state
+- **Purpose:** 封装单个流状态
 - **Responsibilities:**
   - Hold stream configuration
   - Manage RTSP stock
@@ -29,14 +29,14 @@ This directory will contain the refactored RTSP module implementation for multi-
 - **Status:** Not yet implemented
 
 #### `url_parser.h/cpp`
-- **Purpose:** Parse and validate RTSP URLs
+- **Purpose:** 解析和验证 RTSP URL
 - **Responsibilities:**
   - Parse `/camera/{id}/{stream}` format
   - Support legacy `/streamN` format
   - Extract camera_id and stream_name
 - **Status:** Not yet implemented
 
-### Modified Classes
+### 修改的类
 
 #### `stream_manager` (Existing)
 - **Changes Required:**
@@ -48,13 +48,13 @@ This directory will contain the refactored RTSP module implementation for multi-
 
 #### `rtsp_request_handler` (Existing)
 - **Changes Required:**
-  - Update URL parsing logic
+  - 更新 URL parsing logic
   - Route requests through stream_router
   - Handle new URL schemes
 - **Backward Compatibility:** Yes
 - **Status:** Pending refactoring
 
-## URL Scheme Design
+## URL Scheme 设计
 
 ### Proposed URLs
 ```
@@ -78,17 +78,17 @@ rtsp://ip:port/cam0_main
 rtsp://ip:port/cam1_sub
 ```
 
-## Key Design Decisions
+## Key 设计 Decisions
 
 ### 1. Stream Identification
 **Decision:** Use (camera_id, stream_id) pair as key  
 **Rationale:** Numeric IDs are efficient, string names are user-friendly  
-**Implementation:** Map both numeric and string identifiers
+**实现ation:** Map both numeric and string identifiers
 
 ### 2. URL Parsing Strategy
 **Decision:** Support multiple URL formats simultaneously  
 **Rationale:** Backward compatibility while enabling new features  
-**Implementation:** Pattern matching with fallback chain
+**实现ation:** Pattern matching with fallback chain
 
 ### 3. Stream Lifecycle
 **Decision:** Lazy creation on first DESCRIBE request  
@@ -98,40 +98,40 @@ rtsp://ip:port/cam1_sub
 ### 4. Observer Pattern
 **Decision:** Keep existing observer pattern  
 **Rationale:** Proven design, supports multiple clients efficiently  
-**Enhancement:** Add back-pressure handling for slow clients
+**Enhancement:** 添加 back-pressure handling for slow clients
 
-## Refactoring Checklist
+## 重构ing Checklist
 
 ### Phase 1: Preparation (Week 4)
-- [ ] Design stream_router interface
-- [ ] Design stream_instance class
+- [ ] 设计 stream_router interface
+- [ ] 设计 stream_instance class
 - [ ] Plan URL parsing strategy
-- [ ] Write unit test stubs
+- [ ] 编写 unit test stubs
 
-### Phase 2: Implementation (Week 5-6)
-- [ ] Implement stream_router
-- [ ] Implement stream_instance
-- [ ] Implement url_parser
-- [ ] Write unit tests
+### Phase 2: 实现ation (Week 5-6)
+- [ ] 实现 stream_router
+- [ ] 实现 stream_instance
+- [ ] 实现 url_parser
+- [ ] 编写 unit tests
 - [ ] Integration with existing code
 
 ### Phase 3: Migration (Week 7)
-- [ ] Update stream_manager to use router
-- [ ] Update rtsp_request_handler
-- [ ] Add backward compatibility layer
-- [ ] Update configuration loading
+- [ ] 更新 stream_manager 以使用 router
+- [ ] 更新 rtsp_request_handler
+- [ ] 添加 backward compatibility layer
+- [ ] 更新 configuration loading
 - [ ] Integration testing
 
 ### Phase 4: Validation (Week 8)
-- [ ] Test single camera (regression)
-- [ ] Test dual camera
-- [ ] Test URL parsing (all formats)
+- [ ] 测试 single camera (regression)
+- [ ] 测试 dual camera
+- [ ] 测试 URL parsing (all formats)
 - [ ] Performance benchmarking
-- [ ] Documentation
+- [ ] 文档化ation
 
-## Testing Strategy
+## 测试ing Strategy
 
-### Unit Tests
+### Unit 测试s
 - `stream_router_test.cpp`
   - Register/unregister streams
   - Lookup by (camera_id, stream_id)
@@ -149,14 +149,14 @@ rtsp://ip:port/cam1_sub
   - Extract components
   - Legacy format support
 
-### Integration Tests
+### Integration 测试s
 - `multi_camera_rtsp_test.cpp`
   - Connect to multiple cameras
   - Multiple streams per camera
   - Concurrent clients
   - Stream switching
 
-### Performance Tests
+### Performance 测试s
 - Throughput (streams/second)
 - Latency (DESCRIBE to first frame)
 - CPU usage (idle vs. loaded)
@@ -181,7 +181,7 @@ rtsp://ip:port/cam1_sub
 #include "stream_router.h"
 #include "stream_instance.h"
 
-// Create stream instance
+// 创建 stream instance
 auto stream_inst = std::make_shared<stream_instance>(
     camera_id,
     stream_id,
@@ -209,7 +209,7 @@ auto stream = router->get_stream_by_url("/camera/0/main");
 auto stream = router->get_stream_by_url("/stream1");
 ```
 
-### RTSP Request Flow (Updated)
+### RTSP Request Flow (更新d)
 ```
 Client                  RTSP Handler           Stream Router          Stream Instance
   |                           |                      |                        |
@@ -228,28 +228,28 @@ Client                  RTSP Handler           Stream Router          Stream Ins
 
 ### For Application Code
 1. Replace direct stream_manager calls with stream_router
-2. Update URL generation to use new format
-3. Test backward compatibility with old URLs
+2. 更新 URL generation 以使用 new format
+3. 测试 backward compatibility with old URLs
 
 ### For Configuration
-1. Add camera_id to stream definitions
-2. Add URL path customization
+1. 将 camera_id 添加到 stream definitions
+2. 添加 URL path customization
 3. Maintain legacy URL aliases
 
-### For Tests
-1. Update URLs in test cases
-2. Add multi-camera test scenarios
+### For 测试s
+1. 更新 URLs in test cases
+2. 添加 multi-camera test scenarios
 3. Verify legacy URL support
 
 ## Known Issues & Limitations
 
-### Current Issues (Pre-Refactoring)
+### Current Issues (Pre-重构ing)
 1. Hardcoded stream URLs (stream1, stream2, stream3)
 2. Single camera assumption
 3. No URL validation
 4. No dynamic stream creation
 
-### Post-Refactoring Improvements
+### Post-重构ing Improvements
 1. ✅ Flexible URL scheme
 2. ✅ Multi-camera support
 3. ✅ URL validation
@@ -282,9 +282,9 @@ Client                  RTSP Handler           Stream Router          Stream Ins
 
 ## References
 
-### Related Documents
+### Related 文档化s
 - [Main Analysis](../ANALYSIS.md)
-- [Refactoring Roadmap](../REFACTORING_ROADMAP.md)
+- [重构ing Roadmap](../REFACTORING_ROADMAP.md)
 
 ### External Resources
 - RTSP RFC 2326: https://tools.ietf.org/html/rfc2326
@@ -293,6 +293,6 @@ Client                  RTSP Handler           Stream Router          Stream Ins
 
 ---
 
-**Last Updated:** 2026-01-04  
+**Last 更新d:** 2026-01-04  
 **Status:** Planning Phase  
-**Next Review:** Week 4 Implementation Kickoff
+**Next 审查:** Week 4 实现ation Kickoff

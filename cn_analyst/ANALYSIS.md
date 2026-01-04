@@ -529,9 +529,9 @@ rtsp://ip:port/cam1_main
 
 #### 4.3.5 配置结构
 
-**当前：** Multiple JSON files (vi.json, venc.json, etc.)
+**当前：** 多个 JSON 文件（vi.json、venc.json 等）
 
-**提议：** Unified configuration with per-camera sections
+**提议：** 具有每摄像头部分的统一配置
 
 ```json
 {
@@ -586,56 +586,56 @@ rtsp://ip:port/cam1_main
 }
 ```
 
-### 4.4 Migration Strategy
+### 4.4 迁移策略
 
-**Phase 1: Abstraction Layer (Non-breaking)**
-- Introduce camera_manager and camera_instance classes
-- Wrap existing g_chn in camera_instance
-- Keep MAX_CHANNEL = 1 initially
-- Refactor access through camera_manager
+**阶段 1：抽象层（无破坏性）**
+- 引入 camera_manager 和 camera_instance 类
+- 将现有 g_chn 包装在 camera_instance 中
+- 最初保持 MAX_CHANNEL = 1
+- 通过 camera_manager 重构访问
 
-**Phase 2: Multi-Channel Support**
-- Increase MAX_CHANNEL to 4-8
-- Implement dynamic camera creation
-- Update main.cpp to create multiple cameras
-- Test with 2-camera setup
+**阶段 2：多通道支持**
+- 将 MAX_CHANNEL 增加到 4-8
+- 实现动态摄像头创建
+- 更新 main.cpp 以创建多个摄像头
+- 使用双摄像头设置进行测试
 
-**Phase 3: Stream Refactoring**
-- Implement stream_instance and stream_router
-- Refactor stream_manager to use stream_router
-- Update RTSP URL parsing for new scheme
-- Maintain backward compatibility
+**阶段 3：流重构**
+- 实现 stream_instance 和 stream_router
+- 重构 stream_manager 以使用 stream_router
+- 更新 RTSP URL 解析为新方案
+- 保持向后兼容性
 
-**Phase 4: Configuration Migration**
-- Implement unified configuration format
-- Add config validation and migration tool
-- Support both old and new config formats
-- Update documentation
+**阶段 4：配置迁移**
+- 实现统一配置格式
+- 添加配置验证和迁移工具
+- 支持旧的和新的配置格式
+- 更新文档
 
-**Phase 5: Feature Plugins**
-- Extract OSD, AIISP, YOLOv5 into plugins
-- Implement per-camera feature management
-- Add runtime enable/disable support
+**阶段 5：特性插件**
+- 将 OSD、AIISP、YOLOv5 提取为插件
+- 实现每摄像头特性管理
+- 添加运行时启用/禁用支持
 
 ---
 
-## 5. Refactoring Action Items
+## 5. 重构行动事项
 
-### 5.1 High Priority (Core Multi-Camera Support)
+### 5.1 高优先级（核心多摄像头支持）
 
-#### Device Module Refactoring
+#### 设备模块重构
 
-**Item 1: Remove MAX_CHANNEL Hardcoding**
-- **File:** `device/dev_chn.h`
-- **Change:** Replace `#define MAX_CHANNEL 1` with dynamic limit
-- **Impact:** Enables multiple channel instances
-- **Effort:** Medium
-- **Dependencies:** Must update all array accesses
+**事项 1：移除 MAX_CHANNEL 硬编码**
+- **文件：** `device/dev_chn.h`
+- **更改：** 用动态限制替换 `#define MAX_CHANNEL 1`
+- **影响：** 启用多个通道实例
+- **工作量：** 中等
+- **依赖项：** 必须更新所有数组访问
 
-**Item 2: Create camera_manager Class**
-- **File:** New `device/camera_manager.h/cpp`
-- **Purpose:** Central registry for camera instances
-- **Interface:**
+**事项 2：创建 camera_manager 类**
+- **文件：** 新建 `device/camera_manager.h/cpp`
+- **目的：** 摄像头实例的中央注册表
+- **接口：**
   ```cpp
   class camera_manager {
       static bool init(int max_cameras);
@@ -644,10 +644,10 @@ rtsp://ip:port/cam1_main
       static std::shared_ptr<camera_instance> get_camera(int camera_id);
   };
   ```
-- **Effort:** High
-- **Dependencies:** Requires camera_instance class
+- **工作量：** 高
+- **依赖项：** 需要 camera_instance 类
 
-**Item 3: Refactor chn Class → camera_instance**
+**事项 3：重构 chn 类 → camera_instance**
 - **File:** `device/dev_chn.h/cpp` → `device/camera_instance.h/cpp`
 - **Changes:**
   - Remove global static `g_chns[]` array

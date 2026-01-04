@@ -1,18 +1,18 @@
-# RTMP Module Refactoring
+# RTMP 模块重构
 
-This directory will contain the refactored RTMP module implementation for multi-camera support.
+本目录将包含用于多摄像头支持的重构 RTMP 模块实现。
 
 ## Status
 
-**Current Status:** Unpopulated - Awaiting Implementation  
-**Target Completion:** Phase 2-3 (Weeks 6-9)
+**当前状态：** 未填充 - 等待实施  
+**目标完成：** 阶段 2-3（第 6-9 周）
 
-## Planned Components
+## 计划组件
 
-### Core Classes
+### 核心类
 
 #### `multi_session_manager.h/cpp`
-- **Purpose:** Enhanced session management for multi-camera
+- **Purpose:** 用于多摄像头的增强会话管理
 - **Responsibilities:**
   - Track sessions per (camera_id, stream_id, url)
   - Support URL templates
@@ -21,7 +21,7 @@ This directory will contain the refactored RTMP module implementation for multi-
 - **Status:** Not yet implemented
 
 #### `url_template.h/cpp`
-- **Purpose:** URL template expansion
+- **Purpose:** URL 模板扩展
 - **Responsibilities:**
   - Parse template strings
   - Substitute `{camera_id}`, `{stream_name}` variables
@@ -30,20 +30,20 @@ This directory will contain the refactored RTMP module implementation for multi-
 - **Status:** Not yet implemented
 
 #### `rtmp_encoder.h/cpp`
-- **Purpose:** Abstract encoding logic
+- **Purpose:** 抽象编码逻辑
 - **Responsibilities:**
   - H.264 → FLV encoding (existing)
   - H.265 → FLV encoding (future)
   - Codec detection and negotiation
 - **Status:** Planning phase
 
-### Modified Classes
+### 修改的类
 
 #### `session` (Existing)
 - **Changes Required:**
   - Support codec abstraction
   - Improve error recovery
-  - Add connection state machine
+  - 添加 connection state machine
 - **Backward Compatibility:** Yes
 - **Status:** Pending refactoring
 
@@ -55,7 +55,7 @@ This directory will contain the refactored RTMP module implementation for multi-
 - **Backward Compatibility:** Yes
 - **Status:** Pending refactoring
 
-## URL Template Design
+## URL Template 设计
 
 ### Template Format
 ```json
@@ -103,7 +103,7 @@ camera_id=1, stream_name="sub"
 }
 ```
 
-## Key Design Decisions
+## Key 设计 Decisions
 
 ### 1. H.265 Support
 **Challenge:** RTMP spec doesn't officially support H.265  
@@ -158,37 +158,37 @@ class session_pool {
 };
 ```
 
-## Refactoring Checklist
+## 重构ing Checklist
 
 ### Phase 1: Preparation (Week 6)
-- [ ] Design URL template system
-- [ ] Design connection state machine
+- [ ] 设计 URL template system
+- [ ] 设计 connection state machine
 - [ ] Plan H.265 support (research)
-- [ ] Write unit test stubs
+- [ ] 编写 unit test stubs
 
-### Phase 2: Implementation (Week 7-8)
-- [ ] Implement url_template
-- [ ] Implement connection_manager
+### Phase 2: 实现ation (Week 7-8)
+- [ ] 实现 url_template
+- [ ] 实现 connection_manager
 - [ ] Enhance session_manager
-- [ ] Add failover support
-- [ ] Write unit tests
+- [ ] 添加 failover support
+- [ ] 编写 unit tests
 
 ### Phase 3: Integration (Week 9)
-- [ ] Update configuration loading
+- [ ] 更新 configuration loading
 - [ ] Integration with camera_manager
-- [ ] Add reconnection logic
+- [ ] 添加 reconnection logic
 - [ ] Performance testing
 
 ### Phase 4: Validation (Week 10)
-- [ ] Test single stream (regression)
-- [ ] Test multi-camera
-- [ ] Test failover scenarios
+- [ ] 测试 single stream (regression)
+- [ ] 测试 multi-camera
+- [ ] 测试 failover scenarios
 - [ ] Stress testing
-- [ ] Documentation
+- [ ] 文档化ation
 
-## Testing Strategy
+## 测试ing Strategy
 
-### Unit Tests
+### Unit 测试s
 - `url_template_test.cpp`
   - Parse templates
   - Variable substitution
@@ -201,16 +201,16 @@ class session_pool {
 
 - `session_manager_test.cpp`
   - Multi-camera sessions
-  - URL template expansion
+  - URL 模板扩展
   - Session lifecycle
 
-### Integration Tests
+### Integration 测试s
 - `multi_camera_rtmp_test.cpp`
   - Push from multiple cameras
   - Concurrent sessions
   - Failover testing
 
-### Stress Tests
+### Stress 测试s
 - Long-duration push (24+ hours)
 - Network interruptions
 - Server restarts
@@ -251,7 +251,7 @@ std::string url = tmpl.expand(vars);
 
 auto mgr = multi_session_manager::instance();
 
-// Create session for camera 0, stream 0
+// 创建 session for camera 0, stream 0
 session_config cfg;
 cfg.url_template = "rtmp://server/live/cam{camera_id}_{stream_name}";
 cfg.camera_id = 0;
@@ -282,7 +282,7 @@ mgr->create_session(cfg);
 
 ### For Application Code
 1. Replace static URLs with templates
-2. Add camera_id and stream_name to config
+2. 将 camera_id and stream_name 添加到 config
 3. Use new session_manager API
 
 ### For Configuration
@@ -317,14 +317,14 @@ mgr->create_session(cfg);
 
 ## Known Issues & Limitations
 
-### Current Issues (Pre-Refactoring)
+### Current Issues (Pre-重构ing)
 1. H.264 only (no H.265 support)
 2. Static URL configuration
 3. No automatic reconnection
 4. Single RTMP server per stream
 5. Manual error recovery
 
-### Post-Refactoring Improvements
+### Post-重构ing Improvements
 1. ✅ URL templates for multi-camera
 2. ✅ Automatic reconnection
 3. ✅ Failover support
@@ -378,7 +378,7 @@ VideoTagHeader (Enhanced):
 - Requires server-side updates
 - Proprietary extension
 
-### Implementation Plan (Future)
+### 实现ation Plan (Future)
 1. Detect encoder codec (H.264 vs H.265)
 2. Use appropriate FLV tag format
 3. Server compatibility check
@@ -450,18 +450,18 @@ RTMP_WRITE_LOG_ERROR("Session failed, retry in %ds", backoff_delay);
 
 ## References
 
-### Related Documents
+### Related 文档化s
 - [Main Analysis](../ANALYSIS.md)
-- [Refactoring Roadmap](../REFACTORING_ROADMAP.md)
+- [重构ing Roadmap](../REFACTORING_ROADMAP.md)
 
 ### External Resources
 - RTMP Specification: https://rtmp.veriskope.com/docs/spec/
 - Enhanced RTMP: https://github.com/veovera/enhanced-rtmp
-- librtmp Documentation: https://rtmpdump.mplayerhq.hu/librtmp.3.html
+- librtmp 文档化ation: https://rtmpdump.mplayerhq.hu/librtmp.3.html
 - nginx-rtmp-module: https://github.com/arut/nginx-rtmp-module
 
 ---
 
-**Last Updated:** 2026-01-04  
+**Last 更新d:** 2026-01-04  
 **Status:** Planning Phase  
-**Next Review:** Week 6 Implementation Kickoff
+**Next 审查:** Week 6 实现ation Kickoff
