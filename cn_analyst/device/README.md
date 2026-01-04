@@ -559,4 +559,4 @@ Camera 3:
 **Last 更新d:** 2026-01-04  
 **状态：** Planning Phase  
 **优先级：** 关键 Path  
-**Next 审查:** 第 2 周 实现ation Kickoff
+**Next Review:** 第 2 周 实现ation Kickoff

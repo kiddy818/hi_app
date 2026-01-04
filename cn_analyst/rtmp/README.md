@@ -166,7 +166,7 @@ class session_pool {
 - [ ] Plan H.265 support (research)
 - [ ] 编写 unit 测试 stubs
 
-### 阶段 2: 实现ation (第 7 周-8)
+### 阶段 2: 实现 (第 7 周-8)
 - [ ] 实现 url_template
 - [ ] 实现 connection_manager
 - [ ] Enhance session_manager
@@ -378,7 +378,7 @@ VideoTagHeader (Enhanced):
 - Requires server-side updates
 - Proprietary extension
 
-### 实现ation Plan (Future)
+### 实现 Plan (Future)
 1. Detect encoder 编解码器 (H.264 vs H.265)
 2. Use appropriate FLV tag format
 3. Server compatibility check
@@ -464,4 +464,4 @@ RTMP_WRITE_LOG_ERROR("Session failed, retry in %ds", backoff_delay);
 
 **Last 更新d:** 2026-01-04  
 **Status:** Planning Phase  
-**Next 审查:** 第 6 周 实现ation Kickoff
+**Next Review:** 第 6 周 实现 Kickoff
