@@ -107,33 +107,33 @@ Recommended:          2-4 cameras with 2-4 streams each
 class resource_manager {
 public:
     // Initialization
-    静态 bool init(const resource_limits& limits);
-    静态 void release();
+    static bool init(const resource_limits& limits);
+    static void release();
     
     // VPSS Group Management
-    静态 bool allocate_vpss_group(int32_t& grp);
-    静态 void free_vpss_group(int32_t grp);
-    静态 bool is_vpss_group_available();
+    static bool allocate_vpss_group(int32_t& grp);
+    static void free_vpss_group(int32_t grp);
+    static bool is_vpss_group_available();
     
     // VENC Channel Management
-    静态 bool allocate_venc_channel(venc_type type, int32_t& chn);
-    静态 void free_venc_channel(int32_t chn);
-    静态 bool is_venc_channel_available(venc_type type);
+    static bool allocate_venc_channel(venc_type type, int32_t& chn);
+    static void free_venc_channel(int32_t chn);
+    static bool is_venc_channel_available(venc_type type);
     
     // VI Device Management
-    静态 bool allocate_vi_device(int32_t& dev);
-    静态 void free_vi_device(int32_t dev);
-    静态 bool is_vi_device_available();
+    static bool allocate_vi_device(int32_t& dev);
+    static void free_vi_device(int32_t dev);
+    static bool is_vi_device_available();
     
     // Query Functions
     静态 resource_status get_status();
-    静态 bool can_create_camera(const camera_config& cfg);
+    static bool can_create_camera(const camera_config& cfg);
     
 private:
-    静态 std::map<int32_t, bool> m_vpss_allocated;
-    静态 std::map<int32_t, bool> m_venc_allocated;
-    静态 std::map<int32_t, bool> m_vi_allocated;
-    静态 std::mutex m_mutex;
+    static std::map<int32_t, bool> m_vpss_allocated;
+    static std::map<int32_t, bool> m_venc_allocated;
+    static std::map<int32_t, bool> m_vi_allocated;
+    static std::mutex m_mutex;
     静态 resource_limits m_limits;
 };
 ```
@@ -160,30 +160,30 @@ struct resource_status {
 class camera_manager {
 public:
     // Initialization
-    静态 bool init(int32_t max_cameras);
-    静态 void release();
+    static bool init(int32_t max_cameras);
+    static void release();
     
     // Camera Lifecycle
-    静态 std::shared_ptr<camera_instance> create_camera(
+    static std::shared_ptr<camera_instance> create_camera(
         const camera_config& cfg
     );
-    静态 bool destroy_camera(int32_t camera_id);
+    static bool destroy_camera(int32_t camera_id);
     
     // Query Functions
-    静态 std::shared_ptr<camera_instance> get_camera(int32_t camera_id);
-    静态 std::vector<int32_t> list_cameras();
-    静态 int32_t get_camera_count();
-    静态 bool camera_exists(int32_t camera_id);
+    static std::shared_ptr<camera_instance> get_camera(int32_t camera_id);
+    static std::vector<int32_t> list_cameras();
+    static int32_t get_camera_count();
+    static bool camera_exists(int32_t camera_id);
     
     // Validation
-    静态 bool validate_config(const camera_config& cfg);
-    静态 bool can_create_camera(const camera_config& cfg);
+    static bool validate_config(const camera_config& cfg);
+    static bool can_create_camera(const camera_config& cfg);
     
 private:
-    静态 std::map<int32_t, std::shared_ptr<camera_instance>> m_cameras;
-    静态 std::mutex m_mutex;
-    静态 int32_t m_max_cameras;
-    静态 int32_t m_next_camera_id;
+    static std::map<int32_t, std::shared_ptr<camera_instance>> m_cameras;
+    static std::mutex m_mutex;
+    static int32_t m_max_cameras;
+    static int32_t m_next_camera_id;
 };
 ```
 

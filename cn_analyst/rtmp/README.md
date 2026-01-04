@@ -249,7 +249,7 @@ std::string url = tmpl.expand(vars);
 ```cpp
 #include "multi_session_manager.h"
 
-auto mgr = multi_session_manager::实例();
+auto mgr = multi_session_manager::instance();
 
 // 创建 session for camera 0, stream 0
 session_config cfg;

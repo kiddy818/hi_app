@@ -189,7 +189,7 @@ auto stream_inst = std::make_shared<stream_instance>(
 );
 
 // Register with router
-auto router = stream_router::实例();
+auto router = stream_router::instance();
 router->register_stream(stream_inst);
 
 // Also register URL alias
