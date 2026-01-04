@@ -2,7 +2,7 @@
 
 本目录将包含用于多摄像头支持的重构 RTMP 模块实现。
 
-## Status
+## 状态
 
 **当前状态：** 未填充 - 等待实施  
 **目标完成：** 阶段 2-3（第 6-9 周）
@@ -18,16 +18,16 @@
   - Support URL templates
   - Handle connection failures
   - Automatic reconnection
-- **Status:** Not yet implemented
+- **Status:** 尚未实施
 
 #### `url_template.h/cpp`
 - **Purpose:** URL 模板扩展
 - **Responsibilities:**
   - Parse template strings
   - Substitute `{camera_id}`, `{stream_name}` variables
-  - Validate expanded URLs
+  - 验证 expanded URLs
 - **Example:** `rtmp://server/live/cam{camera_id}_{stream_name}`
-- **Status:** Not yet implemented
+- **Status:** 尚未实施
 
 #### `rtmp_encoder.h/cpp`
 - **Purpose:** 抽象编码逻辑
@@ -35,29 +35,29 @@
   - H.264 → FLV encoding (existing)
   - H.265 → FLV encoding (future)
   - Codec detection and negotiation
-- **Status:** Planning phase
+- **Status:** 规划阶段
 
 ### 修改的类
 
-#### `session` (Existing)
+#### `session` （现有）
 - **Changes Required:**
-  - Support codec abstraction
+  - Support codec 抽象
   - Improve error recovery
   - 添加 connection state machine
 - **Backward Compatibility:** Yes
-- **Status:** Pending refactoring
+- **Status:** 等待重构
 
-#### `session_manager` (Existing)
+#### `session_manager` （现有）
 - **Changes Required:**
   - Use URL templates
   - Per-camera session tracking
   - Dynamic session creation
 - **Backward Compatibility:** Yes
-- **Status:** Pending refactoring
+- **Status:** 等待重构
 
 ## URL Template 设计
 
-### Template Format
+### 模板格式
 ```json
 {
   "rtmp": {
@@ -70,7 +70,7 @@
 }
 ```
 
-### Expansion Examples
+### 扩展示例
 ```
 Template: rtmp://192.168.1.100/live/cam{camera_id}_{stream_name}
 
@@ -81,7 +81,7 @@ camera_id=1, stream_name="sub"
 → rtmp://192.168.1.100/live/cam1_sub
 ```
 
-### Static URLs (Backward Compatible)
+### 静态 URL (Backward Compatible)
 ```json
 {
   "cameras": [
@@ -105,7 +105,7 @@ camera_id=1, stream_name="sub"
 
 ## Key 设计 Decisions
 
-### 1. H.265 Support
+### 1. H.265 支持
 **Challenge:** RTMP spec doesn't officially support H.265  
 **Options:**
 - **A. Enhanced FLV**: Use Extended VideoTagHeader (Adobe proprietary)
@@ -113,9 +113,9 @@ camera_id=1, stream_name="sub"
 - **C. H.264 Only**: Transcode H.265→H.264 (CPU intensive)
 
 **Recommended:** Option A (Enhanced FLV) for H.265 support  
-**Status:** Research phase, low priority
+**Status:** 研究阶段, low priority
 
-### 2. Connection Management
+### 2. 连接管理
 **Current:** Manual restart on failure  
 **Proposed:** Automatic reconnection with exponential backoff
 
@@ -134,7 +134,7 @@ class connection_manager {
 - Exponential backoff: 2^attempt seconds
 - Max attempts: 10 (then give up)
 
-### 3. Multi-URL Failover
+### 3. 多 URL 故障转移
 **Feature:** Support multiple RTMP servers per stream  
 **Behavior:** Try primary, fallback on failure
 
@@ -146,7 +146,7 @@ URLs: [primary, backup1, backup2]
 4. On failure, wait and retry primary
 ```
 
-### 4. Session Pooling
+### 4. 会话池化
 **Problem:** Creating sessions is expensive  
 **Solution:** Reuse session objects
 
@@ -160,28 +160,28 @@ class session_pool {
 
 ## 重构ing Checklist
 
-### Phase 1: Preparation (Week 6)
+### 阶段 1: Preparation (第 6 周)
 - [ ] 设计 URL template system
 - [ ] 设计 connection state machine
 - [ ] Plan H.265 support (research)
 - [ ] 编写 unit test stubs
 
-### Phase 2: 实现ation (Week 7-8)
+### 阶段 2: 实现ation (第 7 周-8)
 - [ ] 实现 url_template
 - [ ] 实现 connection_manager
 - [ ] Enhance session_manager
 - [ ] 添加 failover support
 - [ ] 编写 unit tests
 
-### Phase 3: Integration (Week 9)
-- [ ] 更新 configuration loading
+### 阶段 3: Integration (第 9 周)
+- [ ] 更新 配置 loading
 - [ ] Integration with camera_manager
 - [ ] 添加 reconnection logic
 - [ ] Performance testing
 
-### Phase 4: Validation (Week 10)
-- [ ] 测试 single stream (regression)
-- [ ] 测试 multi-camera
+### 阶段 4: Validation (第 10 周)
+- [ ] 测试 单流 (regression)
+- [ ] 测试 多摄像头
 - [ ] 测试 failover scenarios
 - [ ] Stress testing
 - [ ] 文档化ation
@@ -216,18 +216,18 @@ class session_pool {
 - Server restarts
 - Memory leak detection
 
-## Dependencies
+## 依赖项
 
-### Internal
+### 内部
 - `rtmp/session.h` (existing)
 - `device/camera_instance.h` (new)
 - `util/stream_observer.h` (existing)
 
-### External
+### 外部
 - librtmp (RTMP protocol)
 - OpenSSL (for RTMPS)
 
-## API Examples
+## API 示例
 
 ### URL Template Usage (Proposed)
 ```cpp
@@ -278,14 +278,14 @@ mgr->create_session(cfg);
 // Automatically tries each URL on failure
 ```
 
-## Migration Guide
+## 迁移指南
 
-### For Application Code
+### 应用程序代码
 1. Replace static URLs with templates
 2. 将 camera_id and stream_name 添加到 config
 3. Use new session_manager API
 
-### For Configuration
+### 配置
 ```json
 // Old format
 {
@@ -307,7 +307,7 @@ mgr->create_session(cfg);
 }
 ```
 
-### Migration Tool
+### 迁移工具
 ```bash
 # Convert old config to new format
 ./tools/migrate_rtmp_config.py \
@@ -315,29 +315,29 @@ mgr->create_session(cfg);
   --new /opt/ceanic/etc/system_config.json
 ```
 
-## Known Issues & Limitations
+## 已知问题与限制
 
 ### Current Issues (Pre-重构ing)
 1. H.264 only (no H.265 support)
-2. Static URL configuration
+2. Static URL 配置
 3. No automatic reconnection
 4. Single RTMP server per stream
 5. Manual error recovery
 
 ### Post-重构ing Improvements
-1. ✅ URL templates for multi-camera
+1. ✅ URL templates for 多摄像头
 2. ✅ Automatic reconnection
 3. ✅ Failover support
 4. ✅ Per-camera session tracking
 5. 🔄 H.265 support (future)
 
-## Performance Considerations
+## 性能考虑
 
-### CPU Usage
+### CPU 使用
 - FLV encoding overhead: ~5-10% per stream
 - Target: <15% CPU for RTMP (4 streams)
 
-### Network
+### 网络
 - Each session: ~1-10 Mbps depending on bitrate
 - Monitor send buffer fullness
 - Handle slow networks gracefully
@@ -347,7 +347,7 @@ mgr->create_session(cfg);
 - 16 sessions: ~32-64 MB
 - Keep within budget
 
-### Latency
+### 延迟
 - Target: <1 second end-to-end
 - librtmp buffering: ~200-500ms
 - Network latency: varies
@@ -416,9 +416,9 @@ VideoTagHeader (Enhanced):
 - error: Connection lost (auto-reconnect)
 - reconnect(): Retry connection
 
-## Monitoring & Metrics
+## 监控和指标
 
-### Per-Session Metrics
+### 每会话指标
 - Connection state
 - Bitrate (current, average, peak)
 - Frame count (sent, dropped)
@@ -426,35 +426,35 @@ VideoTagHeader (Enhanced):
 - Uptime / Downtime
 - Last error message
 
-### Aggregate Metrics
+### 聚合指标
 - Active sessions
 - Total data sent
 - Failed connection attempts
 - Average latency
 
-### Logging
+### 日志记录
 ```cpp
 RTMP_WRITE_LOG_INFO("Session cam%d_stream%d connected to %s", 
                      camera_id, stream_id, url.c_str());
 RTMP_WRITE_LOG_ERROR("Session failed, retry in %ds", backoff_delay);
 ```
 
-## Future Enhancements
+## 未来增强
 
-### Phase 4+
+### 阶段 4+
 - H.265 support (Enhanced FLV)
 - RTMPS support (SSL/TLS)
 - SRT protocol support (low latency)
 - WebRTC output (browser compatible)
 - Adaptive bitrate
 
-## References
+## 参考资料
 
 ### Related 文档化s
 - [Main Analysis](../ANALYSIS.md)
 - [重构ing Roadmap](../REFACTORING_ROADMAP.md)
 
-### External Resources
+### 外部 Resources
 - RTMP Specification: https://rtmp.veriskope.com/docs/spec/
 - Enhanced RTMP: https://github.com/veovera/enhanced-rtmp
 - librtmp 文档化ation: https://rtmpdump.mplayerhq.hu/librtmp.3.html
@@ -464,4 +464,4 @@ RTMP_WRITE_LOG_ERROR("Session failed, retry in %ds", backoff_delay);
 
 **Last 更新d:** 2026-01-04  
 **Status:** Planning Phase  
-**Next 审查:** Week 6 实现ation Kickoff
+**Next 审查:** 第 6 周 实现ation Kickoff
