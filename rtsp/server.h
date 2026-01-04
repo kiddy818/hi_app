@@ -10,7 +10,7 @@ namespace ceanic{namespace rtsp{
     class rtsp_server
     {
         public:
-            rtsp_server(short port = 554);
+            rtsp_server(int16_t port = 554);
             virtual ~rtsp_server();
 
             bool run();
@@ -20,8 +20,8 @@ namespace ceanic{namespace rtsp{
             void on_run();
 
         protected:
-            int m_listen_s;
-            short m_port;
+            int32_t m_listen_s;
+            int16_t m_port;
             bool m_is_run;
             std::thread m_thread;
             std::list<session_ptr> m_session_ptrs;

@@ -11,15 +11,15 @@ namespace ceanic{namespace rtsp{
     {
     }
 
-    void stream_handler::on_stream_come(util::stream_head* head, const char* buf, int len)
+    void stream_handler::on_stream_come(util::stream_obj_ptr sobj,util::stream_head* head, const char* buf, int32_t len)
     {
         if (is_start())
         {
-            process_stream(head, buf, len);
+            process_stream(sobj,head, buf, len);
         }
     }
 
-    void stream_handler::on_stream_error(int errno)
+    void stream_handler::on_stream_error(util::stream_obj_ptr sobj,int32_t errno)
     {
     }
 

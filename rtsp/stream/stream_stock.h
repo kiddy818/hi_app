@@ -12,7 +12,7 @@ namespace ceanic{namespace rtsp{
         :public stream
     {
         public:
-            explicit stream_stock(int chn,int stream_id = 0);
+            explicit stream_stock(int32_t chn,int32_t stream_id);
 
             virtual ~stream_stock();
 
@@ -20,29 +20,10 @@ namespace ceanic{namespace rtsp{
 
             virtual void stop();
 
-            int chn()
-            {
-                return m_chn;
-            }
-
-            int stream_id()
-            {
-                return m_stream_id;
-            }
-
-            int stream();
-
-            virtual bool request_i_frame();
-            virtual bool get_stream_type(int* stream_type);
-            virtual bool get_stream_head(util::media_head* mh);
-
-            void process_data(util::stream_head* head,const char* buf,int len);
+            void process_data(util::stream_head* head,const char* buf,int32_t len);
 
         protected:
-            int m_chn;
-            int m_stream_id;
-            unsigned int m_stream_len;
-            util::media_head m_media_head;
+            uint32_t m_stream_len;
     };
 
 }}//namespace

@@ -15,12 +15,12 @@ namespace ceanic{namespace rtsp{
         state_ = method_start;
     }
 
-    std::optional<bool> request_parser::parse(request& req, const char* buf, int len, int *left)
+    std::optional<bool> request_parser::parse(request& req, const char* buf, int32_t len, int32_t *left)
     {
         if (req.head_flag)
         {
             //head ok, recv data
-            int need_data_len = req.content_len - req.data_len;
+            int32_t need_data_len = req.content_len - req.data_len;
             if (len  >= need_data_len)
             {
                 memcpy(req.data + req.data_len, buf, need_data_len);
@@ -53,10 +53,8 @@ namespace ceanic{namespace rtsp{
                     req.head_flag = true;
                     req.content_len = 0;
                     req.data_len = 0;
-                    printf(">>>>>>>>>>>>size =%d\n", req.headers.size());
                     for (size_t i = 0; i < req.headers.size();i++)
                     {
-                        printf(">>>>>>>>>>>>name =%s\n", req.headers[i].name.c_str());
                         if (req.headers[i].name == "Content-Length")
                         {
                             req.content_len = std::atoi(req.headers[i].value.c_str());
@@ -71,10 +69,9 @@ namespace ceanic{namespace rtsp{
                         req.data = new char[req.data_capacity];
                     }
 
-                    int process_len = p - buf + 1;
+                    int32_t process_len = p - buf + 1;
                     *left = len - process_len;
 
-                    printf("---------content len %d, left %d\n--------", req.content_len,*left);
                     if (*left >= req.content_len)
                     {
                         memcpy(req.data, p + 1, req.content_len);
@@ -442,17 +439,17 @@ namespace ceanic{namespace rtsp{
         }
     }
 
-    bool request_parser::is_char(int c)
+    bool request_parser::is_char(int32_t c)
     {
         return c >= 0 && c <= 127;
     }
 
-    bool request_parser::is_ctl(int c)
+    bool request_parser::is_ctl(int32_t c)
     {
         return (c >= 0 && c <= 31) || (c == 127);
     }
 
-    bool request_parser::is_tspecial(int c)
+    bool request_parser::is_tspecial(int32_t c)
     {
         switch (c)
         {
@@ -466,7 +463,7 @@ namespace ceanic{namespace rtsp{
         }
     }
 
-    bool request_parser::is_digit(int c)
+    bool request_parser::is_digit(int32_t c)
     {
         return c >= '0' && c <= '9';
     }

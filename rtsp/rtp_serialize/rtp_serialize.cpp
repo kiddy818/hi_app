@@ -2,7 +2,7 @@
 
 namespace ceanic{namespace rtsp{
 
-    rtp_serialize::rtp_serialize(int payload)
+    rtp_serialize::rtp_serialize(int32_t payload)
         :m_payload(payload)
     {
         m_seq = get_ramdom16();
@@ -13,30 +13,30 @@ namespace ceanic{namespace rtsp{
     {
     }
 
-    unsigned int rtp_serialize::get_random32()
+    uint32_t rtp_serialize::get_random32()
     {
-        unsigned int value = 0;
+        uint32_t value = 0;
         //from jrtp
         FILE* f = fopen("/dev/urandom","rb");
 
         if (f)
         {
-            fread(&value, sizeof(unsigned int), 1, f);
+            fread(&value, sizeof(uint32_t), 1, f);
             fclose(f);
         }
 
         return value;
     }
 
-    unsigned short rtp_serialize::get_ramdom16()
+    uint16_t rtp_serialize::get_ramdom16()
     {
-        unsigned short value = 0;
+        uint16_t value = 0;
         //from jrtp
         FILE* f = fopen("/dev/urandom","rb");
 
         if (f)
         {
-            fread(&value, sizeof(unsigned short), 1, f);
+            fread(&value, sizeof(uint16_t), 1, f);
             fclose(f);
         }
 

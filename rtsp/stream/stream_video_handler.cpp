@@ -41,7 +41,7 @@ namespace ceanic{namespace rtsp{
         return m_rtp_session->rtcp_timeout();
     }
 
-    bool stream_video_handler::process_stream(util::stream_head* head, const char* data, int len)
+    bool stream_video_handler::process_stream(util::stream_obj_ptr sobj,util::stream_head* head, const char* data, int32_t len)
     {
         if (!is_start())
         {
@@ -53,6 +53,8 @@ namespace ceanic{namespace rtsp{
             return false;
         }
 
+        //printf("name:%s,chn:%d stream:%d type:%d len:%d\n",sobj->name().c_str(),sobj->chn(),sobj->stream_id(),head->type,len);
+        
         if (!m_rtp_serialize->serialize(*head, data, len, m_rtp_session))
         {
             return false;

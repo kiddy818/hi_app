@@ -1,6 +1,8 @@
 #ifndef stream_type_include_h
 #define stream_type_include_h
 
+#include <stdint.h>
+
 namespace ceanic{namespace util{
 
 #define STREAM_P_FRAME 0
@@ -24,39 +26,55 @@ namespace ceanic{namespace util{
 #define MAX_STREAM_NALU_COUNT (8)
     typedef struct
     {
-        const char* data;
-        int size;
-        unsigned int timestamp;
+        uint8_t* data;
+        uint32_t size;
+        uint32_t time_stamp;
     }nalu_t;
 
     typedef struct {
-        int len;
-        int type; //0:p,1:i 2:audio 3:nalu
-        unsigned long long time_stamp;
-        int tag;
-        int sys_time;
-        int w;
-        int h;
+        uint32_t len;
+        uint32_t type; //0:p,1:i 2:audio 3:nalu
+        uint32_t time_stamp;
 
-        int nalu_count;
+        uint32_t nalu_count;
         nalu_t nalu[MAX_STREAM_NALU_COUNT];
     }stream_head;
 
     enum
     {
-        STREAM_ENCODE_H264 = 0,
-        STREAM_ENCODE_MJPEG = 1,
-        STREAM_ENCODE_H265 = 2,
+        STREAM_VIDEO_ENCODE_H264 = 0,
+        STREAM_VIDEO_ENCODE_MJPEG = 1,
+        STREAM_VIDEO_ENCODE_H265 = 2,
+    };
+
+    enum
+    {
+        STREAM_AUDIO_ENCODE_NONE = 0x0,
+        STREAM_AUDIO_ENCODE_G711U = 0x1,
+        STREAM_AUDIO_ENCODE_AAC = 0x2,
     };
 
 #define CEANIC_TAG 0x5550564e
     typedef struct
     {
-        unsigned int    media_fourcc;//"BEACON"
-        int ver;//now is 1
-        int vdec;
+        uint32_t  media_fourcc;
 
-        int reserve[7];
+        struct
+        {
+            uint8_t vcode;
+            uint16_t w;
+            uint16_t h;
+            uint16_t fr;
+        }video_info;
+
+        struct
+        {
+            uint8_t acode;
+            uint32_t sample_rate;
+            uint8_t bit_width;
+            uint8_t chn;
+        }audio_info;
+
     }media_head;
 
 }}//namespace

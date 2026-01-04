@@ -8,8 +8,8 @@ namespace hisilicon{namespace dev{
     std::thread venc::g_capture_thread;
     std::list<venc_ptr> venc::g_vencs;
 
-    venc::venc(int w,int h,int src_fr,int venc_fr,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn)
-        :m_venc_w(w),m_venc_h(h),m_src_fr(src_fr),m_venc_fr(venc_fr),m_vpss_grp(vpss_grp),m_vpss_chn(vpss_chn)
+    venc::venc(int32_t chn,int32_t stream,int w,int h,int src_fr,int venc_fr,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn)
+        :stream_obj("venc_stream",chn,stream),m_venc_w(w),m_venc_h(h),m_src_fr(src_fr),m_venc_fr(venc_fr),m_vpss_grp(vpss_grp),m_vpss_chn(vpss_chn)
     {
         m_venc_chn = sys::alloc_venc_chn();
     }
@@ -238,8 +238,8 @@ namespace hisilicon{namespace dev{
         }
     }
 
-    venc_h264::venc_h264(int w,int h,int src_fr,int venc_fr,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn)
-        :venc(w,h,src_fr,venc_fr,vpss_grp,vpss_chn)
+    venc_h264::venc_h264(int32_t chn,int32_t stream,int w,int h,int src_fr,int venc_fr,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn)
+        :venc(chn,stream,w,h,src_fr,venc_fr,vpss_grp,vpss_chn)
     {
         memset(&m_venc_chn_attr,0,sizeof(m_venc_chn_attr));
         m_venc_chn_attr.venc_attr.type = OT_PT_H264;
@@ -272,10 +272,6 @@ namespace hisilicon{namespace dev{
 
         memset(&sh,0,sizeof(sh));
         sh.type = STREAM_NALU_SLICE;    
-        sh.tag = CEANIC_TAG;
-        sh.sys_time = time(NULL);  
-        sh.w = m_venc_w;
-        sh.h = m_venc_h;
 
         for(unsigned int i = 0; i < pstream->pack_cnt; i++)
         {
@@ -292,9 +288,9 @@ namespace hisilicon{namespace dev{
                     || es_type == 0x1 /*p*/
                     || es_type == 0x5 /*i*/)
             {
-                sh.nalu[nalu_cnt].data = (char*)es_buf;
+                sh.nalu[nalu_cnt].data = (uint8_t*)es_buf;
                 sh.nalu[nalu_cnt].size = es_len; 
-                sh.nalu[nalu_cnt].timestamp = time_stamp;
+                sh.nalu[nalu_cnt].time_stamp = time_stamp;
 
                 nalu_cnt++;
             }
@@ -302,11 +298,11 @@ namespace hisilicon{namespace dev{
             //g_stream_fun(chn,stream,es_type,time_stamp,es_buf,es_len,g_stream_fun_usr);
         }
 
-        post_stream_to_observer(&sh,NULL,0);
+        post_stream_to_observer(shared_from_this(),&sh,NULL,0);
     }
 
-    venc_h264_cbr::venc_h264_cbr(int w,int h,int src_fr,int venc_fr,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn,int bitrate)
-        :venc_h264(w,h,src_fr,venc_fr,vpss_grp,vpss_chn),m_bitrate(bitrate)
+    venc_h264_cbr::venc_h264_cbr(int32_t chn,int32_t stream,int w,int h,int src_fr,int venc_fr,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn,int bitrate)
+        :venc_h264(chn,stream,w,h,src_fr,venc_fr,vpss_grp,vpss_chn),m_bitrate(bitrate)
     {
         m_venc_chn_attr.rc_attr.rc_mode = OT_VENC_RC_MODE_H264_CBR;
         m_venc_chn_attr.rc_attr.h264_cbr.gop = m_venc_fr; /*the interval of IFrame*/
@@ -320,8 +316,8 @@ namespace hisilicon{namespace dev{
     {
     }
 
-    venc_h264_avbr::venc_h264_avbr(int w,int h,int src_fr,int venc_fr,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn,int max_bitrate)
-        :venc_h264(w,h,src_fr,venc_fr,vpss_grp,vpss_chn),m_max_bitrate(max_bitrate)
+    venc_h264_avbr::venc_h264_avbr(int32_t chn,int32_t stream,int w,int h,int src_fr,int venc_fr,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn,int max_bitrate)
+        :venc_h264(chn,stream,w,h,src_fr,venc_fr,vpss_grp,vpss_chn),m_max_bitrate(max_bitrate)
     {
         m_venc_chn_attr.rc_attr.rc_mode = OT_VENC_RC_MODE_H264_AVBR;
         m_venc_chn_attr.rc_attr.h264_avbr.gop = m_venc_fr; /*the interval of IFrame*/
@@ -335,8 +331,8 @@ namespace hisilicon{namespace dev{
     {
     }
 
-    venc_h265::venc_h265(int w,int h,int src_fr,int venc_fr,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn)
-        :venc(w,h,src_fr,venc_fr,vpss_grp,vpss_chn)
+    venc_h265::venc_h265(int32_t chn,int32_t stream,int w,int h,int src_fr,int venc_fr,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn)
+        :venc(chn,stream,w,h,src_fr,venc_fr,vpss_grp,vpss_chn)
     {
         memset(&m_venc_chn_attr,0,sizeof(m_venc_chn_attr));
         m_venc_chn_attr.venc_attr.type = OT_PT_H265;
@@ -361,39 +357,33 @@ namespace hisilicon{namespace dev{
     {
         char* es_buf = NULL;
         int es_len = 0;
-        int es_type = 0;
         unsigned long long time_stamp = 0;
 
         ceanic::util::stream_head sh;
 
         memset(&sh,0,sizeof(sh));
         sh.type = STREAM_NALU_SLICE;    
-        sh.tag = CEANIC_TAG;
-        sh.sys_time = time(NULL);  
         sh.nalu_count = pstream->pack_cnt;         
-        sh.w = m_venc_w;
-        sh.h = m_venc_h;
 
         for(unsigned int i = 0; i < pstream->pack_cnt; i++)
         {
             es_buf = (char*)(pstream->pack[i].addr + pstream->pack[i].offset);
             es_len = pstream->pack[i].len - pstream->pack[i].offset;
-            es_type = (pstream->pack[i].data_type.h264_type == 19) ? 1 : 0;
             time_stamp = pstream->pack[i].pts / 1000;
 
             //printf("packet%d,len=%d,%02x,%02x,%02x,%02x,%02x\n",i,es_len,es_buf[0],es_buf[1],es_buf[2],es_buf[3],es_buf[4]);
 
-            sh.nalu[i].data = (char*)es_buf;
+            sh.nalu[i].data = (uint8_t*)es_buf;
             sh.nalu[i].size = es_len; 
-            sh.nalu[i].timestamp = time_stamp;
+            sh.nalu[i].time_stamp = time_stamp;
             //g_stream_fun(chn,stream,es_type,time_stamp,es_buf,es_len,g_stream_fun_usr);
         }
 
-        post_stream_to_observer(&sh,NULL,0);
+        post_stream_to_observer(shared_from_this(),&sh,NULL,0);
     }
 
-    venc_h265_cbr::venc_h265_cbr(int w,int h,int src_fr,int venc_fr,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn,int bitrate)
-        :venc_h265(w,h,src_fr,venc_fr,vpss_grp,vpss_chn),m_bitrate(bitrate)
+    venc_h265_cbr::venc_h265_cbr(int32_t chn,int32_t stream,int w,int h,int src_fr,int venc_fr,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn,int bitrate)
+        :venc_h265(chn,stream,w,h,src_fr,venc_fr,vpss_grp,vpss_chn),m_bitrate(bitrate)
     {
         m_venc_chn_attr.rc_attr.rc_mode = OT_VENC_RC_MODE_H265_CBR;
         m_venc_chn_attr.rc_attr.h265_cbr.gop = m_venc_fr; /*the interval of IFrame*/
@@ -407,8 +397,8 @@ namespace hisilicon{namespace dev{
     {
     }
 
-    venc_h265_avbr::venc_h265_avbr(int w,int h,int src_fr,int venc_fr,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn,int max_bitrate)
-        :venc_h265(w,h,src_fr,venc_fr,vpss_grp,vpss_chn),m_max_bitrate(max_bitrate)
+    venc_h265_avbr::venc_h265_avbr(int32_t chn,int32_t stream,int w,int h,int src_fr,int venc_fr,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn,int max_bitrate)
+        :venc_h265(chn,stream,w,h,src_fr,venc_fr,vpss_grp,vpss_chn),m_max_bitrate(max_bitrate)
     {
         m_venc_chn_attr.rc_attr.rc_mode = OT_VENC_RC_MODE_H265_AVBR;
         m_venc_chn_attr.rc_attr.h265_avbr.gop = m_venc_fr; /*the interval of IFrame*/

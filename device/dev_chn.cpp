@@ -68,23 +68,23 @@ namespace hisilicon{namespace dev{
 
         if(m_venc_mode == "H264_CBR")
         {
-            m_venc_main_ptr = std::make_shared<venc_h264_cbr>(venc_w,venc_h,m_vi_ptr->fr(),fr,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),bitrate);
-            m_venc_sub_ptr  = std::make_shared<venc_h264_cbr>(704,576,m_vi_ptr->fr(),fr,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),1000);
+            m_venc_main_ptr = std::make_shared<venc_h264_cbr>(m_chn,MAIN_STREAM_ID,venc_w,venc_h,m_vi_ptr->fr(),fr,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),bitrate);
+            m_venc_sub_ptr  = std::make_shared<venc_h264_cbr>(m_chn,SUB_STREAM_ID,704,576,m_vi_ptr->fr(),fr,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),1000);
         }
         else if(m_venc_mode == "H264_AVBR")
         {
-            m_venc_main_ptr = std::make_shared<venc_h264_avbr>(venc_w,venc_h,m_vi_ptr->fr(),fr,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),bitrate);
-            m_venc_sub_ptr  = std::make_shared<venc_h264_avbr>(704,576,m_vi_ptr->fr(),fr,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),1000);
+            m_venc_main_ptr = std::make_shared<venc_h264_avbr>(m_chn,MAIN_STREAM_ID,venc_w,venc_h,m_vi_ptr->fr(),fr,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),bitrate);
+            m_venc_sub_ptr  = std::make_shared<venc_h264_avbr>(m_chn,SUB_STREAM_ID,704,576,m_vi_ptr->fr(),fr,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),1000);
         }
         else if(m_venc_mode == "H265_CBR")
         {
-            m_venc_main_ptr = std::make_shared<venc_h265_cbr>(venc_w,venc_h,m_vi_ptr->fr(),fr,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),bitrate);
-            m_venc_sub_ptr  = std::make_shared<venc_h265_cbr>(704,576,m_vi_ptr->fr(),fr,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),1000);
+            m_venc_main_ptr = std::make_shared<venc_h265_cbr>(m_chn,MAIN_STREAM_ID,venc_w,venc_h,m_vi_ptr->fr(),fr,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),bitrate);
+            m_venc_sub_ptr  = std::make_shared<venc_h265_cbr>(m_chn,SUB_STREAM_ID,704,576,m_vi_ptr->fr(),fr,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),1000);
         }
         else if(m_venc_mode == "H265_AVBR")
         {
-            m_venc_main_ptr = std::make_shared<venc_h265_avbr>(venc_w,venc_h,m_vi_ptr->fr(),fr,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),bitrate);
-            m_venc_sub_ptr  = std::make_shared<venc_h265_avbr>(704,576,m_vi_ptr->fr(),fr,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),1000);
+            m_venc_main_ptr = std::make_shared<venc_h265_avbr>(m_chn,MAIN_STREAM_ID,venc_w,venc_h,m_vi_ptr->fr(),fr,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),bitrate);
+            m_venc_sub_ptr  = std::make_shared<venc_h265_avbr>(m_chn,SUB_STREAM_ID,704,576,m_vi_ptr->fr(),fr,m_vi_ptr->vpss_grp(),m_vi_ptr->vpss_chn(),1000);
         }
         else
         {
@@ -164,18 +164,13 @@ namespace hisilicon{namespace dev{
             return false;
         }
 
-        if(strstr(m_venc_mode.c_str(),"H264") != NULL)
-        {
-            m_save = std::make_shared<ceanic::stream_save::mp4_save>(ceanic::stream_save::MP4_SAVE_H264,file,m_venc_main_ptr->venc_w(),m_venc_main_ptr->venc_h(),m_venc_main_ptr->venc_fr());
-        }
-        else if(strstr(m_venc_mode.c_str(),"H265") != NULL)
-        {
-            m_save = std::make_shared<ceanic::stream_save::mp4_save>(ceanic::stream_save::MP4_SAVE_H265,file,m_venc_main_ptr->venc_w(),m_venc_main_ptr->venc_h(),m_venc_main_ptr->venc_fr());
-        }
-        else
+        ceanic::util::media_head mh;
+        if(!get_stream_head(m_chn,MAIN_STREAM_ID,&mh))
         {
             return false;
         }
+
+        m_save = std::make_shared<ceanic::stream_save::mp4_save>(mh,file);
 
         return m_save->open();
     }
@@ -224,68 +219,39 @@ namespace hisilicon{namespace dev{
         osd::release();
     }
 
-    void chn::on_stream_come(ceanic::util::stream_head* head, const char* buf, int len)
+    void chn::on_stream_come(ceanic::util::stream_obj_ptr sobj,ceanic::util::stream_head* head, const char* buf, int32_t len)
     {
         if(!m_is_start)
         {
             return;
         }
 
-        int stream = 0;
-        if(head->w == m_venc_main_ptr->venc_w()
-                && head->h == m_venc_main_ptr->venc_h())
-        {
-            stream = 0;
-        }
-        else if(head->w == m_venc_sub_ptr->venc_w()
-                && head->h == m_venc_sub_ptr->venc_h())
-        {
-            stream = 1;
-        }
-        else if(m_yolov5
-                && head->w == m_yolov5->venc_w()
-                && head->h == m_yolov5->venc_h())
-        {
-            //yolov5 stream
-            stream = 2;
-        }
-        else
-        {
-            return;
-        }
+        int32_t chn = sobj->chn();
+        int32_t stream = sobj->stream_id();
+        std::string sname = sobj->name();
 
-        if(strstr(m_venc_mode.c_str(),"H264") != NULL
-                && stream < 2)
+        //rtmp当前支持主码流/子码流 H264格式
+        if(stream == MAIN_STREAM_ID || stream == SUB_STREAM_ID)
         {
-            ceanic::rtmp::session_manager::instance()->process_data(m_chn,stream,head);
-        }
-
-        if(stream == 0
-                && m_save)
-        {
-            m_save->input_data(head,NULL,0);
-        }
-
-        for(int i = 0; i < head->nalu_count; i++)
-        {
-            if(stream == 0 && 
-                    i == 0)
+            if(strstr(m_venc_mode.c_str(),"H264") != NULL)
             {
-                td_u64 cur_pts;
-                ss_mpi_sys_get_cur_pts(&cur_pts);
-                int delay_ms = (cur_pts / 1000) - head->nalu[i].timestamp;
-                DEV_WRITE_LOG_DEBUG("venc main stream %dms delayed",delay_ms);
+                ceanic::rtmp::session_manager::instance()->process_data(chn,stream,head,(uint8_t*)buf,len);
             }
-
-            head->nalu[i].data += 4;//remove 00 00 00 01
-            head->nalu[i].size -= 4;
-            head->nalu[i].timestamp *= 90;
         }
 
-        ceanic::rtsp::stream_manager::instance()->process_data(m_chn,stream,head,NULL,0);
+        //mp4当前保存的是主码流
+        if(stream == MAIN_STREAM_ID )
+        {
+            if(m_save)
+            {
+                m_save->input_data(head,buf,len);
+            }
+        }
+
+        ceanic::rtsp::stream_manager::instance()->process_data(chn,stream,head,buf,len);
     }
 
-    void chn::on_stream_error(int errno)
+    void chn::on_stream_error(ceanic::util::stream_obj_ptr sobj,int32_t errno)
     {
     }
 
@@ -314,11 +280,18 @@ namespace hisilicon{namespace dev{
             return false;
         }
 
+        ret = ot_scene_pause(TD_FALSE);
+        if(ret != TD_SUCCESS)
+        {
+            return false;
+        }
+
         return true;
     }
 
     void chn::scene_release()
     {
+        ot_scene_pause(TD_TRUE);
         ot_scene_deinit();
     }
 
@@ -425,12 +398,12 @@ namespace hisilicon{namespace dev{
             return false;
         }
 
-        if(stream == 2)
+        if(stream == AI_STREAM_ID)
         {
             //yolov5 stream
             return true;
         }
-        else if(stream == 0)
+        else if(stream == MAIN_STREAM_ID)
         {
             chn_ptr->m_venc_main_ptr->request_i_frame();
         }
@@ -448,33 +421,29 @@ namespace hisilicon{namespace dev{
             return false;
         }
 
-        using namespace ceanic::util;
         std::shared_ptr<dev::chn> chn_ptr = g_chns[chn];
         if(!chn_ptr)
         {
             return false;
         }
 
+        using namespace ceanic::util;
         memset(mh,0,sizeof(media_head));
-        mh->media_fourcc = CEANIC_TAG;
-        mh->ver = 1;
-        if(stream == 2)
+
+        if(stream == AI_STREAM_ID)
         {
-            //yolov5 use h264
-            mh->vdec = STREAM_ENCODE_H264;
+            //aidetect stream
+            mh->audio_info.acode = STREAM_AUDIO_ENCODE_NONE;
+            mh->video_info.vcode = STREAM_VIDEO_ENCODE_H264;
+            return true;
         }
-        else if(strstr(chn_ptr->m_venc_mode.c_str(),"H264") != NULL)
-        {
-            mh->vdec = STREAM_ENCODE_H264;
-        }
-        else if(strstr(chn_ptr->m_venc_mode.c_str(),"H265") != NULL)
-        {
-            mh->vdec = STREAM_ENCODE_H265;
-        }
-        else
-        {
-            assert(0);
-        }
+
+        std::shared_ptr<venc> venc_ptr = (stream == MAIN_STREAM_ID) ? chn_ptr-> m_venc_main_ptr : chn_ptr->m_venc_sub_ptr;
+        mh->video_info.w = venc_ptr->venc_w();
+        mh->video_info.h = venc_ptr->venc_h();
+        mh->video_info.fr = venc_ptr->venc_fr();
+        mh->video_info.vcode = (std::dynamic_pointer_cast<venc_h264>(venc_ptr) != nullptr) ? STREAM_VIDEO_ENCODE_H264 : STREAM_VIDEO_ENCODE_H265;
+
         return true;
     }
 
@@ -544,7 +513,7 @@ namespace hisilicon{namespace dev{
             return false;
         }
 
-        m_yolov5 = std::make_shared<yolov5>(m_vi_ptr,model_file);
+        m_yolov5 = std::make_shared<yolov5>(m_chn,AI_STREAM_ID,m_vi_ptr,model_file);
         if(!m_yolov5->start())
         {
             m_yolov5 = nullptr;

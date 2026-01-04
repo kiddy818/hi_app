@@ -16,8 +16,8 @@ namespace ceanic{namespace rtsp{
     typedef struct
     {
         char client_ip[32];
-        int client_port[2];
-        int mode;
+        int32_t client_port[2];
+        int32_t mode;
     }transport_info;
 
     typedef enum 
@@ -56,7 +56,7 @@ namespace ceanic{namespace rtsp{
 
             bool get_transport(const request& req, transport_info& transport, session& sess);
 
-            unsigned int get_session_no();
+            uint32_t get_session_no();
             bool get_channel(std::string& uri, int& chn);
 
             RtspState state();
@@ -76,22 +76,22 @@ namespace ceanic{namespace rtsp{
             void stop_play();
 
             void send_faild(session& sess);
-            int m_session_no;
-            int m_seq;
-            int m_chn;
+            int32_t m_session_no;
+            int32_t m_seq;
+            int32_t m_chn;
             RtspState m_state;
 
             stream_handler_ptr m_video_handler;
-            //stream_handler_ptr m_audio_handler;
+            stream_handler_ptr m_audio_handler;
 
             stream_ptr m_stream;
             util::media_head m_mh;
 
         private:
             static std::mutex udp_port_mutex;
-            static short udp_base_port;
-            static short get_udp_port();
-            static bool bind_udp_port(short port);
+            static int16_t udp_base_port;
+            static int16_t get_udp_port();
+            static bool bind_udp_port(int16_t port);
     };
 
 }}//namespace

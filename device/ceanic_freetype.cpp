@@ -9,8 +9,8 @@
 static std::vector<basic_char_t> g_basic_chars;
 static std::mutex g_freetype_mutex;
 
-ceanic_freetype::ceanic_freetype(const char* en_path,const char* zh_path)
-	:m_en_path(en_path),m_zh_path(zh_path),m_inited(false)
+ceanic_freetype::ceanic_freetype(const char* font_path)
+	:m_font_path(font_path),m_inited(false)
 {
 }
 
@@ -19,11 +19,11 @@ ceanic_freetype::~ceanic_freetype()
 	assert(!is_init());
 }
 
-bool ceanic_freetype::get_glyph_char(wchar_t c,int font_size,basic_char_t* char_info)
+bool ceanic_freetype::get_glyph_char(wchar_t c,int32_t font_size,basic_char_t* char_info)
 {
     std::unique_lock<std::mutex> lock(g_freetype_mutex);
 
-	for(unsigned int i = 0; i < g_basic_chars.size(); i++)
+	for(uint32_t i = 0; i < g_basic_chars.size(); i++)
 	{
 		if(g_basic_chars[i].c == c
 				&& g_basic_chars[i].font_size == font_size)
@@ -33,7 +33,7 @@ bool ceanic_freetype::get_glyph_char(wchar_t c,int font_size,basic_char_t* char_
 		}
 	}
 
-    FT_Face glyph_face =  c > 127 ? m_ft_face_zh : m_ft_face_en;
+    FT_Face glyph_face =  m_ft_face;
 	FT_Error error = FT_Set_Pixel_Sizes(glyph_face,font_size,0);
     if(error)
 	{
@@ -81,13 +81,7 @@ bool ceanic_freetype::init()
 		return false;
 	}
 
-    error = FT_New_Face(m_ft_lib,m_en_path.c_str(),0,&m_ft_face_en);
-	if(error)
-	{
-		return false;
-	}
-
-    error = FT_New_Face(m_ft_lib,m_zh_path.c_str(),0,&m_ft_face_zh);
+    error = FT_New_Face(m_ft_lib,m_font_path.c_str(),0,&m_ft_face);
 	if(error)
 	{
 		return false;
@@ -106,14 +100,13 @@ void ceanic_freetype::release()
 {
 	if(is_init())
 	{
-		FT_Done_Face(m_ft_face_en);
-		FT_Done_Face(m_ft_face_zh);
+		FT_Done_Face(m_ft_face);
 		FT_Done_FreeType(m_ft_lib);
 		m_inited = false;
 	}
 }
 
-bool ceanic_freetype::get_width(const char* str,int font_pixel,int* w)
+bool ceanic_freetype::get_width(const char* str,int32_t font_pixel,int* w)
 {
 	if(!is_init())
 	{
@@ -127,7 +120,7 @@ bool ceanic_freetype::get_width(const char* str,int font_pixel,int* w)
 
     basic_char_t char_info;
     
-    for(auto i = 0; i < wstr.size(); i++)
+    for(uint32_t i = 0; i < wstr.size(); i++)
     {
         get_glyph_char(wstr[i],font_pixel,&char_info);
 
@@ -137,7 +130,7 @@ bool ceanic_freetype::get_width(const char* str,int font_pixel,int* w)
 	return true;
 }
 
-bool ceanic_freetype::get_max_width(const char* str,int font_pixel,int* w)
+bool ceanic_freetype::get_max_width(const char* str,int32_t font_pixel,int* w)
 {
     if(!is_init())
 	{
@@ -151,7 +144,7 @@ bool ceanic_freetype::get_max_width(const char* str,int font_pixel,int* w)
 
     basic_char_t char_info;
     
-    for(auto i = 0; i < wstr.size(); i++)
+    for(uint32_t i = 0; i < wstr.size(); i++)
     {
         get_glyph_char(wstr[i],font_pixel,&char_info);
 
@@ -164,16 +157,16 @@ bool ceanic_freetype::get_max_width(const char* str,int font_pixel,int* w)
     return true;
 }
 
-bool ceanic_freetype::show_string(const char* str,int area_w,int area_h,int font_pixel,unsigned char* pdata,int data_size,short bg_color,short fg_color,short outline_color)
+bool ceanic_freetype::show_string(const char* str,int32_t area_w,int32_t area_h,int32_t font_pixel,unsigned char* pdata,int32_t data_size,int16_t bg_color,int16_t fg_color,int16_t outline_color)
 {
     std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
     std::wstring wstr = conv.from_bytes(str);
 
     basic_char_t char_info;
 
-	int startx=0;
-    int starty = 0;
-	for(int i = 0; i < wstr.size(); i++)
+	int32_t startx=0;
+    int32_t starty = 0;
+	for(uint32_t i = 0; i < wstr.size(); i++)
 	{
 		if(!get_glyph_char(wstr[i],font_pixel,&char_info))
 		{
@@ -208,7 +201,7 @@ bool ceanic_freetype::show_string(const char* str,int area_w,int area_h,int font
 }
 
 
-bool ceanic_freetype::show_string_compare(const char* str_before,const char* str_now,int area_w,int area_h,int font_pixel,unsigned char* pdata,int data_size,short bg_color,short fg_color,short outline_color)
+bool ceanic_freetype::show_string_compare(const char* str_before,const char* str_now,int32_t area_w,int32_t area_h,int32_t font_pixel,unsigned char* pdata,int32_t data_size,int16_t bg_color,int16_t fg_color,int16_t outline_color)
 {
     std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
     std::wstring wstr_before = conv.from_bytes(str_before);
@@ -219,11 +212,11 @@ bool ceanic_freetype::show_string_compare(const char* str_before,const char* str
 		return false;
 	}
 
-	int startx =0;
-    int starty =0;
+	int32_t startx =0;
+    int32_t starty =0;
 	bool draw_char = false;
     basic_char_t char_info;
-	for(int i = 0; i < wstr_cur.size(); i++)
+	for(uint32_t i = 0; i < wstr_cur.size(); i++)
 	{
 		//从i之后的所有字符都要修改
 		if(wstr_cur[i] != wstr_before[i])
@@ -313,30 +306,30 @@ fail:
 	return false;
 }
 
-extern int rgb24to1555(int r,int g,int b,int a);
+extern int32_t rgb24to1555(int32_t r,int32_t g,int32_t b,int32_t a);
 #define SHOW_LEVEL (5)
-bool ceanic_freetype::draw_rgb1555_char(int area_w,int area_h,int font_pixel,FT_Glyph orig,FT_Glyph outline,int startx,int starty,unsigned char* buf,int size,short bg_color,short fg_color,short outline_color)
+bool ceanic_freetype::draw_rgb1555_char(int32_t area_w,int32_t area_h,int32_t font_pixel,FT_Glyph orig,FT_Glyph outline,int32_t startx,int32_t starty,unsigned char* buf,int32_t size,int16_t bg_color,int16_t fg_color,int16_t outline_color)
 {
 	FT_Bitmap * orig_bitmap = &((FT_BitmapGlyph)orig)->bitmap; 
 	FT_Bitmap * outline_bitmap = &((FT_BitmapGlyph)outline)->bitmap; 
 	unsigned char *pdata;
 
-	int h_offset = (outline_bitmap->width - orig_bitmap->width) >> 1;
-	int v_offset = (outline_bitmap->rows - orig_bitmap->rows) >> 1;
-    int total_width = font_pixel;
+	int32_t h_offset = (outline_bitmap->width - orig_bitmap->width) >> 1;
+	int32_t v_offset = (outline_bitmap->rows - orig_bitmap->rows) >> 1;
+    int32_t total_width = font_pixel;
 
-    for(int i = 0; i < area_h; i++)
+    for(int32_t i = 0; i < area_h; i++)
     {
-        for (int  j = 0 ; j < total_width;  ++j)  
+        for (int32_t  j = 0 ; j < total_width;  ++j)  
         {
 			pdata = buf + i * area_w * 2 + (startx + j) * 2;//RGB1555,so need to *2
 
             *(short*)pdata = bg_color;
 
             if (j >= h_offset 
-                    && j < orig_bitmap->width + h_offset 
+                    && j < (int32_t)orig_bitmap->width + h_offset 
                     && i >= starty + v_offset 
-                    && i < orig_bitmap->rows + starty + v_offset)
+                    && i < (int32_t)orig_bitmap->rows + starty + v_offset)
             {
                 if (orig_bitmap->buffer[(i-starty-v_offset)*orig_bitmap->width+j-h_offset] >= SHOW_LEVEL)
                 {

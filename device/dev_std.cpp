@@ -2,7 +2,7 @@
 #include "ceanic_freetype.h"
 
 const char* g_week_stsr[7] = {"星期日","星期一","星期二","星期三","星期四","星期五","星期六"};
-ceanic_freetype g_freetype("/opt/ceanic/fonts/Vera.ttf","/opt/ceanic/fonts/gbsn00lp.ttf");
+ceanic_freetype g_freetype("/opt/ceanic/fonts/SourceHanSansCN-Normal.ttf");
 
 int rgb24to1555(int r,int g,int b,int a)
 {

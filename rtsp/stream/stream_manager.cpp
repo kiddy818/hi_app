@@ -10,11 +10,38 @@ namespace ceanic{namespace rtsp{
     stream_manager::stream_manager()
         :m_stream_checking(false)
     {
+        memset(&m_ops,0,sizeof(m_ops));
     }
 
     stream_manager::~stream_manager()
     {
         stop_stream_check();
+    }
+
+    bool stream_manager::register_stream_ops(stream_ops ops)
+    {
+        m_ops = ops;
+        return true;
+    }
+
+    bool stream_manager::get_stream_head(int32_t chn,int32_t stream_id,ceanic::util::media_head* mh)
+    {
+        if(m_ops.get_stream_head_fun)
+        {
+            return m_ops.get_stream_head_fun(chn,stream_id,mh);
+        }
+
+        return false;
+    }
+
+    bool stream_manager::request_i_frame(int32_t chn,int32_t stream_id)
+    {
+        if(m_ops.request_i_frame_fun)
+        {
+            return m_ops.request_i_frame_fun(chn,stream_id);
+        }
+
+        return false;
     }
 
     bool stream_manager::start_stream_check()
@@ -68,7 +95,7 @@ namespace ceanic{namespace rtsp{
         }
     }
 
-    bool stream_manager::get_stream(int chn,int stream_id, stream_ptr& stream)
+    bool stream_manager::get_stream(int32_t chn,int32_t stream_id, stream_ptr& stream)
     {
         std::unique_lock<std::mutex> lock(m_stream_mu);
 
@@ -96,7 +123,7 @@ namespace ceanic{namespace rtsp{
         return false;
     }
 
-    bool stream_manager::del_stream(int chn,int stream_id)
+    bool stream_manager::del_stream(int32_t chn,int32_t stream_id)
     {
         std::unique_lock<std::mutex> lock(m_stream_mu);
 
@@ -134,7 +161,7 @@ namespace ceanic{namespace rtsp{
         return g_instance;
     }
 
-    bool stream_manager::process_data(int chn,int stream_id,util::stream_head* head,const char* buf,int len)
+    bool stream_manager::process_data(int32_t chn,int32_t stream_id,util::stream_head* head,const char* buf,int32_t len)
     {
         std::unique_lock<std::mutex> lock(m_stream_mu);
 

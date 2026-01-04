@@ -10,6 +10,13 @@
 
 namespace ceanic{namespace rtmp{
 
+    typedef struct
+    {
+        uint32_t len;
+        uint32_t timestamp;
+        int32_t type;
+    }_head;
+
     class session
     {
         public:
@@ -22,11 +29,15 @@ namespace ceanic{namespace rtmp{
             void stop();
             bool is_start();
             bool input_one_nalu(const uint8_t* data,uint32_t len,uint32_t timestamp);
+            bool input_audio_frame(const uint8_t* data,uint32_t len,uint32_t timestamp);
 
         private:
-            void on_process_nalu();
-            bool send_packet(const uint8_t* data,uint32_t len,uint32_t timestamp);
+            void on_process();
+            bool process_video(_head* head,uint8_t* data);
+            bool process_audio(_head* head,uint8_t* data);
+            bool send_packet(bool is_video,const uint8_t* data,uint32_t len,uint32_t timestamp);
             bool send_sps_pps(uint32_t timestamp);
+            bool send_aac_spec(uint32_t timestamp);
             bool send_metedata();
 
         private:

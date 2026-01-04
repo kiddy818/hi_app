@@ -44,9 +44,13 @@ extern "C"
 
 namespace hisilicon{namespace dev{
 
+#define MAIN_STREAM_ID 0
+#define SUB_STREAM_ID 1
+#define AI_STREAM_ID 2
+
     class chn 
-        :public ceanic::rtsp::stream_observer
-         ,public std:: enable_shared_from_this<chn>
+        :public ceanic::util::stream_observer
+        ,public std:: enable_shared_from_this<chn>
     {
         public:
             chn(const char* vi_name,const char*venc_mode,int chn_no);
@@ -68,8 +72,8 @@ namespace hisilicon{namespace dev{
 
             static void start_capture(bool enable);
 
-            void on_stream_come(ceanic::util::stream_head* head, const char* buf, int len);
-            void on_stream_error(int errno);
+            void on_stream_come(ceanic::util::stream_obj_ptr sobj,ceanic::util::stream_head* head, const char* buf, int32_t len);
+            void on_stream_error(ceanic::util::stream_obj_ptr sobj,int32_t errno);
 
             //for scene
             static bool scene_init(const char* dir_path);

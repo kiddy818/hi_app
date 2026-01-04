@@ -7,6 +7,8 @@
 #include <mutex>
 #include <thread>
 #include <optional>
+#include <list>
+#include <rtp_type.h>
 
 namespace ceanic{namespace rtsp{
 
@@ -14,21 +16,21 @@ namespace ceanic{namespace rtsp{
     class session
     {
         public:
-            session(int s, int timeout);
+            session(int32_t s, int32_t timeout);
 
             virtual ~session();
 
             virtual void reduce_session_timeout() = 0;
-            virtual int get_session_timeout() = 0;
+            virtual int32_t get_session_timeout() = 0;
 
             virtual void reduce_rtcp_timeout() = 0;
-            virtual int get_rtcp_timeout() = 0;
+            virtual int32_t get_rtcp_timeout() = 0;
 
-            int socket();
+            int32_t socket();
 
             std::string& ip();
 
-            virtual std::optional<bool> handle_read(const char* data, int len) = 0;
+            virtual std::optional<bool> handle_read(const char* data, int32_t len) = 0;
 
             virtual void handle_reset(); 
 
@@ -42,13 +44,14 @@ namespace ceanic{namespace rtsp{
             }
 
             void on_idle();
-            bool send_packet_n(const char* buf, int buf_len);
+            bool send_packet_n(const char* buf, int32_t buf_len);
+            bool send_rtp_packet(rtp_packet_t* packet);
 
         protected:
-            int m_socket;
+            int32_t m_socket;
             bool m_start;
             std::string m_ip;
-            int m_timeout;
+            int32_t m_timeout;
 
             std::mutex m_out_buf_mu;
             struct  evbuffer* m_out_buf;

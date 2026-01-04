@@ -78,11 +78,11 @@ namespace ceanic{namespace rtsp{
         :public rtp_serialize
     {
         public:
-            explicit h265_rtp_serialize(int payload);
+            explicit h265_rtp_serialize(int32_t payload);
 
             virtual ~h265_rtp_serialize();
 
-            bool serialize(util::stream_head& head,const char* buf,int len,rtp_session_ptr rs);
+            bool serialize(util::stream_head& head,const char* buf,int32_t len,rtp_session_ptr rs);
 
         private:
             void process_nalu(util::nalu_t*nalu,rtp_session_ptr rs);

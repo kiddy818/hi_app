@@ -1,6 +1,7 @@
 #ifndef request_parser_include_h
 #define request_parser_include_h
 
+#include <stdint.h>
 #include <optional>
 namespace ceanic{namespace rtsp{
 
@@ -16,23 +17,23 @@ namespace ceanic{namespace rtsp{
             /// Reset to initial parser state.
             void reset();
 
-            std::optional<bool> parse(request& req, const char* buf, int len, int* left);
+            std::optional<bool> parse(request& req, const char* buf, int32_t len, int32_t* left);
 
         private:
             /// Handle the next character of input.
             std::optional<bool> consume(request& req, char input);
 
             /// Check if a byte is an HTTP character.
-            static bool is_char(int c);
+            static bool is_char(int32_t c);
 
             /// Check if a byte is an HTTP control character.
-            static bool is_ctl(int c);
+            static bool is_ctl(int32_t c);
 
             /// Check if a byte is defined as an HTTP tspecial character.
-            static bool is_tspecial(int c);
+            static bool is_tspecial(int32_t c);
 
             /// Check if a byte is a digit.
-            static bool is_digit(int c);
+            static bool is_digit(int32_t c);
 
             /// The current state of the parser.
             enum state

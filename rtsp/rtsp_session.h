@@ -12,11 +12,11 @@ namespace ceanic{namespace rtsp{
         :public session
     {
         public:
-            rtsp_session(int s, int timeout);
+            rtsp_session(int32_t s, int32_t timeout);
 
             virtual ~rtsp_session();
 
-            virtual std::optional<bool> handle_read(const char* data, int len);
+            virtual std::optional<bool> handle_read(const char* data, int32_t len);
 
             void process_rtsp_request();
 
@@ -27,9 +27,9 @@ namespace ceanic{namespace rtsp{
             virtual void stop();
 
             virtual void reduce_session_timeout();
-            virtual int get_session_timeout();
+            virtual int32_t get_session_timeout();
             virtual void reduce_rtcp_timeout();
-            virtual int get_rtcp_timeout();
+            virtual int32_t get_rtcp_timeout();
 
         protected:
             rtsp_request_handler m_handler;

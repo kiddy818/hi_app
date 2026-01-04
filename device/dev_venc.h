@@ -11,11 +11,12 @@ namespace hisilicon{namespace dev{
     typedef std::shared_ptr<venc> venc_ptr;
 
     class venc
-        :public std::enable_shared_from_this<venc>,
-        public ceanic::rtsp::stream_post
+        :public ceanic::util::stream_obj
+        ,public ceanic::util::stream_post
+        ,public std::enable_shared_from_this<venc>
     {
         public:
-            venc(int w,int h,int src_fr,int venc_fr,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn);
+            venc(int32_t chn,int32_t stream,int w,int h,int src_fr,int venc_fr,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn);
             virtual ~venc();
 
             bool start();
@@ -57,7 +58,7 @@ namespace hisilicon{namespace dev{
         :public venc
     {
         public:
-            venc_h264(int w,int h,int src_fr,int venc_fr,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn);
+            venc_h264(int32_t chn,int32_t stream,int w,int h,int src_fr,int venc_fr,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn);
             virtual ~venc_h264();
 
             virtual void process_video_stream(ot_venc_stream* pstream);
@@ -67,7 +68,7 @@ namespace hisilicon{namespace dev{
         :public venc_h264
     {
         public:
-            venc_h264_cbr(int w,int h,int src_fr,int venc_fr,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn,int bitrate);
+            venc_h264_cbr(int32_t chn,int32_t stream,int w,int h,int src_fr,int venc_fr,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn,int bitrate);
             virtual ~venc_h264_cbr();
 
         protected:
@@ -78,7 +79,7 @@ namespace hisilicon{namespace dev{
         :public venc_h264
     {
         public:
-            venc_h264_avbr(int w,int h,int src_fr,int venc_fr,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn,int max_bitrate);
+            venc_h264_avbr(int32_t chn,int32_t stream,int w,int h,int src_fr,int venc_fr,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn,int max_bitrate);
             virtual ~venc_h264_avbr();
 
         protected:
@@ -89,7 +90,7 @@ namespace hisilicon{namespace dev{
         :public venc
     {
         public:
-            venc_h265(int w,int h,int src_fr,int venc_fr,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn);
+            venc_h265(int32_t chn,int32_t stream,int w,int h,int src_fr,int venc_fr,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn);
             virtual ~venc_h265();
 
             virtual void process_video_stream(ot_venc_stream* pstream);
@@ -99,7 +100,7 @@ namespace hisilicon{namespace dev{
         :public venc_h265
     {
         public:
-            venc_h265_cbr(int w,int h,int src_fr,int venc_fr,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn,int bitrate);
+            venc_h265_cbr(int32_t chn,int32_t stream,int w,int h,int src_fr,int venc_fr,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn,int bitrate);
             virtual ~venc_h265_cbr();
 
         protected:
@@ -110,7 +111,7 @@ namespace hisilicon{namespace dev{
         :public venc_h265
     {
         public:
-            venc_h265_avbr(int w,int h,int src_fr,int venc_fr,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn,int max_bitrate);
+            venc_h265_avbr(int32_t chn,int32_t stream,int w,int h,int src_fr,int venc_fr,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn,int max_bitrate);
             virtual ~venc_h265_avbr();
 
         protected:

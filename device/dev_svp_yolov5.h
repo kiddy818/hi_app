@@ -36,10 +36,12 @@ namespace hisilicon{namespace dev{
     }svp_npu_rect_info_t;
 
     class yolov5 
-        :public ceanic::rtsp::stream_post
+        :public ceanic::util::stream_obj
+        ,public ceanic::util::stream_post
+        ,public std::enable_shared_from_this<yolov5>
     {
         public:
-            yolov5(std::shared_ptr<vi> vi_ptr,const char* model_path);
+            yolov5(int32_t chn,int32_t stream,std::shared_ptr<vi> vi_ptr,const char* model_path);
             ~yolov5();
 
             bool start();

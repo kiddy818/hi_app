@@ -1,6 +1,8 @@
 #include "dev_vi_os08a20_liner.h"
 #include "dev_log.h"
 
+extern ot_isp_sns_obj g_sns_os08a20_obj;
+
 static combo_dev_attr_t g_mipi_4lane_chn0_sensor_os08a20_12bit_8m_nowdr_attr = {
     .devno = 0,
     .input_mode = INPUT_MODE_MIPI,

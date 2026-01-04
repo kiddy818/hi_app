@@ -107,7 +107,7 @@ namespace hisilicon{namespace dev{
         memset(&m_fusion_grp_attr,0,sizeof(m_fusion_grp_attr));
         m_fusion_grp_attr.wdr_mode = (m_wdr_mode == 0) ? OT_WDR_MODE_NONE :OT_WDR_MODE_2To1_LINE;
         m_fusion_grp_attr.cache_line = m_h;
-        for(int i = 0; i < m_pipes.size(); i++)
+        for(uint32_t i = 0; i < m_pipes.size(); i++)
         {
             m_fusion_grp_attr.pipe_id[i] = m_pipes[i];
         }
@@ -340,7 +340,7 @@ namespace hisilicon{namespace dev{
         }
 
         //bind pipe dev
-        for(int i = 0; i < m_pipes.size(); i++)
+        for(uint32_t i = 0; i < m_pipes.size(); i++)
         {
             ret = ss_mpi_vi_bind(m_vi_dev,m_pipes[i]);
             if(ret != TD_SUCCESS)
@@ -360,7 +360,7 @@ namespace hisilicon{namespace dev{
         }
 
         //start vi pipe
-        for(int i = 0; i < m_pipes.size(); i++)
+        for(uint32_t i = 0; i < m_pipes.size(); i++)
         {
             ret = ss_mpi_vi_create_pipe(m_pipes[i],&m_vi_pipe_attr);
             if(ret != TD_SUCCESS)
@@ -478,7 +478,7 @@ namespace hisilicon{namespace dev{
         ss_mpi_vpss_stop_grp(m_vpss_grp);
         ss_mpi_vpss_destroy_grp(m_vpss_grp);
 
-        for(int i = 0; i < m_pipes.size(); i++)
+        for(uint32_t i = 0; i < m_pipes.size(); i++)
         {
             ss_mpi_vi_disable_chn(m_pipes[i], m_vi_chn);
             ss_mpi_vi_stop_pipe(m_pipes[i]);

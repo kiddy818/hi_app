@@ -20,8 +20,8 @@ namespace hisilicon{namespace dev{
 
 static std::vector<std::string> g_yolov5_class_str = {"person", "bicycle", "car", "motorcycle", "airplane", "bus", "train", "truck", "boat", "traffic light", "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat", "dog", "horse", "sheep", "cow", "elephant", "bear", "zebra", "giraffe", "backpack", "umbrella", "handbag", "tie", "suitcase", "frisbee", "skis", "snowboard", "sports ball", "kite", "baseball bat", "baseball glove", "skateboard", "surfboard", "tennis racket", "bottle", "wine glass", "cup", "fork", "knife", "spoon", "bowl", "banana", "apple", "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake", "chair", "couch", "potted plant", "bed", "dining table", "toilet", "tv", "laptop", "mouse", "remote", "keyboard", "cell phone", "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors", "teddy bear", "hair drier", "toothbrush"};
 
-    yolov5::yolov5(std::shared_ptr<vi> vi_ptr,const char* model_path)
-        :m_is_start(false),m_model_path(model_path),m_vi_ptr(vi_ptr),m_vb_poolid(OT_VB_INVALID_POOL_ID)
+    yolov5::yolov5(int32_t chn,int32_t stream,std::shared_ptr<vi> vi_ptr,const char* model_path)
+        :stream_obj("yolov5_stream",chn,stream),m_is_start(false),m_model_path(model_path),m_vi_ptr(vi_ptr),m_vb_poolid(OT_VB_INVALID_POOL_ID)
          ,m_vpss_grp(0),m_vpss_chn(0),m_model_mem_size(0),m_model_mem_ptr(NULL),m_model_id(0),m_model_desc(NULL)
          ,m_input_num(0),m_output_num(0),m_dynamic_batch_idx(0)
     {
@@ -78,7 +78,7 @@ static std::vector<std::string> g_yolov5_class_str = {"person", "bicycle", "car"
         m_max_rgn_w = 0;
         char str[255];
         int rgn_w;
-        for(int i = 0; i < g_yolov5_class_str.size(); i++)
+        for(uint32_t i = 0; i < g_yolov5_class_str.size(); i++)
         {
             sprintf(str,"%s,0.99",g_yolov5_class_str[i].c_str());
             g_freetype.get_width(str,SAMPLE_SVP_OSD_FONT_SIZE,&rgn_w);
@@ -106,10 +106,6 @@ static std::vector<std::string> g_yolov5_class_str = {"person", "bicycle", "car"
 
         memset(&sh,0,sizeof(sh));
         sh.type = STREAM_NALU_SLICE;    
-        sh.tag = CEANIC_TAG;
-        sh.sys_time = time(NULL);  
-        sh.w = m_pic_size.width;
-        sh.h = m_pic_size.height;
 
         for(unsigned int i = 0; i < pstream->pack_cnt; i++)
         {
@@ -123,15 +119,15 @@ static std::vector<std::string> g_yolov5_class_str = {"person", "bicycle", "car"
                     || es_type == 0x1 /*p*/
                     || es_type == 0x5 /*i*/)
             {
-                sh.nalu[nalu_cnt].data = (char*)es_buf;
+                sh.nalu[nalu_cnt].data = (uint8_t*)es_buf;
                 sh.nalu[nalu_cnt].size = es_len; 
-                sh.nalu[nalu_cnt].timestamp = time_stamp;
+                sh.nalu[nalu_cnt].time_stamp = time_stamp;
 
                 nalu_cnt++;
             }
             sh.nalu_count = nalu_cnt;
         }
-        post_stream_to_observer(&sh,NULL,0);
+        post_stream_to_observer(shared_from_this(),&sh,NULL,0);
     }
 
     void yolov5::destroy_vb_pool()
@@ -175,7 +171,6 @@ static std::vector<std::string> g_yolov5_class_str = {"person", "bicycle", "car"
     bool yolov5::create_svp_output()
     {
         td_s32 ret;
-        int i;
         svp_acl_data_buffer *output_data = TD_NULL;
 
         svp_acl_mdl_dataset* output_dataset = svp_acl_mdl_create_dataset();
@@ -185,7 +180,7 @@ static std::vector<std::string> g_yolov5_class_str = {"person", "bicycle", "car"
             return false;
         }
 
-        for (i = 0; i < m_output_num; i++)
+        for (size_t i = 0; i < m_output_num; i++)
         {
             output_data = create_svp_output_buffer(i);
             if(output_data == NULL)
@@ -223,7 +218,7 @@ static std::vector<std::string> g_yolov5_class_str = {"person", "bicycle", "car"
 
     void yolov5::destroy_svp_output()
     {
-        int i;
+        size_t i;
         size_t output_num;
 
         if(m_task_info.output_dataset)
@@ -241,7 +236,7 @@ static std::vector<std::string> g_yolov5_class_str = {"person", "bicycle", "car"
 
     void yolov5::destroy_svp_input()
     {
-        int i;
+        size_t i;
         size_t input_num;
 
         if(m_task_info.input_dataset)
@@ -343,12 +338,12 @@ static std::vector<std::string> g_yolov5_class_str = {"person", "bicycle", "car"
             return NULL;
         }
 
-        if(index == m_input_num - SAMPLE_SVP_NPU_EXTRA_INPUT_NUM)
+        if((size_t)index == m_input_num - SAMPLE_SVP_NPU_EXTRA_INPUT_NUM)
         {
             m_task_info.task_buf_ptr = input_buffer;
             m_task_info.task_buf_size = buffer_size;
             m_task_info.task_buf_stride = stride;
-        }else if(index == m_input_num - 1)
+        }else if((size_t)index == m_input_num - 1)
         {
             m_task_info.work_buf_ptr = input_buffer;
             m_task_info.work_buf_size = buffer_size;
@@ -361,7 +356,7 @@ static std::vector<std::string> g_yolov5_class_str = {"person", "bicycle", "car"
     bool yolov5::create_svp_input()
     {
         td_s32 ret;
-        int i;
+        size_t i;
         svp_acl_data_buffer *input_data = TD_NULL;
 
         svp_acl_mdl_dataset* input_dataset = svp_acl_mdl_create_dataset();
@@ -781,7 +776,7 @@ static std::vector<std::string> g_yolov5_class_str = {"person", "bicycle", "car"
             }
 
             td_u32 frame_size = frame.video_frame.height * frame.video_frame.stride[0] * 3 / 2;
-            td_void* frame_virt_addr = virt_addr + (frame.video_frame.phys_addr[0] - m_vb_pool_info.pool_phy_addr);
+            td_void* frame_virt_addr = (td_u8*)virt_addr + (frame.video_frame.phys_addr[0] - m_vb_pool_info.pool_phy_addr);
             ret = svp_acl_update_data_buffer(data_buffer,frame_virt_addr,frame_size,frame.video_frame.stride[0]);
             if(ret != TD_SUCCESS)
             {
@@ -836,7 +831,7 @@ static std::vector<std::string> g_yolov5_class_str = {"person", "bicycle", "car"
 
         for(i = 0; i < SVP_RECT_NUM; i++)
         {
-            if(m_rgn[i] != OT_INVALID_HANDLE)
+            if(m_rgn[i] != (ot_rgn_handle)OT_INVALID_HANDLE)
             {
                 ss_mpi_rgn_destroy(m_rgn[i]);
                 m_rgn[i] = OT_INVALID_HANDLE;
@@ -1063,11 +1058,11 @@ end1:
         char str[255];
         for (i = 0; i < rect->num; i++)
         {
-            if(m_rgn[i] == OT_INVALID_HANDLE)
+            if(m_rgn[i] == (ot_rgn_handle)OT_INVALID_HANDLE)
             {
                 create_svp_rgn(i);
 
-                if(m_rgn[i] == OT_INVALID_HANDLE)
+                if(m_rgn[i] == (ot_rgn_handle)OT_INVALID_HANDLE)
                 {
                     break;
                 }

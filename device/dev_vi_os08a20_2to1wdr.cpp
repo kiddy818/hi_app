@@ -1,6 +1,8 @@
 #include "dev_vi_os08a20_2to1wdr.h"
 #include "dev_log.h"
 
+extern ot_isp_sns_obj g_sns_os08a20_obj;
+
 static combo_dev_attr_t g_mipi_4lane_chn0_sensor_os08a20_12bit_wdr2to1 = {
     .devno = 0,
     .input_mode = INPUT_MODE_MIPI,
@@ -58,7 +60,7 @@ namespace hisilicon{namespace dev{
         m_pipes.clear();
         m_pipes.push_back(0);
         m_pipes.push_back(1);
-        for(int i = 0; i < m_pipes.size(); i++)
+        for(uint32_t i = 0; i < m_pipes.size(); i++)
         {
             m_fusion_grp_attr.pipe_id[i] = m_pipes[i];
         }

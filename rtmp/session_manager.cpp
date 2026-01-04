@@ -105,7 +105,7 @@ namespace ceanic{namespace rtmp{
         }
     }
 
-    void session_manager::process_data(int32_t chn,int32_t stream_id,util::stream_head* head)
+    void session_manager::process_data(int32_t chn,int32_t stream_id,util::stream_head* head,uint8_t* buf,int32_t len)
     {
         std::unique_lock<std::mutex> lock(m_sess_mu);
 
@@ -118,17 +118,25 @@ namespace ceanic{namespace rtmp{
                     && key->stream_id == stream_id)
             {
                 bool send_success = true;
-                for(auto i = 0; i < head->nalu_count; i++)
+
+                if(IS_VIDEO_FRAME(head->type))
                 {
-                    if(!sess->input_one_nalu((uint8_t*)head->nalu[i].data,head->nalu[i].size,head->nalu[i].timestamp))
+                    for(uint32_t i = 0; i < head->nalu_count; i++)
                     {
-                        send_success = false;
-                        break;
+                        if(!sess->input_one_nalu((uint8_t*)head->nalu[i].data,head->nalu[i].size,head->nalu[i].time_stamp))
+                        {
+                            send_success = false;
+                            break;
+                        }
                     }
+                }else if(IS_AUDIO_FRAME(head->type))
+                {
+                    send_success = sess->input_audio_frame(buf,len,head->time_stamp);
                 }
 
                 if(!send_success)
                 {
+                    RTMP_WRITE_LOG_ERROR("send failed");
                     sess->stop();
                     it = m_sess.erase(it);
                     continue;

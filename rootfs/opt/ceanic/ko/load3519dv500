@@ -3,29 +3,22 @@
 #         -r : rmmod all modules
 #         -i : insmod all modules
 #         -a : rmmod all moules and then insmod them
-# -sensor0-3 : sensor0~sensor3 config, default: os04a10
+# -sensor0-3 : sensor0~sensor3 config, default: hy_s0617
 #     -board : board config, default: dmeb
 #   -vo_intf : vo intf of bt1120/mipitx/bt656/none, default: bt1120
 #    ir_auto : ir_auto 0 or 1, default:1
-# e.g: ./load3519dv500 -a -sensor0 os04a10 -vo_intf bt1120 -board dmeb
+# e.g: ./load3519dv500 -a -sensor0 hy_s0617 -vo_intf bt1120 -board dmeb
 
 ####### select sensor type for your test ########################
-####      os04a10              ####
-####      os08a20              ####
-####      imx347_slave         ####
-####      imx515               ####
-####      sc450ai              ####
-####      sc850sl              ####
-####      bt1120/bt656/bt601   ####
-####      t0/t1/t2/t3          ####
-####      mipi_ad              ####
+####      hy_s0617      ####
+####      hy_s0603      ####
 ####################Variables Definition##########################
 
-SNS_TYPE0=os04a10;               # sensor type
-SNS_TYPE1=os04a10;               # sensor type
-SNS_TYPE2=os04a10;               # sensor type
-SNS_TYPE3=os04a10;               # sensor type
-BOARD=dmeb;                      # sck dmeb dmebpro
+SNS_TYPE0=hy_s0617;               # sensor type
+SNS_TYPE1=hy_s0617;               # sensor type
+SNS_TYPE2=hy_s0617;               # sensor type
+SNS_TYPE3=hy_s0617;               # sensor type
+BOARD=dmeb;                       # sck dmeb dmebpro
 
 VO_INTF=bt1120
 IR_AUTO=1
@@ -220,14 +213,14 @@ load_usage()
     echo "    -r                       remove modules"
     echo "    -a                       remove modules first, then insert modules"
     echo "    -vo_intf vo intf type    config vo intf        [default: bt1120]"
-    echo "    -sensor0~3 sensor_name   config sensor type    [default: os04a10]"
+    echo "    -sensor0~3 sensor_name   config sensor type    [default: hy_s0617]"
     echo "    -board board_name        config board type     [default: dmeb]"
     echo "    -mmz_start               config MMZ start addr [default: 0x48200000]"
     echo "    -mmz_size                config MMZ mem size [unit: M, default: 1918M]"
     echo "    -ir_auto                 config ir_auto enable [default: 1]"
     echo "    -h                       help information"
-    echo -e "Available sensors:os04a10 os08a20 imx347_slave imx515 sc450ai sc850sl bt1120/bt656/bt601 t0/t1/t2/t3"
-    echo -e "for example: $0 -i -vo_intf bt1120 -sensor0 os04a10 -sensor1 os04a10 -sensor2 os04a10 -sensor3 os04a10 -board dmeb -mmz_start 0x48200000 -mmz_size 1918M -ir_auto 1\n"
+    echo -e "Available sensors:hy_s0617 hy_s0603"
+    echo -e "for example: $0 -i -vo_intf bt1120 -sensor0 hy_s0617 -sensor1 hy_s0617 -sensor2 hy_s0617 -sensor3 hy_s0617 -board dmeb -mmz_start 0x48200000 -mmz_size 1918M -ir_auto 1\n"
 }
 
 b_arg_insmod=0

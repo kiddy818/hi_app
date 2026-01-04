@@ -3,6 +3,12 @@ CXX:=$(CROSS)g++
 STRIP=$(CROSS)strip
 CXXFLAGS += -std=c++17
 
+#关闭初始化顺序警告
+CXXFLAGS += -Wno-reorder
+
+#关闭changed in GCC 7.1警告
+CXXFLAGS += -Wno-psabi
+
 THIRD_LIBRARY_PATH=./thirdlibrary
 INC_PATH += -I./
 INC_PATH += -I./util/
@@ -26,7 +32,9 @@ LIBPATH += -L./
 LIBPATH += -L./log
 
 SRCXX += main.cpp
-SRCXX += json/jsoncpp.cpp
+SRCXX += json/json_reader.cpp
+SRCXX += json/json_writer.cpp
+SRCXX += json/json_value.cpp
 
 #log
 SRCXX += log/ceanic_log.cpp
@@ -42,13 +50,15 @@ SRCXX += rtsp/stream/stream_handler.cpp
 SRCXX += rtsp/stream/stream_manager.cpp
 SRCXX += rtsp/stream/stream_stock.cpp
 SRCXX += rtsp/stream/stream_video_handler.cpp
+SRCXX += rtsp/stream/stream_audio_handler.cpp
 SRCXX += rtsp/rtp_session/rtp_session.cpp
 SRCXX += rtsp/rtp_session/rtp_tcp_session.cpp
 SRCXX += rtsp/rtp_session/rtp_udp_session.cpp
 SRCXX += rtsp/rtp_serialize/h264_rtp_serialize.cpp
 SRCXX += rtsp/rtp_serialize/h265_rtp_serialize.cpp
-SRCXX += rtsp/rtp_serialize/mjpeg_rtp_serialize.cpp
 SRCXX += rtsp/rtp_serialize/rtp_serialize.cpp
+SRCXX += rtsp/rtp_serialize/pcmu_rtp_serialize.cpp
+SRCXX += rtsp/rtp_serialize/aac_rtp_serialize.cpp
 
 #rtmp
 SRCXX += rtmp/session.cpp
@@ -78,6 +88,16 @@ DEVICE_SRC += device/ceanic_freetype.cpp
 DEVICE_SRC += device/dev_std.cpp
 DEVICE_SRC += device/dev_vo.cpp
 DEVICE_SRC += device/dev_vo_bt1120.cpp
+
+#sensor driver os04a10
+INC_PATH += -I../../cbb/isp/include/
+INC_PATH += -I../../cbb/isp/user/3a/include/
+SRC += device/sensor/omnivision_os04a10/os04a10_cmos.c
+SRC += device/sensor/omnivision_os04a10/os04a10_sensor_ctl.c
+
+#sensor driver os08a10
+SRC += device/sensor/omnivision_os08a20/os08a20_cmos.c
+SRC += device/sensor/omnivision_os08a20/os08a20_sensor_ctl.c
 
 #surpport scene
 SCENE_PATH = ../scene_auto
@@ -114,7 +134,31 @@ LIBS += $(THIRD_LIBRARY_PATH)/freetype-2.7.1/lib/libfreetype.a
 LIBS += $(THIRD_LIBRARY_PATH)/hisilicon_mp4/lib/libmp4.a
 LIBS += $(THIRD_LIBRARY_PATH)/hisilicon_mp4/lib/libuproc.a
 LIBS += $(THIRD_LIBRARY_PATH)/hisilicon_mp4/lib/libmwlog.a
-LIBS += $(MPI_LIBS) $(REL_LIB)/libsecurec.a $(REL_LIB)/libss_mpi_snap.a
+
+#for hisilicon mpi libs
+LIBS += $(REL_LIB)/libss_mpi.a
+LIBS += $(REL_LIB)/libss_mpi_sysbind.a
+LIBS += $(REL_LIB)/libss_mpi_sysmem.a
+LIBS += $(REL_LIB)/libss_mpi_ae.a
+LIBS += $(REL_LIB)/libss_mpi_isp.a
+LIBS += $(REL_LIB)/libot_mpi_isp.a
+LIBS += $(REL_LIB)/libss_mpi_awb.a
+LIBS += $(REL_LIB)/libdehaze.a
+LIBS += $(REL_LIB)/libextend_stats.a
+LIBS += $(REL_LIB)/libdrc.a
+LIBS += $(REL_LIB)/libldci.a
+LIBS += $(REL_LIB)/libbnr.a
+LIBS += $(REL_LIB)/libcalcflicker.a
+LIBS += $(REL_LIB)/libacs.a
+LIBS += $(REL_LIB)/libss_mpi_aibnr.a
+LIBS += $(REL_LIB)/libsvp_acl.a
+LIBS += $(REL_LIB)/libprotobuf-c.a
+LIBS += $(REL_LIB)/libfileformat.a
+LIBS += $(REL_LIB)/libss_mpi_km.a
+LIBS += $(REL_LIB)/libss_mpi_ai3dnr.a
+LIBS += $(REL_LIB)/libss_mpi_aidrc.a
+
+LIBS += $(REL_LIB)/libsecurec.a $(REL_LIB)/libss_mpi_snap.a
 
 LIBS+= -Wl,--end-group
 
@@ -129,13 +173,16 @@ PROG_OBJ= $(SRC:.c=.o)
 DEVICE_OBJ= $(DEVICE_SRC:.cpp=.o)
 
 $(target):$(PROGXX_OBJ) $(PROG_OBJ) $(DEVICE_OBJ)
-	$(CXX) $^ -o $@ $(INC_PATH) $(LIBPATH) $(LIBS) $(CFLAGS) -lpthread
+	@echo "LD $(target)"
+	@$(CXX) $^ -o $@ $(INC_PATH) $(LIBPATH) $(LIBS) $(CFLAGS) -lpthread
 
 %.o:%.cpp
-	$(CXX) -c -o  $@ $< $(INC_PATH) $(CFLAGS) $(CXXFLAGS)
+	@echo "CXX $<"
+	@$(CXX) -c -o  $@ $< $(INC_PATH) $(CFLAGS) $(CXXFLAGS)
 
 %.o:%.c
-	$(CC) -c -o  $@ $< $(INC_PATH) $(CFLAGS)
+	@echo "CC $<"
+	@$(CC) -c -o  $@ $< $(INC_PATH) $(CFLAGS)
 
 device_clean:
 	-rm $(DEVICE_OBJ)
@@ -143,6 +190,9 @@ device_clean:
 clean:
 	-rm $(target) $(PROG_OBJ) $(PROGXX_OBJ) $(DEVICE_OBJ)
 
+strip:
+	$(STRIP) $(target)
+
 install:
-	cp $(target) /home/mjj/work/nfs/3519dv500/020/
+	cp $(target) /home/mjj/work/nfs/3519dv500/021/
 
