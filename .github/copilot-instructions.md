@@ -38,12 +38,14 @@ VI (sensor) → VPSS (processing) → VENC (encoding) → RTSP/RTMP/MP4
 ## Build Instructions
 
 ### Prerequisites
-- HiSilicon SDK V2.0.2.0 or V2.0.2.1 must be compiled first
+- HiSilicon SDK V2.0.2.0 or V2.0.2.1 must be compiled first (V2.0.2.1 recommended)
 - Cross-compilation toolchain from HiSilicon SDK
-- Project must be placed in: `Hi3519DV500_SDK_V2.0.2.1/smp/a55_linux/source/mpp/sample/`
+- Project must be placed in: `Hi3519DV500_SDK_V{version}/smp/a55_linux/source/mpp/sample/`
+  - Replace `{version}` with actual SDK version (e.g., 2.0.2.1)
 
 ### Build Commands
 ```bash
+# Adjust SDK version path as needed (e.g., V2.0.2.0 or V2.0.2.1)
 cd Hi3519DV500_SDK_V2.0.2.1/smp/a55_linux/source/mpp/sample/3516dv500_app
 make          # Build the application
 make clean    # Clean build artifacts
@@ -113,7 +115,7 @@ There is no automated test suite. Testing is performed on actual hardware:
 3. **Load Kernel Modules**: Run `./load3519dv500 -i` from `/opt/ceanic/ko/`
 4. **Run Application**: Execute `./ceanic_app` from `/opt/ceanic/bin/`
 5. **Test Streams**:
-   - RTSP: `rtsp://192.168.10.98/stream1`, `stream2`, `stream3`
+   - RTSP: `rtsp://{device-ip}/stream1`, `stream2`, `stream3` (replace `{device-ip}` with actual device IP)
    - RTMP: Configure nginx server, set URLs in `net_service.json`
    - Use VLC to view streams
 
