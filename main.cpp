@@ -7,6 +7,10 @@
 #include <rtmp/session_manager.h>
 #include <execinfo.h>
 
+#include "camera_manager.h"
+#include "resource_manager.h"
+using namespace hisilicon::device;
+
 LOG_HANDLE g_app_log;
 LOG_HANDLE g_rtsp_log;
 LOG_HANDLE g_rtmp_log;
@@ -825,6 +829,71 @@ int main(int argc,char* argv[])
     signal(SIGTERM,on_quit);
     signal(SIGSEGV,sigsegv_handler);
 
+    // Initialize resource manager
+    resource_limits limits;
+    limits.max_vi_devices = 4;
+    limits.max_vpss_groups = 32;
+    limits.max_venc_channels = 16;
+    resource_manager::init(limits);
+
+    // Initialize camera manager
+    camera_manager::init(1); // Support up to 4 cameras
+
+    // Create camera configuration
+    camera_config config;
+    config.camera_id = -1; // Auto-assign ID
+    config.enabled = true;
+    config.sensor = sensor_config("OS08A20", "liner");
+
+    // Configure main stream
+    stream_config main_stream;
+    main_stream.stream_id = 0;
+    main_stream.name = "main";
+    main_stream.type = encoder_type::H264_CBR;
+    main_stream.width = 1920;
+    main_stream.height = 1080;
+    main_stream.framerate = 30;
+    main_stream.bitrate = 4096;
+    main_stream.outputs.rtsp_enabled = true;
+    main_stream.outputs.rtsp_url_path = "/camera/0/main";
+
+    config.streams.push_back(main_stream);
+
+    // Create camera
+    auto camera = camera_manager::create_camera(config);
+    if (camera) {
+        // Start camera
+        if (camera->start()) {
+            std::cout << "Camera started successfully" << std::endl;
+        }
+        
+        // Add another stream dynamically
+        stream_config sub_stream;
+        sub_stream.stream_id = 1;
+        sub_stream.name = "sub";
+        sub_stream.type = encoder_type::H264_CBR;
+        sub_stream.width = 704;
+        sub_stream.height = 576;
+        sub_stream.framerate = 30;
+        sub_stream.bitrate = 1024;
+        sub_stream.outputs.rtsp_enabled = true;
+        sub_stream.outputs.rtsp_url_path = "/camera/0/sub";
+        
+        camera->create_stream(sub_stream);
+        
+        // Enable features
+        camera->enable_feature("osd", "");
+        camera->enable_feature("aiisp", "/opt/ceanic/model/aiisp.bin");
+        
+        // Get status
+        camera_status status = camera->get_status();
+        std::cout << "Camera " << status.camera_id 
+                << " has " << status.stream_count << " streams" << std::endl;
+        
+        // Stop camera when done
+        camera->stop();
+    }
+
     int chn = 0;
 
     g_app_log = ceanic_start_log("ceanic_app",CEANIC_LOG_MODE_CONSOLE,CEANIC_LOG_DEBUG,NULL,0);
@@ -984,6 +1053,9 @@ int main(int argc,char* argv[])
     {
         sleep(1);
     }
+
+    camera_manager::release();
+    resource_manager::release();
     return 0;
 }
 

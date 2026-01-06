@@ -212,7 +212,7 @@ static const ot_isp_demosaic_attr g_cmos_demosaic = {
     {
         48, /* nddm_strength */
         64, /* nddm_mf_detail_strength */
-        { 0 }, /* nddm_hf_detail_strength */
+        0, // { 0 }, /* nddm_hf_detail_strength */
         2, /* detail_smooth_range */
         0, /* color_noise_f_threshold */
         8, /* color_noise_f_strength */
@@ -225,9 +225,9 @@ static const ot_isp_demosaic_attr g_cmos_demosaic = {
         /* nddm_mf_detail_strength */
         { 82, 74, 68, 60, 54, 50, 44, 40, 40, 40, 40, 32, 16, 16, 16, 16 },
         /* nddm_hf_detail_strength */
-        {
+        // {
             { 0, 0, 1, 2, 4, 6, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8 },
-        },
+        // },
         /* detail_smooth_range */
         { 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 3, 5, 7, 7, 7, 7 },
         /* color_noise_f_threshold */
@@ -248,7 +248,7 @@ static const ot_isp_demosaic_attr g_cmos_demosaic_wdr = {
     {
         48, /* nddm_strength */
         64, /* nddm_mf_detail_strength */
-        { 0 }, /* nddm_hf_detail_strength */
+        0, // { 0 }, /* nddm_hf_detail_strength */
         2, /* detail_smooth_range */
         0, /* color_noise_f_threshold */
         8, /* color_noise_f_strength */
@@ -261,9 +261,9 @@ static const ot_isp_demosaic_attr g_cmos_demosaic_wdr = {
         /* nddm_mf_detail_strength */
         { 60, 60, 58, 55, 50, 45, 40, 30, 20, 16, 16, 16, 16, 16, 16, 16 },
         /* nddm_hf_detail_strength */
-        {
+        // {
             { 0, 0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 5, 5, 5, 5, 5 },
-        },
+        // },
         /* detail_smooth_range */
         { 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 6, 7, 7, 7, 7, 7 },
         /* color_noise_f_threshold */
@@ -545,9 +545,9 @@ static ot_isp_noise_calibration g_cmos_noise_calibration = {
 static const ot_isp_nr_attr g_cmos_bayer_nr = {
     1,      /* bEnable */
     0,      /* enOpType */
-    {
+    // {
         1,      /* tnr_enable */
-    },
+    // },
     0,      /* lsc_nr_enable */
     0,      /* lsc_ratio1 */
     {
@@ -560,8 +560,8 @@ static const ot_isp_nr_attr g_cmos_bayer_nr = {
         77, 77, 77, 77, 77, 77, 77, 77,
         77, 77, 77, 77, 77, 77, 77, 77
     },
-    OT_ISP_MD_MODE,      /* ref_mode */
-    0,      /* load_ref_enable */
+    // OT_ISP_MD_MODE,      /* ref_mode */
+    // 0,      /* load_ref_enable */
     /* snr_cfg */
     {
         0, /* snr_version */
@@ -581,7 +581,7 @@ static const ot_isp_nr_attr g_cmos_bayer_nr = {
                     {64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64}, /* sfm6_strength */
                     {64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64}, /* sfm7_strength */
                     {100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100}, /* sth */
-                    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, /* tss */
+                    // {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, /* tss */
                     {128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128}, /* fine_str */
                     {50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50}, /* coring_wgt */
                     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0} /* coring_mot_ratio */
@@ -596,7 +596,7 @@ static const ot_isp_nr_attr g_cmos_bayer_nr = {
                     64, /* sfm6_strength */
                     64, /* sfm7_strength */
                     100, /* sth */
-                    0, /* tss */
+                    // 0, /* tss */
                     128, /* fine_str */
                     50, /* coring_wgt */
                     0,  /* coring_mot_ratio */
@@ -607,7 +607,7 @@ static const ot_isp_nr_attr g_cmos_bayer_nr = {
     /* tnr_cfg */
     {
         {
-            {
+            // {
             /* tnr auto */
             {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}, /* md_mode */
             {32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32}, /* md_size_ratio */
@@ -639,7 +639,7 @@ static const ot_isp_nr_attr g_cmos_bayer_nr = {
             26, /* sfr_r */
             32, /* sfr_g */
             26, /* sfr_b */
-                },
+            //    },
         },
     },
     /* wdr_cfg */
@@ -673,9 +673,9 @@ static const ot_isp_nr_attr g_cmos_bayer_nr = {
 static const ot_isp_nr_attr g_cmos_bayer_nr_wdr = {
     1,      /* bEnable */
     0,      /* enOpType */
-    {
+    // {
         1,      /* tnr_enable */
-    },
+    // },
     0,      /* lsc_nr_enable */
     0,      /* lsc_ratio1 */
     {
@@ -688,8 +688,8 @@ static const ot_isp_nr_attr g_cmos_bayer_nr_wdr = {
         77, 77, 77, 77, 77, 77, 77, 77,
         77, 77, 77, 77, 77, 77, 77, 77
     },
-    OT_ISP_MD_MODE,      /* ref_mode */
-    0,      /* load_ref_enable */
+    // OT_ISP_MD_MODE,      /* ref_mode */
+    // 0,      /* load_ref_enable */
     /* snr_cfg */
     {
         0, /* snr_version */
@@ -709,7 +709,7 @@ static const ot_isp_nr_attr g_cmos_bayer_nr_wdr = {
                     {64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64}, /* sfm6_strength */
                     {64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64}, /* sfm7_strength */
                     {100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100}, /* sth */
-                    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, /* tss */
+                    // {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, /* tss */
                     {128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128}, /* fine_str */
                     {50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50}, /* coring_wgt */
                     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0} /* coring_mot_ratio */
@@ -723,7 +723,7 @@ static const ot_isp_nr_attr g_cmos_bayer_nr_wdr = {
                     64, /* sfm6_strength */
                     64, /* sfm7_strength */
                     100, /* sth */
-                    0, /* tss */
+                    // 0, /* tss */
                     128, /* fine_str */
                     50, /* coring_wgt */
                     0,  /* coring_mot_ratio */
@@ -734,7 +734,7 @@ static const ot_isp_nr_attr g_cmos_bayer_nr_wdr = {
     /* tnr_cfg */
     {
         {
-            {
+            // {
             /* tnr auto */
             {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}, /* md_mode */
             {32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32}, /* md_size_ratio */
@@ -766,7 +766,7 @@ static const ot_isp_nr_attr g_cmos_bayer_nr_wdr = {
             26, /* sfr_r */
             32, /* sfr_g */
             26, /* sfr_b */
-                },
+            //    },
         },
     },
     /* wdr_cfg */
@@ -1153,6 +1153,7 @@ static const ot_isp_sharpen_attr g_cmos_yuv_sharpen = {
         25,
         /* max_sharp_gain */
         40,
+#if 0
         {
             /* shoot_inner_threshold */
             0,
@@ -1198,6 +1199,7 @@ static const ot_isp_sharpen_attr g_cmos_yuv_sharpen = {
                 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16
             },
         },
+#endif
     },
     /* auto para */
     {
@@ -1414,6 +1416,7 @@ static const ot_isp_sharpen_attr g_cmos_yuv_sharpen = {
         { 30, 30, 31, 31, 31, 31, 31, 31, 31, 31, 31, 31, 31, 31, 31, 31 },
         /* max_sharp_gain[OT_ISP_AUTO_ISO_NUM] */
         { 30, 30, 30, 30, 30, 26, 20, 20, 18, 18, 18, 18, 18, 18, 18, 18 },
+#if 0
         {
             /* shoot_inner_threshold[OT_ISP_AUTO_ISO_NUM] */
             {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -1548,6 +1551,7 @@ static const ot_isp_sharpen_attr g_cmos_yuv_sharpen = {
                 {16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16}
             },
         }
+#endif
     },
 };
 
@@ -1641,6 +1645,7 @@ static const ot_isp_sharpen_attr g_cmos_yuv_sharpen_wdr = {
         25,
         /* max_sharp_gain */
         40,
+#if 0
         {
             /* shoot_inner_threshold */
             0,
@@ -1686,6 +1691,7 @@ static const ot_isp_sharpen_attr g_cmos_yuv_sharpen_wdr = {
                 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16
             },
         },
+#endif
     },
     /* auto para */
     {
@@ -1903,6 +1909,7 @@ static const ot_isp_sharpen_attr g_cmos_yuv_sharpen_wdr = {
         { 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25 },
         /* max_sharp_gain[OT_ISP_AUTO_ISO_NUM] */
         { 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40 },
+#if 0
         {
             /* shoot_inner_threshold[OT_ISP_AUTO_ISO_NUM] */
             {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -2037,6 +2044,7 @@ static const ot_isp_sharpen_attr g_cmos_yuv_sharpen_wdr = {
                 {16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16}
             },
         }
+#endif
     },
 };
 
@@ -2342,11 +2350,15 @@ static const ot_isp_drc_attr g_cmos_drc = {
     /* detail_adjust_coef */
     8,
     /* local_mixing_bright[OT_ISP_DRC_LMIX_NODE_NUM] */
-    { .local_mixing_bright = {15, 17, 18, 20, 22, 23, 25, 26, 28, 29, 31, 32, 34, 36, 37, 39, 40, 42,
-                              43, 45, 46, 48, 49, 51, 53, 54, 56, 57, 59, 61, 62, 63, 64}, },
+    // { .local_mixing_bright = 
+    {15, 17, 18, 20, 22, 23, 25, 26, 28, 29, 31, 32, 34, 36, 37, 39, 40, 42,
+                              43, 45, 46, 48, 49, 51, 53, 54, 56, 57, 59, 61, 62, 63, 64},
+    // },
     /* local_mixing_dark[OT_ISP_DRC_LMIX_NODE_NUM] */
-    { .local_mixing_dark = {15, 17, 18, 20, 22, 23, 25, 26, 28, 29, 31, 32, 34, 36, 37, 39, 40, 42,
-                            43, 45, 46, 48, 49, 51, 53, 54, 56, 57, 59, 61, 62, 63, 64}, },
+    // { .local_mixing_dark = 
+    {15, 17, 18, 20, 22, 23, 25, 26, 28, 29, 31, 32, 34, 36, 37, 39, 40, 42,
+                            43, 45, 46, 48, 49, 51, 53, 54, 56, 57, 59, 61, 62, 63, 64},
+    // },
     /* high_saturation_color_ctrl */
     15,
     /* global_color_ctrl */
@@ -2427,11 +2439,15 @@ static const ot_isp_drc_attr g_cmos_drc_wdr = {
     /* detail_adjust_coef */
     8,
     /* local_mixing_bright[OT_ISP_DRC_LMIX_NODE_NUM] */
-    { .local_mixing_bright = {15, 17, 18, 20, 22, 23, 25, 26, 28, 29, 31, 32, 34, 36, 37, 39, 40, 42,
-                              43, 45, 46, 48, 49, 51, 53, 54, 56, 57, 59, 61, 62, 63, 64}, },
+    // { .local_mixing_bright = 
+    {15, 17, 18, 20, 22, 23, 25, 26, 28, 29, 31, 32, 34, 36, 37, 39, 40, 42,
+                              43, 45, 46, 48, 49, 51, 53, 54, 56, 57, 59, 61, 62, 63, 64},
+    // },
     /* local_mixing_dark[OT_ISP_DRC_LMIX_NODE_NUM] */
-    { .local_mixing_dark = {15, 17, 18, 20, 22, 23, 25, 26, 28, 29, 31, 32, 34, 36, 37, 39, 40, 42,
-                            43, 45, 46, 48, 49, 51, 53, 54, 56, 57, 59, 61, 62, 63, 64}, },
+    // { .local_mixing_dark = 
+    {15, 17, 18, 20, 22, 23, 25, 26, 28, 29, 31, 32, 34, 36, 37, 39, 40, 42,
+                            43, 45, 46, 48, 49, 51, 53, 54, 56, 57, 59, 61, 62, 63, 64},
+    // },
     /* high_saturation_color_ctrl */
     15,
     /* global_color_ctrl */

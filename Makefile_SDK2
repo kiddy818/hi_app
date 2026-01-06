@@ -1,0 +1,227 @@
+include ../Makefile.param
+CXX:=$(CROSS)g++
+STRIP=$(CROSS)strip
+CXXFLAGS += -std=c++17
+
+#关闭初始化顺序警告
+CXXFLAGS += -Wno-reorder
+
+#关闭changed in GCC 7.1警告
+CXXFLAGS += -Wno-psabi
+
+THIRD_LIBRARY_PATH=./thirdlibrary
+INC_PATH += -I./
+INC_PATH += -I./util/
+INC_PATH += -I./json/
+INC_PATH += -I./log/
+
+INC_PATH += -I./rtsp/
+INC_PATH += -I./rtsp/stream/
+INC_PATH += -I./rtsp/rtp_serialize/
+INC_PATH += -I./rtsp/rtp_session/
+INC_PATH += -I./aiisp/
+INC_PATH += -I./device/
+
+INC_PATH += -I./device/sdk_fit_2.0
+INC_PATH += -I./cn_analyst/device/src/
+
+INC_PATH += -I$(THIRD_LIBRARY_PATH)/freetype-2.7.1/include/freetype2
+INC_PATH += -I$(THIRD_LIBRARY_PATH)/log4cpp/include/
+INC_PATH += -I$(THIRD_LIBRARY_PATH)/libevent-2.0.18-stable/include
+INC_PATH += -I$(THIRD_LIBRARY_PATH)/rtmpdump/include/
+
+LIBPATH += -L./
+LIBPATH += -L./log
+
+SRCXX += ./main.cpp
+SRCXX += json/json_reader.cpp
+SRCXX += json/json_writer.cpp
+SRCXX += json/json_value.cpp
+
+#log
+SRCXX += log/ceanic_log.cpp
+SRCXX += log/ceanic_log4cpp.cpp
+
+#rtsp server
+SRCXX += rtsp/server.cpp
+SRCXX += rtsp/session.cpp
+SRCXX += rtsp/rtsp_session.cpp
+SRCXX += rtsp/rtsp_request_handler.cpp
+SRCXX += rtsp/request_parser.cpp
+SRCXX += rtsp/stream/stream_handler.cpp
+SRCXX += rtsp/stream/stream_manager.cpp
+SRCXX += rtsp/stream/stream_stock.cpp
+SRCXX += rtsp/stream/stream_video_handler.cpp
+SRCXX += rtsp/stream/stream_audio_handler.cpp
+SRCXX += rtsp/rtp_session/rtp_session.cpp
+SRCXX += rtsp/rtp_session/rtp_tcp_session.cpp
+SRCXX += rtsp/rtp_session/rtp_udp_session.cpp
+SRCXX += rtsp/rtp_serialize/h264_rtp_serialize.cpp
+SRCXX += rtsp/rtp_serialize/h265_rtp_serialize.cpp
+SRCXX += rtsp/rtp_serialize/rtp_serialize.cpp
+SRCXX += rtsp/rtp_serialize/pcmu_rtp_serialize.cpp
+SRCXX += rtsp/rtp_serialize/aac_rtp_serialize.cpp
+
+#rtmp
+SRCXX += rtmp/session.cpp
+SRCXX += rtmp/session_manager.cpp
+
+#aiisp
+SRCXX += aiisp/aiisp.cpp
+SRCXX += aiisp/aiisp_bnr.cpp
+SRCXX += aiisp/aiisp_drc.cpp
+SRCXX += aiisp/aiisp_3dnr.cpp
+
+#device
+DEVICE_SRC += device/dev_sys.cpp
+DEVICE_SRC += device/dev_vi.cpp
+DEVICE_SRC += device/dev_vi_isp.cpp
+DEVICE_SRC += device/dev_vi_os04a10_liner.cpp
+DEVICE_SRC += device/dev_vi_os04a10_2to1wdr.cpp
+DEVICE_SRC += device/dev_vi_os08a20_liner.cpp
+DEVICE_SRC += device/dev_vi_os08a20_2to1wdr.cpp
+DEVICE_SRC += device/dev_venc.cpp
+DEVICE_SRC += device/dev_chn.cpp
+DEVICE_SRC += device/dev_osd.cpp
+DEVICE_SRC += device/dev_snap.cpp
+DEVICE_SRC += device/dev_svp.cpp
+DEVICE_SRC += device/dev_svp_yolov5.cpp
+DEVICE_SRC += device/ceanic_freetype.cpp
+DEVICE_SRC += device/dev_std.cpp
+DEVICE_SRC += device/dev_vo.cpp
+DEVICE_SRC += device/dev_vo_bt1120.cpp
+
+DEVICE_REFACTOR_DIR := ./cn_analyst/device/src
+DEVICE_SRC += $(DEVICE_REFACTOR_DIR)/resource_manager.cpp \
+               $(DEVICE_REFACTOR_DIR)/stream_config.cpp \
+               $(DEVICE_REFACTOR_DIR)/camera_instance.cpp \
+               $(DEVICE_REFACTOR_DIR)/camera_manager.cpp
+
+#sensor driver os04a10
+INC_PATH += -I../../cbb/isp/include/
+INC_PATH += -I../../cbb/isp/user/3a/include/
+SRC += device/sensor/omnivision_os04a10/os04a10_cmos.c
+SRC += device/sensor/omnivision_os04a10/os04a10_sensor_ctl.c
+
+#sensor driver os08a10
+SRC += device/sensor/omnivision_os08a20/os08a20_cmos.c
+SRC += device/sensor/omnivision_os08a20/os08a20_sensor_ctl.c
+
+#surpport scene
+SCENE_PATH = ../scene_auto
+INC_PATH += -I$(SCENE_PATH)/include
+INC_PATH += -I$(SCENE_PATH)/src/sample
+INC_PATH += -I$(SCENE_PATH)/../common
+INC_PATH += -I$(SCENE_PATH)/tools/configaccess/include
+SRC += $(SCENE_PATH)/src/core/ot_scene.c
+SRC += $(SCENE_PATH)/src/core/ot_scene_setparam.c
+SRC += $(SCENE_PATH)/src/core/scene_setparam_inner.c
+SRC += $(SCENE_PATH)/src/sample/scene_loadparam.c
+#SRC += $(SCENE_PATH)/tools/configaccess/src/ot_confaccess.c
+SRC += ../common/sample_comm_vi.c
+SRC += ../common/ot_confaccess.c
+SRC += ../common/sample_comm_isp.c
+
+#support rate_auto
+SVC_RATE_PATH = ../svc_rate_auto
+INC_PATH += -I$(SVC_RATE_PATH)/include
+SRC += $(SVC_RATE_PATH)/src/ot_bitrate_auto.c
+SRC += $(SVC_RATE_PATH)/src/bitrate_auto_load_param.c
+
+#support stream_save
+INC_PATH += -I$(THIRD_LIBRARY_PATH)/hisilicon_mp4/include
+INC_PATH += -I./stream_save/
+SRCXX += stream_save/mp4_save.cpp
+
+LIBS += -Wl,--start-group
+
+LIBS += $(THIRD_LIBRARY_PATH)/rtmpdump/lib/librtmp.a
+LIBS += $(THIRD_LIBRARY_PATH)/log4cpp/lib/liblog4cpp.a
+LIBS += $(THIRD_LIBRARY_PATH)/libevent-2.0.18-stable/lib/libevent.a
+LIBS += $(THIRD_LIBRARY_PATH)/freetype-2.7.1/lib/libfreetype.a
+LIBS += $(THIRD_LIBRARY_PATH)/hisilicon_mp4/lib/libmp4.a
+LIBS += $(THIRD_LIBRARY_PATH)/hisilicon_mp4/lib/libuproc.a
+LIBS += $(THIRD_LIBRARY_PATH)/hisilicon_mp4/lib/libmwlog.a
+
+#for hisilicon mpi libs
+LIBS += $(REL_LIB)/libhi_mpi.a
+LIBS += $(REL_LIB)/libhi_mpi_sysbind.a
+LIBS += $(REL_LIB)/libhi_mpi_sysmem.a
+LIBS += $(REL_LIB)/libhi_mpi_ae.a
+LIBS += $(REL_LIB)/libhi_mpi_isp.a
+LIBS += $(REL_LIB)/libot_mpi_isp.a
+LIBS += $(REL_LIB)/libhi_mpi_awb.a
+LIBS += $(REL_LIB)/libdehaze.a
+LIBS += $(REL_LIB)/libextend_stats.a
+LIBS += $(REL_LIB)/libdrc.a
+LIBS += $(REL_LIB)/libldci.a
+LIBS += $(REL_LIB)/libbnr.a
+LIBS += $(REL_LIB)/libcalcflicker.a
+LIBS += $(REL_LIB)/libacs.a
+LIBS += $(REL_LIB)/libhi_mpi_aibnr.a
+LIBS += $(REL_LIB)/libsvp_acl.a
+LIBS += $(REL_LIB)/libprotobuf-c.a
+LIBS += $(REL_LIB)/libfileformat.a
+LIBS += $(REL_LIB)/libhi_mpi_km.a
+LIBS += $(REL_LIB)/libhi_mpi_ai3dnr.a
+LIBS += $(REL_LIB)/libhi_mpi_aidrc.a
+
+LIBS += $(REL_LIB)/libsecurec.a $(REL_LIB)/libhi_mpi_snap.a
+
+LIBS+= -Wl,--end-group
+
+LIBS+= -Wl,-gc-sections
+
+target = ceanic_app
+
+all: $(target)
+
+OBJSDIR := objs
+
+# 转换函数：将路径转换为 objs/ 下的结构
+# 规则：移除 ../ 前缀，所有文件都放在 objs/up 下
+define convert_src_to_obj
+$(OBJSDIR)/$(patsubst ../%,up/%,$(1:.c=.o))
+endef
+
+PROG_OBJ = $(foreach src_f,$(SRC),$(call convert_src_to_obj,$(src_f)))
+$(info "生成的目标文件: $(PROG_OBJ)")
+
+PROGXX_OBJ = $(patsubst %.cpp,$(OBJSDIR)/%.o,$(SRCXX))
+DEVICE_OBJ = $(patsubst %.cpp,$(OBJSDIR)/%.o,$(DEVICE_SRC))
+
+$(target) : $(PROGXX_OBJ) $(PROG_OBJ) $(DEVICE_OBJ)
+	@echo "LD $(target)"
+	@$(CXX) $^ -o $@ $(INC_PATH) $(LIBPATH) $(LIBS) $(CFLAGS) -lpthread
+
+${OBJSDIR}/%.o : %.cpp
+	@echo "CXX $<"
+	@[ -d $(@D) ] || mkdir -p $(@D)
+	@$(CXX) -c -o  $@ $< $(INC_PATH) $(CFLAGS) $(CXXFLAGS)
+
+# 匹配特定的上一级目录处理，已替换到子目录 up
+# - 需要使用规则找到原来的源码文件
+# ../third/xxx.c -> build/up/third/xxx.o
+${OBJSDIR}/up/%.o : ../%.c
+	@echo "CC $<"
+	@[ -d $(@D) ] || mkdir -p $(@D)
+	@$(CC) -c -o  $@ $< $(INC_PATH) $(CFLAGS)
+
+${OBJSDIR}/%.o : %.c
+	@echo "CC $<"
+	@[ -d $(@D) ] || mkdir -p $(@D)
+	@$(CC) -c -o  $@ $< $(INC_PATH) $(CFLAGS)
+
+device_clean:
+	-rm $(DEVICE_OBJ)
+
+clean:
+	rm -fr $(OBJSDIR)
+	-rm $(target)
+
+strip:
+	$(STRIP) $(target)
+
+install:
+	cp $(target) $(HOME)/nfs/hi3519dv500
+
