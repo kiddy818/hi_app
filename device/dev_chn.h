@@ -1,6 +1,23 @@
 #ifndef dev_chn_include_h
 #define dev_chn_include_h
 
+/**
+ * @file dev_chn.h
+ * @brief Legacy single-camera channel management
+ * 
+ * @deprecated This class is part of the legacy single-camera architecture.
+ * For new code, use camera_manager and camera_instance from cn_analyst/device/src/.
+ * For migrating existing code, use dev_chn_wrapper which provides the same interface
+ * but uses the new multi-camera architecture internally.
+ * 
+ * Migration Path:
+ *   1. Replace hisilicon::dev::chn with hisilicon::dev::chn_wrapper
+ *   2. Test backward compatibility
+ *   3. Gradually refactor to use camera_manager directly
+ * 
+ * Status: LEGACY - Will be removed in Phase 3
+ */
+
 #include "dev_sys.h"
 #include "dev_vi_os04a10_liner.h"
 #include "dev_vi_os04a10_2to1wdr.h"
@@ -40,7 +57,7 @@ extern "C"
 //yolov5
 #include "dev_svp_yolov5.h"
 
-#define MAX_CHANNEL 1
+#define MAX_CHANNEL 1  // DEPRECATED: Will be removed in Phase 3, use camera_manager instead
 
 namespace hisilicon{namespace dev{
 
@@ -48,6 +65,13 @@ namespace hisilicon{namespace dev{
 #define SUB_STREAM_ID 1
 #define AI_STREAM_ID 2
 
+    /**
+     * @brief Legacy channel class for single-camera operation
+     * @deprecated Use camera_instance from new architecture instead
+     * 
+     * For backward compatibility, consider using chn_wrapper which provides
+     * the same interface but delegates to camera_manager/camera_instance.
+     */
     class chn 
         :public ceanic::util::stream_observer
         ,public std:: enable_shared_from_this<chn>

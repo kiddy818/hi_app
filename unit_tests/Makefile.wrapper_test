@@ -1,0 +1,55 @@
+# Makefile for dev_chn_wrapper test
+# This test demonstrates backward compatibility
+
+CXX = g++
+CXXFLAGS = -std=c++17 -Wall -g
+
+# Include paths
+INC_PATH = -I../ \
+           -I../util/ \
+           -I../device/ \
+           -I../cn_analyst/device/src/ \
+           -I../log/
+
+# Source files
+SRCS = test_dev_chn_wrapper.cpp \
+       ../cn_analyst/device/src/resource_manager.cpp \
+       ../cn_analyst/device/src/stream_config.cpp \
+       ../cn_analyst/device/src/camera_instance.cpp \
+       ../cn_analyst/device/src/camera_manager.cpp \
+       ../device/dev_chn_wrapper.cpp
+
+# Note: This is a minimal test build. Full build requires HiSilicon SDK
+# and all dependencies. For now, we just verify the wrapper API compiles.
+
+TARGET = test_dev_chn_wrapper
+
+all: info
+
+info:
+	@echo "======================================"
+	@echo "dev_chn_wrapper Test Makefile"
+	@echo "======================================"
+	@echo ""
+	@echo "This test requires the HiSilicon SDK environment."
+	@echo "It demonstrates the wrapper API but cannot run without hardware."
+	@echo ""
+	@echo "To build in the full SDK environment:"
+	@echo "  1. Ensure you're in the HiSilicon SDK tree"
+	@echo "  2. Run: make -f Makefile.wrapper_test"
+	@echo ""
+	@echo "The wrapper provides backward compatibility with dev_chn"
+	@echo "while using the new camera_manager architecture internally."
+	@echo ""
+	@echo "See test_dev_chn_wrapper.cpp for usage examples."
+
+# Full build target (requires SDK)
+build:
+	@echo "Building $(TARGET)..."
+	$(CXX) $(CXXFLAGS) $(INC_PATH) $(SRCS) -o $(TARGET)
+	@echo "Build complete: $(TARGET)"
+
+clean:
+	rm -f $(TARGET) *.o
+
+.PHONY: all info build clean
