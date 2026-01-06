@@ -4,8 +4,11 @@
 
 ## 状态
 
-**当前状态：** 未填充 - 等待实施  
+**当前状态：** 阶段 2 进行中 - 迁移包装器已实现  
 **目标完成：** 阶段 1-2（第 1-8 周）
+
+**阶段 1 完成：** ✅ 核心抽象（resource_manager、camera_manager、camera_instance）已实现并测试  
+**阶段 2 进展：** 🔄 迁移包装器（dev_chn_wrapper）已创建，正在集成测试
 
 ## 计划组件
 
@@ -319,22 +322,22 @@ struct stream_config {
 ### 阶段 1: Core Abstractions （第 1-4 周）
 
 #### 第 2 周: Resource Manager
-- [ ] 设计 resource_manager 接口
-- [ ] 实现 VPSS group 追踪
-- [ ] 实现 VENC channel 追踪
-- [ ] 实现 VI device 追踪
-- [ ] 添加 验证逻辑
-- [ ] 编写 单元测试
-- [ ] 集成测试
+- [x] 设计 resource_manager 接口
+- [x] 实现 VPSS group 追踪
+- [x] 实现 VENC channel 追踪
+- [x] 实现 VI device 追踪
+- [x] 添加 验证逻辑
+- [x] 编写 单元测试
+- [x] 集成测试
 
 #### 第 3 周: Camera Manager & 实例
-- [ ] 设计 camera_manager 接口
-- [ ] 设计 camera_instance 类
-- [ ] 实现摄像头生命周期
-- [ ] 实现资源分配
-- [ ] 添加验证逻辑
-- [ ] 编写单元测试
-- [ ] 集成测试
+- [x] 设计 camera_manager 接口
+- [x] 设计 camera_instance 类
+- [x] 实现摄像头生命周期
+- [x] 实现资源分配
+- [x] 添加验证逻辑
+- [x] 编写单元测试
+- [x] 集成测试
 
 #### 第 4 周: Stream Management
 - [ ] 设计 stream_instance 类
@@ -347,6 +350,9 @@ struct stream_config {
 ### 阶段 2: Multi-Camera Support （第 5-8 周）
 
 #### 第 5 周: 移除 MAX_CHANNEL
+- [x] 创建迁移包装器 `dev_chn_wrapper`
+- [x] 标记 `dev_chn` 为已弃用
+- [x] 更新 Makefile 以包含新设备模块
 - [ ] 移除 `#define MAX_CHANNEL 1`
 - [ ] 用 camera_manager 替换 `g_chns[]` 数组
 - [ ] 更新 所有引用
@@ -431,30 +437,43 @@ struct stream_config {
 
 ## 迁移路径
 
-### Step 1: 封装层 (第 5 周)
+### Step 1: 封装层 (第 5 周) ✅ 已完成
 为当前代码创建兼容封装适配层:
 ```cpp
-// dev_chn.h (deprecated)
-class chn {
-    std::shared_ptr<camera_instance> m_impl;
+// device/dev_chn_wrapper.h (已实现)
+class chn_wrapper : public ceanic::util::stream_observer {
+    std::shared_ptr<camera_instance> m_camera_instance;
+    std::shared_ptr<chn> m_legacy_chn;  // 回退支持
 public:
-    chn(const char* sensor, const char* mode, int chn_no);
+    chn_wrapper(const char* sensor, const char* mode, int chn_no);
     bool start(...);
     void stop();
-    // ... delegate to camera_instance
+    // ... delegate to camera_instance or legacy chn
 };
 ```
 
-### Step 2: 更新 main.cpp (第 5 周)
-```cpp
-// Old way
-std::shared_ptr<hisilicon::dev::chn> g_chn;
-g_chn = std::make_shared<hisilicon::dev::chn>("OS04A10", "H264_CBR", 0);
+**已实现功能:**
+- ✅ 完整的 dev_chn API 兼容性
+- ✅ 自动回退到旧实现（当 camera_manager 未初始化时）
+- ✅ 透明委托到 camera_manager/camera_instance
+- ✅ 支持所有现有功能（AIISP、YOLOv5、VO 等）
 
-// New way
+### Step 2: 更新 main.cpp (第 5-6 周) 🔄 进行中
+```cpp
+// Option 1: 使用包装器（最小更改）
+#include "dev_chn_wrapper.h"
+using chn_type = hisilicon::dev::chn_wrapper;  // 简单替换
+
+std::shared_ptr<chn_type> g_chn;
+chn_type::init(mode);  // 初始化新架构
+g_chn = std::make_shared<chn_type>("OS04A10", "H264_CBR", 0);
+g_chn->start(...);
+
+// Option 2: 直接使用新 API（推荐用于新代码）
 camera_manager::init(4);  // 支持up to 4 cameras
 camera_config cfg = load_camera_config(0);
 auto camera = camera_manager::create_camera(cfg);
+camera->start();
 ```
 
 ### Step 3: 移除 Legacy Code (第 8 周+)
@@ -462,6 +481,7 @@ auto camera = camera_manager::create_camera(cfg);
 - 移除封装 `dev_chn.{h,cpp}`
 - 更新相关参考
 - 移除兼容性层
+- 完全迁移到新架构
 
 ## 已知问题与限制
 
@@ -556,7 +576,7 @@ Camera 3:
 
 ---
 
-**Last 更新d:** 2026-01-04  
-**状态：** Planning Phase  
+**Last 更新d:** 2026-01-06  
+**状态：** 阶段 2 进行中 - 迁移包装器已完成  
 **优先级：** 关键 Path  
-**Next Review:** 第 2 周 实施 Kickoff
+**Next Review:** 第 5-6 周 main.cpp 重构和集成测试
