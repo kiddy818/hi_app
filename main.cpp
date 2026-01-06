@@ -1,5 +1,5 @@
 #include <app_std.h>
-#include <dev_chn.h>
+#include <dev_chn_wrapper.h>
 #include <json/json.h>
 #include <fstream>
 #include <rtsp/server.h>
@@ -11,7 +11,9 @@ LOG_HANDLE g_app_log;
 LOG_HANDLE g_rtsp_log;
 LOG_HANDLE g_rtmp_log;
 LOG_HANDLE g_dev_log;
-std::shared_ptr<hisilicon::dev::chn> g_chn;
+
+using namespace hisilicon::dev;
+std::shared_ptr<chn_wrapper> g_chn;
 
 #define NET_SERVICE_FILE_PATH "/opt/ceanic/etc/net_service.json"
 typedef struct
@@ -906,7 +908,7 @@ int main(int argc,char* argv[])
         printf("\tbitrate:%d\n",g_venc_info[i].bitrate);
     }
 
-    g_chn = std::make_shared<hisilicon::dev::chn>(g_vi_info[chn].name,g_venc_info[chn].name,chn);
+    g_chn = std::make_shared<chn_wrapper>(g_vi_info[chn].name,g_venc_info[chn].name,chn);
     g_chn->start(g_venc_info[chn].w,g_venc_info[chn].h,g_venc_info[chn].fr,g_venc_info[chn].bitrate);
     hisilicon::dev::chn::start_capture(true);
 

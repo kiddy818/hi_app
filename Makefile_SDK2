@@ -22,8 +22,9 @@ INC_PATH += -I./rtsp/rtp_session/
 INC_PATH += -I./aiisp/
 INC_PATH += -I./device/
 
+DEVICE_REFACTOR_DIR := ./cn_analyst/device/src
 INC_PATH += -I./device/sdk_fit_2.0
-INC_PATH += -I./cn_analyst/device/src/
+INC_PATH += -I$(DEVICE_REFACTOR_DIR)
 
 INC_PATH += -I$(THIRD_LIBRARY_PATH)/freetype-2.7.1/include/freetype2
 INC_PATH += -I$(THIRD_LIBRARY_PATH)/log4cpp/include/
@@ -91,7 +92,8 @@ DEVICE_SRC += device/dev_std.cpp
 DEVICE_SRC += device/dev_vo.cpp
 DEVICE_SRC += device/dev_vo_bt1120.cpp
 
-DEVICE_REFACTOR_DIR := ./cn_analyst/device/src
+DEVICE_SRC += device/dev_chn_wrapper.cpp
+
 DEVICE_SRC += $(DEVICE_REFACTOR_DIR)/resource_manager.cpp \
                $(DEVICE_REFACTOR_DIR)/stream_config.cpp \
                $(DEVICE_REFACTOR_DIR)/camera_instance.cpp \
@@ -224,4 +226,3 @@ strip:
 
 install:
 	cp $(target) $(HOME)/nfs/hi3519dv500
-

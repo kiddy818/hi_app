@@ -251,7 +251,7 @@ namespace hisilicon{namespace dev{
         ceanic::rtsp::stream_manager::instance()->process_data(chn,stream,head,buf,len);
     }
 
-    void chn::on_stream_error(ceanic::util::stream_obj_ptr sobj,int32_t errno)
+    void chn::on_stream_error(ceanic::util::stream_obj_ptr sobj,int32_t error)
     {
     }
 

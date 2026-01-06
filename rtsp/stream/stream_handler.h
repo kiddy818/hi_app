@@ -15,7 +15,7 @@ namespace ceanic{namespace rtsp{
 
             void on_stream_come(util::stream_obj_ptr sobj,util::stream_head* head, const char* buf, int32_t len);
 
-            void on_stream_error(util::stream_obj_ptr sobj,int32_t errno);
+            void on_stream_error(util::stream_obj_ptr sobj,int32_t error);
 
             virtual bool start() = 0;
 

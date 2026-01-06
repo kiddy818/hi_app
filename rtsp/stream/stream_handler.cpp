@@ -19,7 +19,7 @@ namespace ceanic{namespace rtsp{
         }
     }
 
-    void stream_handler::on_stream_error(util::stream_obj_ptr sobj,int32_t errno)
+    void stream_handler::on_stream_error(util::stream_obj_ptr sobj,int32_t error)
     {
     }
 

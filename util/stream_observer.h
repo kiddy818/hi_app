@@ -47,7 +47,7 @@ namespace ceanic{namespace util{
     {
         public:
             virtual void on_stream_come(stream_obj_ptr sob,util::stream_head* head, const char* buf, int32_t len) = 0;
-            virtual void on_stream_error(stream_obj_ptr sob,int32_t errno) = 0;
+            virtual void on_stream_error(stream_obj_ptr sob,int32_t error) = 0;
     };
 
     typedef std::shared_ptr<stream_observer> stream_observer_ptr;
@@ -73,7 +73,7 @@ namespace ceanic{namespace util{
                 for (it = m_stream_observers.begin(); it != m_stream_observers.end(); it++)
                 {
                     if (*it == observer)
-                    {                
+                    {
                         return;
                     }
                 }
@@ -118,9 +118,9 @@ namespace ceanic{namespace util{
                 std::list<stream_observer_ptr>::iterator it;
                 for (it = m_stream_observers.begin(); it != m_stream_observers.end(); it++)
                 {
-                    (*it)->on_stream_come(sobj,head, buf, len);                    
+                    (*it)->on_stream_come(sobj,head, buf, len);
                 }
-            }    
+            }
 
         protected:
             std::list<stream_observer_ptr> m_stream_observers;

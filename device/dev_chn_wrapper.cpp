@@ -256,10 +256,10 @@ void chn_wrapper::on_stream_come(ceanic::util::stream_obj_ptr sobj,
     // TODO: Implement observer pattern integration with new architecture
 }
 
-void chn_wrapper::on_stream_error(ceanic::util::stream_obj_ptr sobj, int32_t errno)
+void chn_wrapper::on_stream_error(ceanic::util::stream_obj_ptr sobj, int32_t error)
 {
     if (m_use_legacy && m_legacy_chn) {
-        m_legacy_chn->on_stream_error(sobj, errno);
+        m_legacy_chn->on_stream_error(sobj, error);
         return;
     }
     
