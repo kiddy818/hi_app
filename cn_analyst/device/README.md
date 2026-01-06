@@ -84,7 +84,7 @@
 
 ### 海思 3519DV500 限制
 ```
-Resource              Total Available    每摄像头 Max    Typical Usage
+资源                  总量                最多/每摄像头       典型用法
 --------------------------------------------------------------------------------
 VI Devices            4                  1                 1 每摄像头
 VPSS Groups           32                 1-2               1 每摄像头
@@ -92,12 +92,12 @@ VPSS Channels         128 (4 per grp)    2-4               2-3 每摄像头
 VENC Channels         16 total           4-8               2-3 每摄像头
   ├─ H.265            4-8 channels       2-4               1-2 每摄像头
   └─ H.264            8-12 channels      2-6               1-2 每摄像头
-ISP Pipelines         4                  1                 1 每摄像头 (max 4 cameras)
-SVP (NNIE) Core       1 (shared)         N/A               Shared for AI
-VB Memory             256-512 MB         64-128 MB         Varies by resolution
+ISP Pipelines         4                  1                 1 每摄像头
+SVP (NNIE) Core       1 (shared)         N/A               AI 共享
+VB Memory             256-512 MB         64-128 MB         根据方案变化
 --------------------------------------------------------------------------------
-Practical Limit:      4 cameras max
-Recommended:          2-4 cameras with 2-4 streams each
+实际限定: 最多4个摄像头
+推荐: 2-4个摄像头，2-4流/摄像头
 ```
 
 ## Resource Manager 设计
@@ -126,7 +126,7 @@ public:
     static bool is_vi_device_available();
     
     // Query Functions
-    静态 resource_status get_status();
+    static resource_status get_status();
     static bool can_create_camera(const camera_config& cfg);
     
 private:
@@ -134,7 +134,7 @@ private:
     static std::map<int32_t, bool> m_venc_allocated;
     static std::map<int32_t, bool> m_vi_allocated;
     static std::mutex m_mutex;
-    静态 resource_limits m_limits;
+    static resource_limits m_limits;
 };
 ```
 
@@ -314,68 +314,68 @@ struct stream_config {
 };
 ```
 
-## 重构ing Checklist
+## 重构 检查表
 
 ### 阶段 1: Core Abstractions （第 1-4 周）
 
 #### 第 2 周: Resource Manager
 - [ ] 设计 resource_manager 接口
-- [ ] 实现 VPSS group tracking
-- [ ] 实现 VENC channel tracking
-- [ ] 实现 VI device tracking
-- [ ] 添加 验证 logic
-- [ ] 编写 unit tests
-- [ ] Integration testing
+- [ ] 实现 VPSS group 追踪
+- [ ] 实现 VENC channel 追踪
+- [ ] 实现 VI device 追踪
+- [ ] 添加 验证逻辑
+- [ ] 编写 单元测试
+- [ ] 集成测试
 
 #### 第 3 周: Camera Manager & 实例
 - [ ] 设计 camera_manager 接口
-- [ ] 设计 camera_instance class
-- [ ] 实现 camera lifecycle
-- [ ] 实现 资源分配
-- [ ] 添加 验证 logic
-- [ ] 编写 unit tests
-- [ ] Integration testing
+- [ ] 设计 camera_instance 类
+- [ ] 实现摄像头生命周期
+- [ ] 实现资源分配
+- [ ] 添加验证逻辑
+- [ ] 编写单元测试
+- [ ] 集成测试
 
 #### 第 4 周: Stream Management
-- [ ] 设计 stream_instance class
-- [ ] Integrate with camera_instance
-- [ ] 实现 stream creation/destruction
-- [ ] Connect to RTSP/RTMP routers
-- [ ] 编写 unit tests
-- [ ] Integration testing
+- [ ] 设计 stream_instance 类
+- [ ] 和 camera_instance 集成
+- [ ] 实现 stream 创建/销毁
+- [ ] 连接到 RTSP/RTMP 的路由
+- [ ] 编写单元测试
+- [ ] 集成测试
 
 ### 阶段 2: Multi-Camera Support （第 5-8 周）
 
 #### 第 5 周: 移除 MAX_CHANNEL
 - [ ] 移除 `#define MAX_CHANNEL 1`
-- [ ] Replace `g_chns[]` 数组 with camera_manager
-- [ ] 更新 all references
-- [ ] 重构 initialization in main.cpp
-- [ ] 测试 with 单摄像头 (regression)
+- [ ] 用 camera_manager 替换 `g_chns[]` 数组
+- [ ] 更新 所有引用
+- [ ] 重构 main.cpp 中的初始化 
+- [ ] 回归测试 单摄像头
 
 #### 第 6 周: Configuration System
-- [ ] 设计 unified 配置 schema
-- [ ] 实现 config parser
-- [ ] 添加 验证 logic
-- [ ] 创建 migration tool
-- [ ] 测试 配置 loading
+- [ ] 设计 通用配置
+- [ ] 实现 配置解析
+- [ ] 添加 验证逻辑
+- [ ] 创建 迁移工具
+- [ ] 测试 配置加载
 
 #### 第 7 周: Multi-VENC Capture
-- [ ] 重构 VENC capture 线程
-- [ ] 支持多个 cameras
-- [ ] 测试 concurrent encoding
-- [ ] Performance optimization
+- [ ] 重构 VENC 捕获线程
+- [ ] 支持多个摄像头
+- [ ] 测试并发编码
+- [ ] 性能优化
 
-#### 第 8 周: Integration 测试ing
-- [ ] 测试 2-camera setup
-- [ ] 测试 4-camera setup
-- [ ] Performance benchmarking
-- [ ] Stress testing
-- [ ] 文档化ation
+#### 第 8 周: 集成测试
+- [ ] 测试创建2个摄像头
+- [ ] 测试创建4个摄像头
+- [ ] 性能摸底
+- [ ] 压力测试
+- [ ] 文档
 
-## 测试ing Strategy
+## 测试策略
 
-### Unit 测试s
+### 单元测试
 
 **resource_manager_test.cpp**
 - Allocate/free resources
@@ -395,17 +395,17 @@ struct stream_config {
 - Feature management
 - Observer pattern
 
-### Integration 测试s
+### 集成测试
 
 **single_camera_test.cpp** (Regression)
 - All sensors supported
 - All encoding modes
 - All features
-- Verify 向后兼容性
+- Verify backward compatibility
 
 **dual_camera_test.cpp**
 - Two cameras simultaneously
-- Independent 配置
+- Independent configuration
 - Concurrent encoding
 - Resource isolation
 
@@ -414,16 +414,16 @@ struct stream_config {
 - Resource exhaustion handling
 - Performance under load
 
-### Performance 测试s
+### 性能测试
 
-**Metrics:**
+**指标:**
 - Frame rate stability (30fps target)
 - Encoding latency (<50ms)
 - CPU usage (<80% on quad-core)
 - Memory usage (<512MB total)
-- Startup time (<5 seconds 每摄像头)
+- Startup time (<5 seconds per camera)
 
-**测试 Scenarios:**
+**测试场景:**
 - 1 camera, 4 streams
 - 2 cameras, 2 streams each
 - 4 cameras, 2 streams each
@@ -431,8 +431,8 @@ struct stream_config {
 
 ## 迁移路径
 
-### Step 1: Wrapper Layer (第 5 周)
-创建 compatibility wrapper for existing code:
+### Step 1: 封装层 (第 5 周)
+为当前代码创建兼容封装适配层:
 ```cpp
 // dev_chn.h (deprecated)
 class chn {
@@ -458,26 +458,26 @@ auto camera = camera_manager::create_camera(cfg);
 ```
 
 ### Step 3: 移除 Legacy Code (第 8 周+)
-Once all tests pass with new 实现:
-- 移除 `dev_chn.{h,cpp}` wrapper
-- 更新 all references
-- 移除 compatibility layer
+新的实现都测试确认后，逐步移除旧的代码:
+- 移除封装 `dev_chn.{h,cpp}`
+- 更新相关参考
+- 移除兼容性层
 
 ## 已知问题与限制
 
-### Current Issues (Pre-重构ing)
-1. `MAX_CHANNEL = 1` 硬编码的
-2. 静态 `g_chn` global variable
-3. 静态 `g_chns[]` 数组
-4. 否 resource tracking
-5. 否 多摄像头 support
+### Current Issues (预重构分析)
+1. 硬编码的 `MAX_CHANNEL = 1`
+2. 静态全局变量 `g_chn`
+3. 静态数组 `g_chns[]`
+4. 不支持资源追踪
+5. 不支持多摄像头 
 
-### Post-重构ing Improvements
-1. ✅ 动态 camera 分配
-2. ✅ Resource manager enforces limits
-3. ✅ 每摄像头 配置
-4. ✅ Independent camera lifecycle
-5. ✅ Scalable to hardware limits (4 cameras)
+### 重构分析后的改进
+1. ✅ 动态摄像头分配
+2. ✅ 资源管理执行限制
+3. ✅ 每摄像头配置
+4. ✅ 独立的摄像头生命周期
+5. ✅ 可扩展的硬件限制（4个摄像头）
 
 ## 性能考虑
 
@@ -485,12 +485,12 @@ Once all tests pass with new 实现:
 - Target: <80% on quad-core ARMv8
 - VI/VPSS: Hardware accelerated
 - VENC: Hardware accelerated
-- ISP: Hardware 管道
-- Software overhead: <10% 每摄像头
+- ISP: Hardware pipeline
+- Software overhead: <10% per camera
 
 ### 内存使用
 - Target: <512MB total
-- 每摄像头: ~64-128MB (varies by resolution)
+- Per camera: ~64-128MB (varies by resolution)
 - VB pools: Pre-allocated based on config
 - Stream buffers: Shared pointers (minimal copy)
 
@@ -498,7 +498,7 @@ Once all tests pass with new 实现:
 - VI capture: <10ms
 - VPSS processing: <10ms
 - VENC encoding: <30ms
-- Total camera to 编码的: <50ms
+- Total camera to encoded: <50ms
 
 ## 硬件绑定
 
@@ -515,7 +515,7 @@ dest_chn = {OT_ID_VENC, venc_chn, 0};
 ss_mpi_sys_bind(&src_chn, &dest_chn);
 ```
 
-### Resource Mapping Example
+### 资源映射举例
 ```
 Camera 0:
   VI0 → VPSS0 → VENC0 (main), VENC1 (sub)
@@ -534,22 +534,22 @@ Camera 3:
 
 ### 阶段 4+
 - Hot-plug camera support
-- 动态 resolution switching
+- dynamic resolution switching
 - Hardware failover (camera swap)
-- Advanced ISP tuning 每摄像头
+- Advanced ISP tuning for each camera
 - ROI (Region of Interest) encoding
 - Smart encoding (save bandwidth)
 
 ## 参考资料
 
 ### Related 文档化s
-- [Main Analysis](../ANALYSIS.md)
-- [重构ing Roadmap](../REFACTORING_ROADMAP.md)
-- [RTSP 重构ing](../rtsp/README.md)
-- [RTMP 重构ing](../rtmp/README.md)
+- [整体分析](../ANALYSIS.md)
+- [重构路径](../REFACTORING_ROADMAP.md)
+- [RTSP重构](../rtsp/README.md)
+- [RTMP重构](../rtmp/README.md)
 
 ### 外部资源
-- HiSilicon MPP SDK 文档化ation
+- HiSilicon MPP SDK Documentation
 - ISP Calibration Guide
 - VPSS Configuration Manual
 - VENC Optimization Guide
@@ -559,4 +559,4 @@ Camera 3:
 **Last 更新d:** 2026-01-04  
 **状态：** Planning Phase  
 **优先级：** 关键 Path  
-**Next Review:** 第 2 周 实现ation Kickoff
+**Next Review:** 第 2 周 实施 Kickoff
