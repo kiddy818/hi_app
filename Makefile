@@ -21,6 +21,7 @@ INC_PATH += -I./rtsp/rtp_serialize/
 INC_PATH += -I./rtsp/rtp_session/
 INC_PATH += -I./aiisp/
 INC_PATH += -I./device/
+INC_PATH += -I./cn_analyst/device/src/
 
 INC_PATH += -I$(THIRD_LIBRARY_PATH)/freetype-2.7.1/include/freetype2
 #INC_PATH += -I$(THIRD_LIBRARY_PATH)/boost_1_60_0/include/
@@ -80,6 +81,7 @@ DEVICE_SRC += device/dev_vi_os08a20_liner.cpp
 DEVICE_SRC += device/dev_vi_os08a20_2to1wdr.cpp
 DEVICE_SRC += device/dev_venc.cpp
 DEVICE_SRC += device/dev_chn.cpp
+DEVICE_SRC += device/dev_chn_wrapper.cpp
 DEVICE_SRC += device/dev_osd.cpp
 DEVICE_SRC += device/dev_snap.cpp
 DEVICE_SRC += device/dev_svp.cpp
@@ -88,6 +90,12 @@ DEVICE_SRC += device/ceanic_freetype.cpp
 DEVICE_SRC += device/dev_std.cpp
 DEVICE_SRC += device/dev_vo.cpp
 DEVICE_SRC += device/dev_vo_bt1120.cpp
+
+#new device module (Phase 1 refactoring)
+DEVICE_NEW_SRC += cn_analyst/device/src/resource_manager.cpp
+DEVICE_NEW_SRC += cn_analyst/device/src/stream_config.cpp
+DEVICE_NEW_SRC += cn_analyst/device/src/camera_instance.cpp
+DEVICE_NEW_SRC += cn_analyst/device/src/camera_manager.cpp
 
 #sensor driver os04a10
 INC_PATH += -I../../cbb/isp/include/
@@ -171,8 +179,9 @@ all: $(target)
 PROGXX_OBJ= $(SRCXX:.cpp=.o)
 PROG_OBJ= $(SRC:.c=.o)
 DEVICE_OBJ= $(DEVICE_SRC:.cpp=.o)
+DEVICE_NEW_OBJ= $(DEVICE_NEW_SRC:.cpp=.o)
 
-$(target):$(PROGXX_OBJ) $(PROG_OBJ) $(DEVICE_OBJ)
+$(target):$(PROGXX_OBJ) $(PROG_OBJ) $(DEVICE_OBJ) $(DEVICE_NEW_OBJ)
 	@echo "LD $(target)"
 	@$(CXX) $^ -o $@ $(INC_PATH) $(LIBPATH) $(LIBS) $(CFLAGS) -lpthread
 
@@ -185,10 +194,10 @@ $(target):$(PROGXX_OBJ) $(PROG_OBJ) $(DEVICE_OBJ)
 	@$(CC) -c -o  $@ $< $(INC_PATH) $(CFLAGS)
 
 device_clean:
-	-rm $(DEVICE_OBJ)
+	-rm $(DEVICE_OBJ) $(DEVICE_NEW_OBJ)
 
 clean:
-	-rm $(target) $(PROG_OBJ) $(PROGXX_OBJ) $(DEVICE_OBJ)
+	-rm $(target) $(PROG_OBJ) $(PROGXX_OBJ) $(DEVICE_OBJ) $(DEVICE_NEW_OBJ)
 
 strip:
 	$(STRIP) $(target)
