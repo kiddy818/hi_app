@@ -1,4 +1,5 @@
 #include "dev_chn_wrapper.h"
+#include "dev_chn.h"  // For MAIN_STREAM_ID, SUB_STREAM_ID constants
 #include "dev_log.h"
 #include <cstring>
 
@@ -73,8 +74,9 @@ bool chn_wrapper::start(int venc_w, int venc_h, int fr, int bitrate)
         // Start the camera
         if (!m_camera_instance->start()) {
             DEV_WRITE_LOG_ERROR("Failed to start camera");
-            hisilicon::device::camera_manager::destroy_camera(m_camera_instance->camera_id());
+            int32_t cam_id = m_camera_instance->camera_id();
             m_camera_instance.reset();
+            hisilicon::device::camera_manager::destroy_camera(cam_id);
             return false;
         }
         
@@ -105,8 +107,9 @@ void chn_wrapper::stop()
     if (m_camera_instance) {
         try {
             m_camera_instance->stop();
-            hisilicon::device::camera_manager::destroy_camera(m_camera_instance->camera_id());
+            int32_t cam_id = m_camera_instance->camera_id();
             m_camera_instance.reset();
+            hisilicon::device::camera_manager::destroy_camera(cam_id);
             DEV_WRITE_LOG_INFO("Camera stopped via new architecture");
         } catch (const std::exception& e) {
             DEV_WRITE_LOG_ERROR("Exception stopping camera: %s", e.what());
@@ -204,7 +207,13 @@ bool chn_wrapper::init(ot_vi_vpss_mode_type mode)
     // Also initialize legacy system for compatibility
     bool legacy_result = chn::init(mode);
     
-    return legacy_result;
+    // Both systems should be initialized for full functionality
+    if (!s_camera_manager_initialized || !legacy_result) {
+        DEV_WRITE_LOG_WARN("Partial initialization: camera_manager=%d, legacy=%d",
+                          s_camera_manager_initialized, legacy_result);
+    }
+    
+    return legacy_result && s_camera_manager_initialized;
 }
 
 void chn_wrapper::release()

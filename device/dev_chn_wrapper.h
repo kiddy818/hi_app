@@ -15,8 +15,8 @@
  */
 
 #include "dev_chn.h"
-#include "../cn_analyst/device/src/camera_manager.h"
-#include "../cn_analyst/device/src/camera_instance.h"
+#include "camera_manager.h"
+#include "camera_instance.h"
 #include <memory>
 #include <string>
 

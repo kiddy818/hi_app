@@ -4,6 +4,11 @@
  * 
  * This test demonstrates the usage of dev_chn_wrapper for backward compatibility
  * with the legacy dev_chn interface while using the new camera architecture.
+ * 
+ * NOTE: File paths used in tests (e.g., /opt/ceanic/...) are placeholders for
+ * demonstration purposes. Actual paths depend on deployment configuration and
+ * hardware setup. Tests will gracefully handle missing files/hardware by reporting
+ * features as "not available".
  */
 
 #include <iostream>
@@ -58,6 +63,8 @@ void test_feature_management() {
         std::cout << "Camera started" << std::endl;
         
         // Test AIISP feature
+        // Note: Model file paths are placeholders for demonstration
+        // Actual paths depend on deployment configuration
         std::cout << "Testing AIISP feature..." << std::endl;
         if (camera_wrapper->aiisp_start("/opt/ceanic/aiisp/model/test.bin", 0)) {
             std::cout << "AIISP started successfully" << std::endl;
@@ -68,6 +75,7 @@ void test_feature_management() {
         }
         
         // Test YOLOv5 feature
+        // Note: Model file paths are placeholders for demonstration
         std::cout << "Testing YOLOv5 feature..." << std::endl;
         if (camera_wrapper->yolov5_start("/opt/ceanic/yolov5/model.om")) {
             std::cout << "YOLOv5 started successfully" << std::endl;
@@ -148,6 +156,8 @@ void test_static_methods() {
     }
     
     // Test scene methods (delegates to legacy)
+    // Note: Scene configuration paths are placeholders
+    // Actual paths depend on sensor and deployment configuration
     std::cout << "Testing scene methods..." << std::endl;
     if (chn_wrapper::scene_init("/opt/ceanic/scene/param/sensor_os04a10")) {
         std::cout << "Scene initialized" << std::endl;
@@ -160,6 +170,7 @@ void test_static_methods() {
     }
     
     // Test rate auto methods
+    // Note: Configuration file paths are placeholders
     std::cout << "Testing rate auto methods..." << std::endl;
     if (chn_wrapper::rate_auto_init("/opt/ceanic/etc/rate_auto.ini")) {
         std::cout << "Rate auto initialized" << std::endl;
