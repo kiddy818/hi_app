@@ -1,6 +1,8 @@
 #include "camera_instance.h"
 #include <algorithm>
 
+#include "dev_log.h"
+
 namespace hisilicon {
 namespace device {
 
@@ -36,6 +38,7 @@ camera_instance::camera_instance(int32_t camera_id, const camera_config& config)
     , m_config(config)
     , m_is_running(false)
 {
+    m_vi_ptr = nullptr;
 }
 
 camera_instance::~camera_instance() {
@@ -288,8 +291,52 @@ void camera_instance::free_resources() {
 }
 
 bool camera_instance::init_vi() {
-    // Placeholder: In real implementation, would initialize VI hardware
-    // using sensor configuration from m_config.sensor
+    // Check and release any existing VI component
+    if (m_vi_ptr)
+    {
+        m_vi_ptr.reset();
+        m_vi_ptr = nullptr;
+    }
+
+    // Select the VI component based on camera configuration
+    const auto& sensor_type = m_config.sensor.name;;
+    const auto& work_mode = m_config.sensor.mode;
+
+    if (sensor_type == "os04a10")
+    {
+        if (work_mode == "linear")
+        {
+            m_vi_ptr = std::make_shared<vi_os04a10_liner>();
+        }
+        else
+        {
+            m_vi_ptr = std::make_shared<vi_os04a10_2to1wdr>();
+        }
+    }
+    else if (sensor_type == "os08a20")
+    {
+        if (work_mode == "linear")
+        {
+            m_vi_ptr = std::make_shared<vi_os08a20_liner>();
+        }
+        else
+        {
+            m_vi_ptr = std::make_shared<vi_os08a20_2to1wdr>();
+        }
+    }
+    else
+    {
+        return false;
+    }
+
+    if(!m_vi_ptr->start())
+    {
+        DEV_WRITE_LOG_ERROR("vi start failed");
+        m_vi_ptr.reset();
+        m_vi_ptr = nullptr;
+        return false;
+    }
+
     return true;
 }
 

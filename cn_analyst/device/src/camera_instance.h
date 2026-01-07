@@ -10,6 +10,13 @@
 #include <mutex>
 #include <vector>
 
+#include "dev_vi_os04a10_liner.h"
+#include "dev_vi_os04a10_2to1wdr.h"
+#include "dev_vi_os08a20_liner.h"
+#include "dev_vi_os08a20_2to1wdr.h"
+
+using namespace hisilicon::dev;
+
 namespace hisilicon {
 namespace device {
 
@@ -262,6 +269,8 @@ private:
     
     // Features tracking
     std::map<std::string, bool> m_enabled_features;
+
+    std::shared_ptr<vi> m_vi_ptr;
     
     // Thread safety
     mutable std::mutex m_mutex;
