@@ -13,7 +13,8 @@ LOG_HANDLE g_rtmp_log;
 LOG_HANDLE g_dev_log;
 
 using namespace hisilicon::dev;
-std::shared_ptr<chn_wrapper> g_chn;
+using chn_type = chn_wrapper;
+std::shared_ptr<chn_type> g_chn;
 
 #define NET_SERVICE_FILE_PATH "/opt/ceanic/etc/net_service.json"
 typedef struct
@@ -759,7 +760,7 @@ static void do_exit()
         if(g_rate_auto_info.enable
                 && strstr(g_venc_info[chn].name,"AVBR") != NULL)
         {
-            hisilicon::dev::chn::rate_auto_release();
+            chn_type::rate_auto_release();
         }
 
         if(g_aiisp_info.enable)
@@ -769,16 +770,16 @@ static void do_exit()
 
         if(g_scene_info.enable)
         {
-            hisilicon::dev::chn::scene_release();
+            chn_type::scene_release();
         }
 
-        hisilicon::dev::chn::start_capture(false);
+        chn_type::start_capture(false);
         if(g_chn)
         {
             g_chn->stop();
         }
 
-        hisilicon::dev::chn::release();
+        chn_type::release();
     }catch(...)
     {
         printf("do exit unexcepted error\n");
@@ -843,8 +844,8 @@ int main(int argc,char* argv[])
     printf("\trtmp main url:%s\n",g_net_service_info.rtmp_main_url);
     printf("\trtmp sub url:%s\n",g_net_service_info.rtmp_sub_url);
     ceanic::rtsp::stream_ops ops;
-    ops.request_i_frame_fun = hisilicon::dev::chn::request_i_frame;
-    ops.get_stream_head_fun = hisilicon::dev::chn::get_stream_head;
+    ops.request_i_frame_fun = chn_type::request_i_frame;
+    ops.get_stream_head_fun = chn_type::get_stream_head;
     ceanic::rtsp::stream_manager::instance()->register_stream_ops(ops);
     ceanic::rtsp::rtsp_server rs(g_net_service_info.rtsp_port);
     if(!rs.run())
@@ -886,7 +887,7 @@ int main(int argc,char* argv[])
         mode = OT_VI_ONLINE_VPSS_OFFLINE;
     }
 
-    hisilicon::dev::chn::init(mode);
+    chn_type::init(mode);
 
     //vi
     get_vi_info();
@@ -908,9 +909,9 @@ int main(int argc,char* argv[])
         printf("\tbitrate:%d\n",g_venc_info[i].bitrate);
     }
 
-    g_chn = std::make_shared<chn_wrapper>(g_vi_info[chn].name,g_venc_info[chn].name,chn);
+    g_chn = std::make_shared<chn_type>(g_vi_info[chn].name,g_venc_info[chn].name,chn);
     g_chn->start(g_venc_info[chn].w,g_venc_info[chn].h,g_venc_info[chn].fr,g_venc_info[chn].bitrate);
-    hisilicon::dev::chn::start_capture(true);
+    chn_type::start_capture(true);
 
     //scene
     get_scene_info();
@@ -920,8 +921,8 @@ int main(int argc,char* argv[])
     printf("\tdir_path:%s\n",g_scene_info.dir_path);
     if(g_scene_info.enable)
     {
-        hisilicon::dev::chn::scene_init(g_scene_info.dir_path);
-        hisilicon::dev::chn::scene_set_mode(g_scene_info.mode);
+        chn_type::scene_init(g_scene_info.dir_path);
+        chn_type::scene_set_mode(g_scene_info.mode);
     }
 
     //aiisp
@@ -939,7 +940,7 @@ int main(int argc,char* argv[])
             && strstr(g_venc_info[chn].name,"AVBR") != NULL)
     {
         //only avbr support rate auto
-        hisilicon::dev::chn::rate_auto_init(g_rate_auto_info.file);
+        chn_type::rate_auto_init(g_rate_auto_info.file);
     }
 
     //mp4 save

@@ -94,8 +94,8 @@ namespace hisilicon{namespace dev{
             return false;
         }
 
-        if(!m_venc_main_ptr->start()
-                || !m_venc_sub_ptr->start())
+        if(!m_venc_main_ptr->start(m_vi_ptr->vpss_grp(), m_vi_ptr->vpss_chn())
+                || !m_venc_sub_ptr->start(m_vi_ptr->vpss_grp(), m_vi_ptr->vpss_chn()))
         {
             DEV_WRITE_LOG_ERROR("venc start failed");
             m_venc_main_ptr->stop();

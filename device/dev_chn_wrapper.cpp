@@ -65,6 +65,7 @@ bool chn_wrapper::start(int venc_w, int venc_h, int fr, int bitrate)
         create_camera_config(venc_w, venc_h, fr, bitrate, config);
         
         // Create camera via camera_manager
+        // 这里只是使用 camera_manager 创建了一个 camera 实例，并没有完全使用 camera_manager 来管理
         m_camera_instance = hisilicon::device::camera_manager::create_camera(config);
         if (!m_camera_instance) {
             DEV_WRITE_LOG_ERROR("Failed to create camera instance");
@@ -79,7 +80,7 @@ bool chn_wrapper::start(int venc_w, int venc_h, int fr, int bitrate)
             hisilicon::device::camera_manager::destroy_camera(cam_id);
             return false;
         }
-        
+
         m_is_start = true;
         DEV_WRITE_LOG_INFO("Camera started successfully via new architecture");
         return true;
@@ -133,9 +134,7 @@ bool chn_wrapper::get_isp_exposure_info(isp_exposure_t* val)
         return m_legacy_chn->get_isp_exposure_info(val);
     }
     
-    // TODO: Implement via camera_instance when ISP interface is integrated
-    DEV_WRITE_LOG_WARN("get_isp_exposure_info not yet implemented in new architecture");
-    return false;
+    return m_camera_instance->get_isp_exposure_info(val);
 }
 
 bool chn_wrapper::start_save(const char* file)
@@ -193,7 +192,8 @@ bool chn_wrapper::init(ot_vi_vpss_mode_type mode)
         s_resource_manager_initialized = true;
         DEV_WRITE_LOG_INFO("Resource manager initialized");
     }
-    
+
+#if 1
     // Initialize camera manager
     if (!s_camera_manager_initialized) {
         if (!hisilicon::device::camera_manager::init(4)) {
@@ -203,7 +203,8 @@ bool chn_wrapper::init(ot_vi_vpss_mode_type mode)
         s_camera_manager_initialized = true;
         DEV_WRITE_LOG_INFO("Camera manager initialized (max 4 cameras)");
     }
-    
+#endif
+
     // Also initialize legacy system for compatibility
     bool legacy_result = chn::init(mode);
     
@@ -252,8 +253,13 @@ void chn_wrapper::on_stream_come(ceanic::util::stream_obj_ptr sobj,
         m_legacy_chn->on_stream_come(sobj, head, buf, len);
         return;
     }
-    
-    // TODO: Implement observer pattern integration with new architecture
+
+    if(!m_is_start)
+    {
+        return;
+    }
+
+    m_camera_instance->on_stream_come(sobj, head, buf, len);
 }
 
 void chn_wrapper::on_stream_error(ceanic::util::stream_obj_ptr sobj, int32_t error)
@@ -263,7 +269,8 @@ void chn_wrapper::on_stream_error(ceanic::util::stream_obj_ptr sobj, int32_t err
         return;
     }
     
-    // TODO: Implement error handling with new architecture
+    // 暂时没有特别的处理方式，先打印日志
+    DEV_WRITE_LOG_INFO("on_stream_error not yet implemented in new architecture");
 }
 
 bool chn_wrapper::scene_init(const char* dir_path)
@@ -372,12 +379,38 @@ void chn_wrapper::vo_stop()
 
 bool chn_wrapper::get_stream_head(int chn, int stream, ceanic::util::media_head* mh)
 {
-    return chn::get_stream_head(chn, stream, mh);
+    if (!s_camera_manager_initialized)
+    {
+        return chn::get_stream_head(chn, stream, mh);
+    }
+
+    static std::shared_ptr<hisilicon::device::camera_instance> pCameraIndex = hisilicon::device::camera_manager::get_camera(chn);
+    if (pCameraIndex)
+    {
+        return pCameraIndex->get_stream_head(stream, mh);
+    }
+    else
+    {
+        return false;
+    }
 }
 
 bool chn_wrapper::request_i_frame(int chn, int stream)
 {
-    return chn::request_i_frame(chn, stream);
+    if (!s_camera_manager_initialized)
+    {
+        return chn::request_i_frame(chn, stream);
+    }
+
+    static std::shared_ptr<hisilicon::device::camera_instance> pCameraIndex = hisilicon::device::camera_manager::get_camera(chn);
+    if (pCameraIndex)
+    {
+        return pCameraIndex->request_i_frame(stream);
+    }
+    else
+    {
+        return false;
+    }
 }
 
 // Helper methods

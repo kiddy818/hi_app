@@ -174,7 +174,7 @@ namespace hisilicon{namespace dev{
         g_capture_thread.join();
     }
 
-    bool venc::start()
+    bool venc::start(ot_vpss_grp vpss_grp, ot_vpss_chn vpss_chn)
     {
         td_s32 ret;
         ret = ss_mpi_venc_create_chn(m_venc_chn,&m_venc_chn_attr);
@@ -184,6 +184,17 @@ namespace hisilicon{namespace dev{
             return false;
         }
         m_venc_fd = ss_mpi_venc_get_fd(m_venc_chn);
+
+        DEV_WRITE_LOG_INFO("venc::start input grp[%d] chn[%d] VS m grp[%d] chn[%d]",
+            vpss_grp, vpss_chn, m_vpss_grp, m_vpss_chn);
+        if (vpss_grp != -1)
+        {
+            m_vpss_grp = vpss_grp;
+        }
+        if (vpss_chn != -1)
+        {
+            m_vpss_chn = vpss_chn;
+        }
 
         ot_mpp_chn src_chn;
         ot_mpp_chn dest_chn;

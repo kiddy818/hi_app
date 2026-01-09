@@ -19,7 +19,7 @@ namespace hisilicon{namespace dev{
             venc(int32_t chn,int32_t stream,int w,int h,int src_fr,int venc_fr,ot_vpss_grp vpss_grp,ot_vpss_chn vpss_chn);
             virtual ~venc();
 
-            bool start();
+            bool start(ot_vpss_grp vpss_grp, ot_vpss_chn vpss_chn);
             void stop();
             ot_venc_chn venc_chn();
             int venc_fd();

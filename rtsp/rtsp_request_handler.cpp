@@ -112,15 +112,21 @@ namespace ceanic{namespace rtsp{
         const char *p = uri.c_str()+pos+1;
 
         int32_t ch;
-        int32_t ret = 0;
+
+        std::string::size_type pos_ext = uri.rfind(std::string("/stream="));
+        if (pos_ext == pos) {
+            if (sscanf(p,"stream=%d",&ch)== 1) {
+                chn = ch;
+                return (chn >= 0);
+            }
+        }
+
         if (sscanf(p,"stream%d",&ch)== 1) {
             chn = ch-1;
-            ret = (chn >= 0);
+            return (chn >= 0);
         }
-        else
-            ret = false;
 
-        return ret;
+        return false;
     }
 
     void rtsp_request_handler::handle_request(const request& req, session& sess)
@@ -129,7 +135,7 @@ namespace ceanic{namespace rtsp{
         std::cout << "------------rtsp request-------------" << std::endl;
         std::cout << "method: " << req.method << std::endl;
         std::cout << "uri: " << req.uri << std::endl;
-        for (unsigned int32_t i = 0; i < req.headers.size(); i++)
+        for (u_int32_t i = 0; i < req.headers.size(); i++)
         {
             std::cout << req.headers[i].name << ":  " << req.headers[i].value << std::endl;
         }

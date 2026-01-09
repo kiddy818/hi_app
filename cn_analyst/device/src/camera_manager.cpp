@@ -1,4 +1,5 @@
 #include "camera_manager.h"
+#include "dev_log.h"
 #include <algorithm>
 #include <sstream>
 
@@ -55,24 +56,27 @@ std::shared_ptr<camera_instance> camera_manager::create_camera(const camera_conf
     std::lock_guard<std::mutex> lock(m_mutex);
     
     if (!m_initialized) {
+        DEV_WRITE_LOG_ERROR("Failed to create camera instance @1 [not initialized]");
         return nullptr;
     }
     
     // Check if we've reached the maximum number of cameras
     if (static_cast<int32_t>(m_cameras.size()) >= m_max_cameras) {
+        DEV_WRITE_LOG_ERROR("Failed to create camera instance @2 [exceeded max]");
         return nullptr;
     }
     
     // Validate configuration
     std::string error_msg;
     if (!validate_config(config, error_msg)) {
-        // In real implementation, would log error_msg
+        DEV_WRITE_LOG_ERROR("Failed to create camera instance @3 [%s]", error_msg.c_str());
         return nullptr;
     }
     
     // Check if camera ID is already in use (if specified)
     int32_t camera_id = config.camera_id;
     if (camera_id >= 0 && m_cameras.find(camera_id) != m_cameras.end()) {
+        DEV_WRITE_LOG_ERROR("Failed to create camera instance @4 [already exists]");
         return nullptr; // Camera ID already exists
     }
     
@@ -80,6 +84,7 @@ std::shared_ptr<camera_instance> camera_manager::create_camera(const camera_conf
     if (camera_id < 0) {
         camera_id = allocate_camera_id();
         if (camera_id < 0) {
+            DEV_WRITE_LOG_ERROR("Failed to create camera instance @5 [allocate ID]");
             return nullptr; // Failed to allocate ID
         }
     }
@@ -93,6 +98,7 @@ std::shared_ptr<camera_instance> camera_manager::create_camera(const camera_conf
     
     // Add to camera map
     m_cameras[camera_id] = camera;
+    DEV_WRITE_LOG_INFO("Create camera instance [success, camera_id=%d]", camera_id);
     
     return camera;
 }

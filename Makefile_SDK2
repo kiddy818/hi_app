@@ -187,7 +187,7 @@ $(OBJSDIR)/$(patsubst ../%,up/%,$(1:.c=.o))
 endef
 
 PROG_OBJ = $(foreach src_f,$(SRC),$(call convert_src_to_obj,$(src_f)))
-$(info "生成的目标文件: $(PROG_OBJ)")
+# $(info "生成的目标文件: $(PROG_OBJ)")
 
 PROGXX_OBJ = $(patsubst %.cpp,$(OBJSDIR)/%.o,$(SRCXX))
 DEVICE_OBJ = $(patsubst %.cpp,$(OBJSDIR)/%.o,$(DEVICE_SRC))

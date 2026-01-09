@@ -15,6 +15,8 @@
 #include "dev_vi_os08a20_liner.h"
 #include "dev_vi_os08a20_2to1wdr.h"
 
+#include <stream_observer.h>
+
 using namespace hisilicon::dev;
 
 namespace hisilicon {
@@ -128,7 +130,8 @@ class stream_instance;
  * 
  * Implements observer pattern for distributing streams to listeners.
  */
-class camera_instance {
+class camera_instance : public std::enable_shared_from_this<camera_instance>,
+                        public ceanic::util::stream_observer {
 public:
     /**
      * @brief Construct a camera instance
@@ -243,6 +246,16 @@ public:
      * @return Allocated resources
      */
     allocated_resources get_allocated_resources() const { return m_resources; }
+
+    bool get_isp_exposure_info(isp_exposure_t* val);
+
+    // Observer Pattern (from device to streaming)
+    void on_stream_come(ceanic::util::stream_obj_ptr obj, ceanic::util::stream_head* head,
+                       const char* buf, int32_t len) override;
+    void on_stream_error(ceanic::util::stream_obj_ptr obj, int32_t error) override;
+    bool request_i_frame(int stream);
+    bool get_stream_head(int stream, ceanic::util::media_head* mh);
+
     
 private:
     // Internal initialization methods
@@ -252,6 +265,8 @@ private:
     bool init_vpss();
     bool init_streams();
     bool init_features();
+
+    void stop_streams();
     
     // Internal stream management (without locking)
     bool create_stream_internal(const stream_config& config);

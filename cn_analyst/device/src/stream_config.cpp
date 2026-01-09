@@ -163,6 +163,9 @@ bool stream_config_helper::is_bitrate_valid(int32_t bitrate, int32_t width, int3
     if (width <= 1920 && height <= 1080) {
         max_bitrate = std::max(max_bitrate, 20480); // 20 Mbps
     }
+
+    // 当前支持最大码率80Mbps，支持的最大分辨率：6144×6144
+    max_bitrate = std::max(max_bitrate, 80*1024);
     
     return (bitrate >= min_bitrate && bitrate <= max_bitrate);
 }
