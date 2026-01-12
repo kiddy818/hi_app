@@ -15,7 +15,7 @@
 #include "dev_vi_os08a20_liner.h"
 #include "dev_vi_os08a20_2to1wdr.h"
 
-#include <stream_observer.h>
+#include "dev_svp_yolov5.h"
 
 using namespace hisilicon::dev;
 
@@ -256,6 +256,10 @@ public:
     bool request_i_frame(int stream);
     bool get_stream_head(int stream, ceanic::util::media_head* mh);
 
+    //for yolov5
+    bool yolov5_start(const char* model_file);
+    void yolov5_stop();
+
     
 private:
     // Internal initialization methods
@@ -286,6 +290,8 @@ private:
     std::map<std::string, bool> m_enabled_features;
 
     std::shared_ptr<vi> m_vi_ptr;
+
+    std::shared_ptr<yolov5> m_yolov5;
     
     // Thread safety
     mutable std::mutex m_mutex;

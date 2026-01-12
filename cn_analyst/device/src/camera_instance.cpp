@@ -7,6 +7,12 @@
 #include "rtmp/session_manager.h"
 #include "stream_manager.h"
 
+#define MAIN_STREAM_ID 0
+#define SUB_STREAM_ID 1
+#define AI_STREAM_ID 2
+
+using namespace ceanic::util;
+
 namespace hisilicon {
 namespace device {
 
@@ -68,6 +74,7 @@ public:
         m_venc_ptr->start(vpss_grp, vpss_chn);
 
         // 使用了默认的osd配置，后期可根据主视窗大小适配
+        // 默认做了start操作，需要考虑根据是否enable来决定是否开启
         m_osd_ptr = std::make_shared<osd_date>(32,32,64, m_venc_ptr->venc_chn());
         m_osd_ptr->start();
 
@@ -81,7 +88,7 @@ public:
         m_is_running = false;
     }
 
-    bool register_stream_observer(ceanic::util::stream_observer_ptr observer) {
+    bool register_stream_observer(stream_observer_ptr observer) {
         if (!m_venc_ptr || !observer) {
             return false;
         }
@@ -90,7 +97,7 @@ public:
         return true;
     }
 
-    bool unregister_stream_observer(ceanic::util::stream_observer_ptr observer) {
+    bool unregister_stream_observer(stream_observer_ptr observer) {
         if (!m_venc_ptr || !observer) {
             return false;
         }
@@ -109,23 +116,13 @@ public:
         return true;
     }
 
-    bool get_stream_head(ceanic::util::media_head* mh)
+    bool get_stream_head(media_head* mh)
     {
         if (!m_venc_ptr) {
             return false;
         }
 
-        using namespace ceanic::util;
         memset(mh,0,sizeof(media_head));
-#if 0
-        if(stream == AI_STREAM_ID)
-        {
-            //aidetect stream
-            mh->audio_info.acode = STREAM_AUDIO_ENCODE_NONE;
-            mh->video_info.vcode = STREAM_VIDEO_ENCODE_H264;
-            return true;
-        }
-#endif
 
         mh->video_info.w = m_venc_ptr->venc_w();
         mh->video_info.h = m_venc_ptr->venc_h();
@@ -336,15 +333,21 @@ std::vector<int32_t> camera_instance::list_streams() const {
 bool camera_instance::enable_feature(const std::string& feature_name, const std::string& config) {
     std::lock_guard<std::mutex> lock(m_mutex);
     
-    // Placeholder implementation
-    // In real implementation, would initialize the specific feature
-    m_enabled_features[feature_name] = true;
+    if (feature_name == "yolov5") {
+        return yolov5_start(config.c_str());
+    }
+
     return true;
 }
 
 bool camera_instance::disable_feature(const std::string& feature_name) {
     std::lock_guard<std::mutex> lock(m_mutex);
     
+    if (feature_name == "yolov5") {
+        yolov5_stop();
+        return true;
+    }
+
     auto it = m_enabled_features.find(feature_name);
     if (it != m_enabled_features.end()) {
         m_enabled_features.erase(it);
@@ -527,15 +530,16 @@ bool camera_instance::init_features() {
     if (m_config.features.osd_enabled) {
         m_enabled_features["osd"] = true;
     }
+    else {
+        // 这里考虑接收是否开启，来调节stream_instance的osd显示
+        // 前面默认stream_instance开启OSD，后续可以根据的动态配置，开关OSD
+        m_enabled_features["osd"] = false;
+    }
     
     if (m_config.features.aiisp_enabled) {
         m_enabled_features["aiisp"] = true;
     }
-    
-    if (m_config.features.yolov5_enabled) {
-        m_enabled_features["yolov5"] = true;
-    }
-    
+      
     if (m_config.features.vo_enabled) {
         m_enabled_features["vo"] = true;
     }
@@ -543,7 +547,7 @@ bool camera_instance::init_features() {
     return true;
 }
 
-void camera_instance::on_stream_come(ceanic::util::stream_obj_ptr obj, ceanic::util::stream_head *head, const char *buf, int32_t len)
+void camera_instance::on_stream_come(stream_obj_ptr obj, stream_head *head, const char *buf, int32_t len)
 {
     int32_t chn = obj->chn();
     int32_t stream = obj->stream_id();
@@ -572,12 +576,21 @@ void camera_instance::on_stream_come(ceanic::util::stream_obj_ptr obj, ceanic::u
     ceanic::rtsp::stream_manager::instance()->process_data(chn,stream,head,buf,len);
 }
 
-void camera_instance::on_stream_error(ceanic::util::stream_obj_ptr obj, int32_t error)
+void camera_instance::on_stream_error(stream_obj_ptr obj, int32_t error)
 {
 }
 
 bool camera_instance::request_i_frame(int stream)
 {
+    if (AI_STREAM_ID == stream)
+    {
+        //aidetect stream
+        if (m_yolov5)
+        {
+            return true;
+        }
+    }
+
     auto it = m_streams.find(stream);
     if (it == m_streams.end()) {
         return false; // Stream not found
@@ -592,8 +605,17 @@ bool camera_instance::request_i_frame(int stream)
     return false;
 }
 
-bool camera_instance::get_stream_head(int stream, ceanic::util::media_head *mh)
+bool camera_instance::get_stream_head(int stream, media_head *mh)
 {
+    if (AI_STREAM_ID == stream)
+    {
+        //aidetect stream
+        memset(mh,0,sizeof(media_head));
+        mh->audio_info.acode = STREAM_AUDIO_ENCODE_NONE;
+        mh->video_info.vcode = STREAM_VIDEO_ENCODE_H264;
+        return true;
+    }
+
     auto it = m_streams.find(stream);
     if (it == m_streams.end()) {
         return false; // Stream not found
@@ -606,6 +628,36 @@ bool camera_instance::get_stream_head(int stream, ceanic::util::media_head *mh)
     }
 
     return false;
+}
+
+bool camera_instance::yolov5_start(const char* model_file)
+{
+    if(!m_is_running)
+    {
+        return false;
+    }
+
+    // 第一个参数 int32_t m_chn 目前并没有使用到双摄像头，用0即可
+    m_yolov5 = std::make_shared<yolov5>(0, AI_STREAM_ID, m_vi_ptr, model_file);
+    if(!m_yolov5->start())
+    {
+        m_yolov5 = nullptr;
+        return false;
+    }
+
+    m_yolov5->register_stream_observer(shared_from_this());
+
+    return true;
+}
+
+void camera_instance::yolov5_stop()
+{
+    if(m_yolov5)
+    {
+        m_yolov5->unregister_stream_observer(shared_from_this());
+        m_yolov5->stop();
+        m_yolov5 = nullptr;
+    }
 }
 
 } // namespace device
