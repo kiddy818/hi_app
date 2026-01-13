@@ -164,9 +164,7 @@ bool chn_wrapper::trigger_jpg(const char* file, int quality, const char* str_inf
         return m_legacy_chn->trigger_jpg(file, quality, str_info);
     }
     
-    // TODO: Implement JPEG snapshot via camera_instance
-    DEV_WRITE_LOG_WARN("trigger_jpg not yet implemented in new architecture");
-    return false;
+    return m_camera_instance->trigger_jpg(file, quality, str_info);
 }
 
 bool chn_wrapper::init(ot_vi_vpss_mode_type mode)

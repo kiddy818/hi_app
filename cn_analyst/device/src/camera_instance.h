@@ -29,6 +29,9 @@
 // mp4
 #include <mp4_save.h>
 
+// save jpeg
+#include "dev_snap.h"
+
 using namespace hisilicon::dev;
 
 namespace hisilicon {
@@ -283,6 +286,9 @@ public:
     // MP4 Recording
     bool start_save(const char* file);
     void stop_save();
+
+    // JPEG Snapshot
+    bool trigger_jpg(const char* file, int quality, const char* str_info);
     
 private:
     // Internal initialization methods
@@ -321,6 +327,8 @@ private:
     std::shared_ptr<vo> m_vo;
 
     std::shared_ptr<ceanic::stream_save::stream_save> m_save;
+
+    std::shared_ptr<snap> m_snap;
 
     // Thread safety
     mutable std::mutex m_mutex;

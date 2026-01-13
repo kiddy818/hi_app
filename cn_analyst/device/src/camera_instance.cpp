@@ -167,6 +167,7 @@ camera_instance::camera_instance(int32_t camera_id, const camera_config& config)
 
     m_vo = nullptr;
     m_save = nullptr;
+    m_snap = nullptr;
 }
 
 camera_instance::~camera_instance() {
@@ -218,8 +219,10 @@ bool camera_instance::start() {
 
         DEV_WRITE_LOG_ERROR("Failed to start camera instance @6 [Initialize streams and encoders]");
 
-        // Stop all streams
+        stop_streams();
         m_vi_ptr->stop();
+        free_resources();
+        return false;
     }
     
     m_is_running = true;
@@ -238,6 +241,21 @@ void camera_instance::stop() {
     
     // Disable all features
     m_enabled_features.clear();
+
+    yolov5_stop();
+    aiisp_stop();
+    vo_stop();
+    stop_save();
+
+    if (m_snap) {
+        m_snap->stop();
+        m_snap.reset();
+    };
+
+    if (m_vi_ptr) {
+        m_vi_ptr->stop();
+        m_vi_ptr.reset();
+    }
     
     // Free hardware resources
     free_resources();
@@ -343,6 +361,7 @@ bool camera_instance::enable_feature(const std::string& feature_name, const std:
     DEV_WRITE_LOG_INFO("enable_feature %s with config %s", feature_name.c_str(), config.c_str());
 
     if (feature_name == "yolov5") {
+        m_enabled_features["yolov5"] = true;
         if (config.empty()) {
             return yolov5_start(m_config.features.yolov5_model.c_str());
         } else {
@@ -352,6 +371,7 @@ bool camera_instance::enable_feature(const std::string& feature_name, const std:
 
     // 暂时没有设置参数 mode， 先使用0 作为参数处理
     if (feature_name == "aiisp") {
+        m_enabled_features["aiisp"] = true;
         if (config.empty()) {
             return aiisp_start(m_config.features.aiisp_model.c_str(), 0);
         } else {
@@ -360,10 +380,12 @@ bool camera_instance::enable_feature(const std::string& feature_name, const std:
     }
 
     if (feature_name == "vo") {
+        m_enabled_features["vo"] = true;
         return vo_start("BT1120", "1080P60");
     }
 
     if (feature_name == "savemp4") {
+        m_enabled_features["savemp4"] = true;
         if (config.empty()) {
             return start_save("save.mp4");
         } else {
@@ -581,11 +603,12 @@ bool camera_instance::init_features() {
     else {
         // 这里考虑接收是否开启，来调节stream_instance的osd显示
         // 前面默认stream_instance开启OSD，后续可以根据的动态配置，开关OSD
-        m_enabled_features["osd"] = false;
+        // 无需额外设置：找不到选项即为不使能
     }
       
     if (m_config.features.vo_enabled) {
         m_enabled_features["vo"] = true;
+        enable_feature("vo", "");
     }
     
     return true;
@@ -850,6 +873,37 @@ void camera_instance::stop_save()
         m_save->close();
         m_save = nullptr;
     }
+}
+
+bool camera_instance::trigger_jpg(const char *file, int quality, const char *str_info)
+{
+    if(!m_is_running)
+    {
+        return false;
+    }
+
+    if(quality <1)
+    {
+        quality = 1;
+    }
+
+    if(quality > 99)
+    {
+        quality = 99;
+    }
+
+    if(!m_snap)
+    {
+        m_snap = std::make_shared<snap>(m_vi_ptr);
+
+        if(!m_snap->start())
+        {
+            m_snap = nullptr;
+            return false;
+        }
+    }
+
+    return m_snap->trigger(file, quality, str_info);
 }
 
 } // namespace device
