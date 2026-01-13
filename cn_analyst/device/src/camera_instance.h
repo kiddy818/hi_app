@@ -23,6 +23,9 @@
 // yolov5
 #include "dev_svp_yolov5.h"
 
+// vo
+#include "dev_vo_bt1120.h"
+
 using namespace hisilicon::dev;
 
 namespace hisilicon {
@@ -262,7 +265,7 @@ public:
     bool request_i_frame(int stream);
     bool get_stream_head(int stream, ceanic::util::media_head* mh);
 
-    //for yolov5
+    // YOLOv5 features
     bool yolov5_start(const char* model_file);
     void yolov5_stop();
 
@@ -270,6 +273,9 @@ public:
     bool aiisp_start(const char* model_file, int mode);
     void aiisp_stop();
 
+    // VO features
+    bool vo_start(const char* intf_type,const char* intf_sync);
+    void vo_stop();
     
 private:
     // Internal initialization methods
@@ -304,6 +310,8 @@ private:
     std::shared_ptr<yolov5> m_yolov5;
 
     std::shared_ptr<aiisp> m_aiisp_ptr;
+
+    std::shared_ptr<vo> m_vo;
 
     // Thread safety
     mutable std::mutex m_mutex;

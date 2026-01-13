@@ -7,6 +7,8 @@
 #include "rtmp/session_manager.h"
 #include "stream_manager.h"
 
+#include <lt8618sx.h>
+
 #define MAIN_STREAM_ID 0
 #define SUB_STREAM_ID 1
 #define AI_STREAM_ID 2
@@ -162,6 +164,8 @@ camera_instance::camera_instance(int32_t camera_id, const camera_config& config)
     m_vi_ptr = nullptr;
     m_yolov5 = nullptr;
     m_aiisp_ptr = nullptr;
+
+    m_vo = nullptr;
 }
 
 camera_instance::~camera_instance() {
@@ -354,6 +358,10 @@ bool camera_instance::enable_feature(const std::string& feature_name, const std:
         }
     }
 
+    if (feature_name == "vo") {
+        return vo_start("BT1120", "1080P60");
+    }
+
     return true;
 }
 
@@ -367,6 +375,11 @@ bool camera_instance::disable_feature(const std::string& feature_name) {
 
     if (feature_name == "aiisp") {
         aiisp_stop();
+        return true;
+    }
+
+    if (feature_name == "vo") {
+        vo_stop();
         return true;
     }
 
@@ -546,8 +559,7 @@ void camera_instance::stop_streams() {
 }
 
 bool camera_instance::init_features() {
-    // Placeholder: In real implementation, would initialize features
-    // based on m_config.features
+    // 可根据 m_config.features 确定是否开启某些功能
     
     if (m_config.features.osd_enabled) {
         m_enabled_features["osd"] = true;
@@ -556,10 +568,6 @@ bool camera_instance::init_features() {
         // 这里考虑接收是否开启，来调节stream_instance的osd显示
         // 前面默认stream_instance开启OSD，后续可以根据的动态配置，开关OSD
         m_enabled_features["osd"] = false;
-    }
-    
-    if (m_config.features.aiisp_enabled) {
-        m_enabled_features["aiisp"] = true;
     }
       
     if (m_config.features.vo_enabled) {
@@ -752,6 +760,55 @@ void camera_instance::aiisp_stop()
     aiisp_bnr::release();
     aiisp_drc::release();
     aiisp_3dnr::release();
+}
+
+bool camera_instance::vo_start(const char *intf_type, const char *intf_sync)
+{
+    if(!m_is_running)
+    {
+        return false;
+    }
+
+    if(strcmp(intf_type, "BT1120") == 0
+            && strcmp(intf_sync, "1080P60") == 0)
+    {
+        m_vo = std::make_shared<vo_bt1120>(1920,1080,60,0,m_vi_ptr);
+    }
+    else
+    {
+        DEV_WRITE_LOG_ERROR("invalid param, intf_type:%s, intf_sync:%s", intf_type, intf_sync);
+        return false;
+    }
+
+    if(!m_vo->start())
+    {
+        DEV_WRITE_LOG_ERROR("vo start failed");
+        m_vo = nullptr;
+        return false;
+    }
+
+    //demo板子用了lt8618sx,bt1120->hdmi
+    int fd = open("/dev/lt8618sx", O_RDONLY);
+    if(fd > -1)
+    {
+        td_u32 lt_mode = OT_VO_OUT_1080P60;
+        if(ioctl(fd, LT_CMD_SETMODE, &lt_mode) < 0)
+        {
+            DEV_WRITE_LOG_ERROR("lt8618sx set mode failed");
+        }
+        close(fd);
+    }
+
+    return true;
+}
+
+void camera_instance::vo_stop()
+{
+    if(m_vo)
+    {
+        m_vo->stop();
+        m_vo = nullptr;
+    }
 }
 
 } // namespace device
