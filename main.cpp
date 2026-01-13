@@ -131,7 +131,7 @@ static void init_venc_info()
     Json::Value root;
     // Initialize for single camera (backward compatible)
     venc_t venc_cfg;
-    sprintf(venc_cfg.name,"H264_CBR");
+    snprintf(venc_cfg.name, sizeof(venc_cfg.name), "H264_CBR");
     venc_cfg.w = 2688;
     venc_cfg.h = 1520;
     venc_cfg.fr = 30;
@@ -189,7 +189,7 @@ static int get_venc_info()
             
             Json::Value node = root[venc];
             venc_t venc_cfg;
-            sprintf(venc_cfg.name, "%s", node["name"].asCString());
+            snprintf(venc_cfg.name, sizeof(venc_cfg.name), "%s", node["name"].asCString());
             venc_cfg.w = node["w"].asInt();
             venc_cfg.h = node["h"].asInt();
             venc_cfg.fr = node["fr"].asInt();
@@ -226,7 +226,7 @@ static void init_vi_info()
     Json::Value root;
     // Initialize for single camera (backward compatible)
     vi_t vi_cfg;
-    sprintf(vi_cfg.name,"OS04A10");
+    snprintf(vi_cfg.name, sizeof(vi_cfg.name), "OS04A10");
     
     root["sensor1"]["name"] = vi_cfg.name;
 
@@ -276,7 +276,7 @@ static int get_vi_info()
             
             Json::Value node = root[sns];
             vi_t vi_cfg;
-            sprintf(vi_cfg.name, "%s", node["name"].asCString());
+            snprintf(vi_cfg.name, sizeof(vi_cfg.name), "%s", node["name"].asCString());
             g_vi_info.push_back(vi_cfg);
         }
         
