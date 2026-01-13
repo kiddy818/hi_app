@@ -943,7 +943,18 @@ int main(int argc,char* argv[])
     chn_type::init(mode);
 
     //vi
-    get_vi_info();
+    if (get_vi_info() != 0) {
+        APP_WRITE_LOG_ERROR("Failed to load VI configuration");
+        printf("Error: Failed to load VI configuration\n");
+        return -1;
+    }
+    
+    if (g_vi_info.empty()) {
+        APP_WRITE_LOG_ERROR("No cameras configured in vi.json");
+        printf("Error: No cameras configured in vi.json\n");
+        return -1;
+    }
+    
     for(size_t i = 0; i < g_vi_info.size(); i++)
     {
         printf("sensor%zu:\n", i + 1);
@@ -951,7 +962,18 @@ int main(int argc,char* argv[])
     }
 
     //venc
-    get_venc_info();
+    if (get_venc_info() != 0) {
+        APP_WRITE_LOG_ERROR("Failed to load VENC configuration");
+        printf("Error: Failed to load VENC configuration\n");
+        return -1;
+    }
+    
+    if (g_venc_info.empty()) {
+        APP_WRITE_LOG_ERROR("No encoders configured in venc.json");
+        printf("Error: No encoders configured in venc.json\n");
+        return -1;
+    }
+    
     for(size_t i = 0; i < g_venc_info.size(); i++)
     {
         printf("venc%zu:\n", i + 1);
@@ -962,6 +984,14 @@ int main(int argc,char* argv[])
         printf("\tbitrate:%d\n", g_venc_info[i].bitrate);
     }
 
+    // Validate camera index (currently hardcoded to 0 for backward compatibility)
+    if (chn >= static_cast<int>(g_vi_info.size()) || chn >= static_cast<int>(g_venc_info.size())) {
+        APP_WRITE_LOG_ERROR("Camera index %d out of bounds (vi_count=%zu, venc_count=%zu)", 
+                           chn, g_vi_info.size(), g_venc_info.size());
+        printf("Error: Camera index %d out of bounds\n", chn);
+        return -1;
+    }
+    
     g_chn = std::make_shared<chn_type>(g_vi_info[chn].name,g_venc_info[chn].name,chn);
     g_chn->start(g_venc_info[chn].w,g_venc_info[chn].h,g_venc_info[chn].fr,g_venc_info[chn].bitrate);
     chn_type::start_capture(true);
