@@ -143,9 +143,8 @@ bool chn_wrapper::start_save(const char* file)
         return m_legacy_chn->start_save(file);
     }
     
-    // TODO: Implement MP4 save via camera_instance
-    DEV_WRITE_LOG_WARN("start_save not yet implemented in new architecture");
-    return false;
+    // 可以考虑使用enable_feature(FEATURE_SAVE_TO_FILE)
+    return m_camera_instance->start_save(file);
 }
 
 void chn_wrapper::stop_save()
@@ -155,8 +154,8 @@ void chn_wrapper::stop_save()
         return;
     }
     
-    // TODO: Implement via camera_instance
-    DEV_WRITE_LOG_WARN("stop_save not yet implemented in new architecture");
+    m_camera_instance->stop_save();
+    return;
 }
 
 bool chn_wrapper::trigger_jpg(const char* file, int quality, const char* str_info)

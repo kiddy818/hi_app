@@ -166,6 +166,7 @@ camera_instance::camera_instance(int32_t camera_id, const camera_config& config)
     m_aiisp_ptr = nullptr;
 
     m_vo = nullptr;
+    m_save = nullptr;
 }
 
 camera_instance::~camera_instance() {
@@ -362,6 +363,14 @@ bool camera_instance::enable_feature(const std::string& feature_name, const std:
         return vo_start("BT1120", "1080P60");
     }
 
+    if (feature_name == "savemp4") {
+        if (config.empty()) {
+            return start_save("save.mp4");
+        } else {
+            return start_save(config.c_str());
+        }
+    }
+
     return true;
 }
 
@@ -380,6 +389,11 @@ bool camera_instance::disable_feature(const std::string& feature_name) {
 
     if (feature_name == "vo") {
         vo_stop();
+        return true;
+    }
+
+    if (feature_name == "savemp4") {
+        stop_save();
         return true;
     }
 
@@ -592,16 +606,16 @@ void camera_instance::on_stream_come(stream_obj_ptr obj, stream_head *head, cons
             ceanic::rtmp::session_manager::instance()->process_data(chn,stream,head,(uint8_t*)buf,len);
         }
     }
+#endif
 
     //mp4当前保存的是主码流
-    if(stream == MAIN_STREAM_ID )
+    if(stream == MAIN_STREAM_ID)
     {
         if(m_save)
         {
             m_save->input_data(head,buf,len);
         }
     }
-#endif
 
     ceanic::rtsp::stream_manager::instance()->process_data(chn,stream,head,buf,len);
 }
@@ -808,6 +822,33 @@ void camera_instance::vo_stop()
     {
         m_vo->stop();
         m_vo = nullptr;
+    }
+}
+
+bool camera_instance::start_save(const char *file)
+{
+    if(!m_is_running)
+    {
+        return false;
+    }
+
+    ceanic::util::media_head mh;
+    if(!get_stream_head(MAIN_STREAM_ID, &mh))
+    {
+        return false;
+    }
+
+    m_save = std::make_shared<ceanic::stream_save::mp4_save>(mh,file);
+
+    return m_save->open();
+}
+
+void camera_instance::stop_save()
+{
+    if(m_save)
+    {
+        m_save->close();
+        m_save = nullptr;
     }
 }
 

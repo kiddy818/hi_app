@@ -26,6 +26,9 @@
 // vo
 #include "dev_vo_bt1120.h"
 
+// mp4
+#include <mp4_save.h>
+
 using namespace hisilicon::dev;
 
 namespace hisilicon {
@@ -276,6 +279,10 @@ public:
     // VO features
     bool vo_start(const char* intf_type,const char* intf_sync);
     void vo_stop();
+
+    // MP4 Recording
+    bool start_save(const char* file);
+    void stop_save();
     
 private:
     // Internal initialization methods
@@ -312,6 +319,8 @@ private:
     std::shared_ptr<aiisp> m_aiisp_ptr;
 
     std::shared_ptr<vo> m_vo;
+
+    std::shared_ptr<ceanic::stream_save::stream_save> m_save;
 
     // Thread safety
     mutable std::mutex m_mutex;
