@@ -3,7 +3,7 @@
 
 /**
  * @file dev_chn.h
- * @brief Legacy single-camera channel management
+ * @brief Legacy channel management (now supports dynamic camera allocation)
  * 
  * @deprecated This class is part of the legacy single-camera architecture.
  * For new code, use camera_manager and camera_instance from cn_analyst/device/src/.
@@ -15,7 +15,12 @@
  *   2. Test backward compatibility
  *   3. Gradually refactor to use camera_manager directly
  * 
- * Status: LEGACY - Will be removed in Phase 3
+ * Status: LEGACY - MAX_CHANNEL limitation removed in Phase 3
+ * 
+ * Changes in Phase 3:
+ *   - Removed hardcoded MAX_CHANNEL=1 limitation
+ *   - Replaced g_chns[] static array with std::map for dynamic allocation
+ *   - Now supports multiple channels without recompilation
  */
 
 #include "dev_sys.h"
@@ -68,11 +73,16 @@ namespace hisilicon{namespace dev{
 #define AI_STREAM_ID 2
 
     /**
-     * @brief Legacy channel class for single-camera operation
+     * @brief Legacy channel class (now with dynamic allocation support)
      * @deprecated Use camera_instance from new architecture instead
      * 
      * For backward compatibility, consider using chn_wrapper which provides
      * the same interface but delegates to camera_manager/camera_instance.
+     * 
+     * Phase 3 Changes:
+     *   - Removed MAX_CHANNEL=1 hardcoded limitation
+     *   - Uses std::map for dynamic channel management
+     *   - Supports multiple channels via channel number parameter
      */
     class chn 
         :public ceanic::util::stream_observer
@@ -145,6 +155,9 @@ namespace hisilicon{namespace dev{
 
             static ot_scene_param g_scene_param;
             static ot_scene_video_mode g_scene_video_mode;
+            
+            // Phase 3: Dynamic channel management
+            // Replaced g_chns[MAX_CHANNEL] array with map to support unlimited cameras
             static std::map<int, std::shared_ptr<chn>> g_chn_map;
             static std::mutex g_chn_map_mutex;
 

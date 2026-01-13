@@ -12,9 +12,17 @@
 8. 抓拍JPG
 9. Yolov5(通过rtsp视频验证)
 10. vo(BT1120 1080p@60)
+11. **多摄像头支持** (Phase 3新增: 移除MAX_CHANNEL限制，支持动态摄像头配置)
 
 当前支持的sensor为: 
 1. OS04A10,OS04A10_WDR,OS08A20(for 3519DV500),OS08A20_WDR(for 3519DV500)
+
+#### Phase 3 更新 (2026-01)
+- ✅ 移除硬编码的 `MAX_CHANNEL = 1` 限制
+- ✅ 使用动态分配替代静态数组 `g_chns[]`
+- ✅ 支持通过JSON配置文件动态配置多个摄像头(最多8个)
+- ✅ 完全向后兼容单摄像头配置
+- 📖 详见: [doc/PHASE3_MIGRATION.md](doc/PHASE3_MIGRATION.md)
 
 
 #### 流程图

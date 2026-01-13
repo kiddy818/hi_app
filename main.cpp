@@ -17,6 +17,34 @@ using namespace hisilicon::dev;
 using chn_type = chn_wrapper;
 std::shared_ptr<chn_type> g_chn;
 
+/**
+ * Phase 3 Changes: Dynamic Multi-Camera Support
+ * 
+ * The application now supports dynamic camera allocation without MAX_CHANNEL limitation.
+ * 
+ * Configuration:
+ *   - /opt/ceanic/etc/vi.json: Sensor configurations (sensor1, sensor2, ...)
+ *   - /opt/ceanic/etc/venc.json: Encoder configurations (venc1, venc2, ...)
+ * 
+ * The system will automatically detect and load all configured cameras.
+ * To add more cameras, simply add more entries in the JSON files.
+ * 
+ * Example multi-camera configuration:
+ *   vi.json:
+ *     {
+ *       "sensor1": { "name": "OS04A10" },
+ *       "sensor2": { "name": "OS08A20" }
+ *     }
+ * 
+ *   venc.json:
+ *     {
+ *       "venc1": { "name": "H264_CBR", "w": 2688, "h": 1520, "fr": 30, "bitrate": 4000 },
+ *       "venc2": { "name": "H265_AVBR", "w": 3840, "h": 2160, "fr": 30, "bitrate": 8000 }
+ *     }
+ * 
+ * Currently supports up to 8 cameras (hardware limited by HiSilicon 3519DV500).
+ */
+
 #define NET_SERVICE_FILE_PATH "/opt/ceanic/etc/net_service.json"
 typedef struct
 {
