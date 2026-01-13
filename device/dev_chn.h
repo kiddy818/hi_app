@@ -29,6 +29,8 @@
 #include <stream_observer.h>
 #include "dev_vo.h"
 #include "dev_vo_bt1120.h"
+#include <map>
+#include <mutex>
 
 //for scene
 extern "C"
@@ -57,7 +59,7 @@ extern "C"
 //yolov5
 #include "dev_svp_yolov5.h"
 
-#define MAX_CHANNEL 1  // DEPRECATED: Will be removed in Phase 3, use camera_manager instead
+// MAX_CHANNEL removed - use dynamic allocation via camera_manager
 
 namespace hisilicon{namespace dev{
 
@@ -143,7 +145,8 @@ namespace hisilicon{namespace dev{
 
             static ot_scene_param g_scene_param;
             static ot_scene_video_mode g_scene_video_mode;
-            static std::shared_ptr<chn> g_chns[MAX_CHANNEL];
+            static std::map<int, std::shared_ptr<chn>> g_chn_map;
+            static std::mutex g_chn_map_mutex;
 
             static rate_auto_param g_rate_auto_param;
     };

@@ -2,6 +2,7 @@
 #include <dev_chn_wrapper.h>
 #include <json/json.h>
 #include <fstream>
+#include <vector>
 #include <rtsp/server.h>
 #include <rtsp/stream/stream_manager.h>
 #include <rtmp/session_manager.h>
@@ -93,26 +94,26 @@ typedef struct
     int fr;
     int bitrate;
 }venc_t;
-static venc_t g_venc_info[MAX_CHANNEL];
+
+// Dynamic camera configuration - replaces static MAX_CHANNEL array
+static std::vector<venc_t> g_venc_info;
+
 static void init_venc_info()
 {
     Json::Value root;
-    for(auto i = 0; i < MAX_CHANNEL; i++)
-    {
-        std::string venc = "venc" + std::to_string(i + 1);
-
-        sprintf(g_venc_info[i].name,"H264_CBR");
-        g_venc_info[i].w = 2688;
-        g_venc_info[i].h = 1520;
-        g_venc_info[i].fr = 30;
-        g_venc_info[i].bitrate = 4000;
-
-        root[venc]["name"] = g_venc_info[i].name;
-        root[venc]["w"] = g_venc_info[i].w;
-        root[venc]["h"] = g_venc_info[i].h;
-        root[venc]["fr"] = g_venc_info[i].fr;
-        root[venc]["bitrate"] = g_venc_info[i].bitrate;
-    }
+    // Initialize for single camera (backward compatible)
+    venc_t venc_cfg;
+    sprintf(venc_cfg.name,"H264_CBR");
+    venc_cfg.w = 2688;
+    venc_cfg.h = 1520;
+    venc_cfg.fr = 30;
+    venc_cfg.bitrate = 4000;
+    
+    root["venc1"]["name"] = venc_cfg.name;
+    root["venc1"]["w"] = venc_cfg.w;
+    root["venc1"]["h"] = venc_cfg.h;
+    root["venc1"]["fr"] = venc_cfg.fr;
+    root["venc1"]["bitrate"] = venc_cfg.bitrate;
 
     std::string str= root.toStyledString();
     std::ofstream ofs;
@@ -148,17 +149,29 @@ static int get_venc_info()
             return -1;
         }
 
-        Json::Value node; 
-        for(auto i = 0; i < MAX_CHANNEL; i++)
-        {
-            std::string venc= "venc" + std::to_string(i + 1);
-            node = root[venc];
-
-            sprintf(g_venc_info[i].name,"%s",node["name"].asCString());
-            g_venc_info[i].w = node["w"].asInt();
-            g_venc_info[i].h = node["h"].asInt();
-            g_venc_info[i].fr = node["fr"].asInt();
-            g_venc_info[i].bitrate = node["bitrate"].asInt();
+        // Clear and load camera configurations dynamically
+        g_venc_info.clear();
+        
+        // Load all available venc configurations
+        for (int i = 0; i < 8; i++) {  // Support up to 8 cameras
+            std::string venc = "venc" + std::to_string(i + 1);
+            if (!root.isMember(venc)) {
+                break;  // No more cameras configured
+            }
+            
+            Json::Value node = root[venc];
+            venc_t venc_cfg;
+            sprintf(venc_cfg.name, "%s", node["name"].asCString());
+            venc_cfg.w = node["w"].asInt();
+            venc_cfg.h = node["h"].asInt();
+            venc_cfg.fr = node["fr"].asInt();
+            venc_cfg.bitrate = node["bitrate"].asInt();
+            g_venc_info.push_back(venc_cfg);
+        }
+        
+        // Ensure at least one camera is configured (backward compatibility)
+        if (g_venc_info.empty()) {
+            return -1;
         }
 
         ifs.close();
@@ -176,18 +189,18 @@ typedef struct
 {
     char name[32];
 }vi_t;
-static vi_t g_vi_info[MAX_CHANNEL];
+
+// Dynamic camera configuration - replaces static MAX_CHANNEL array
+static std::vector<vi_t> g_vi_info;
+
 static void init_vi_info()
 {
     Json::Value root;
-    for(auto i = 0; i < MAX_CHANNEL; i++)
-    {
-        std::string sns = "sensor" + std::to_string(i + 1);
-
-        sprintf(g_vi_info[i].name,"OS04A10");
-
-        root[sns]["name"] = g_vi_info[i].name;
-    }
+    // Initialize for single camera (backward compatible)
+    vi_t vi_cfg;
+    sprintf(vi_cfg.name,"OS04A10");
+    
+    root["sensor1"]["name"] = vi_cfg.name;
 
     std::string str= root.toStyledString();
     std::ofstream ofs;
@@ -223,13 +236,25 @@ static int get_vi_info()
             return -1;
         }
 
-        Json::Value node; 
-        for(auto i = 0; i < MAX_CHANNEL; i++)
-        {
+        // Clear and load camera configurations dynamically
+        g_vi_info.clear();
+        
+        // Load all available sensor configurations
+        for (int i = 0; i < 8; i++) {  // Support up to 8 cameras
             std::string sns = "sensor" + std::to_string(i + 1);
-            node = root[sns];
-
-            sprintf(g_vi_info[i].name,"%s",node["name"].asCString());
+            if (!root.isMember(sns)) {
+                break;  // No more sensors configured
+            }
+            
+            Json::Value node = root[sns];
+            vi_t vi_cfg;
+            sprintf(vi_cfg.name, "%s", node["name"].asCString());
+            g_vi_info.push_back(vi_cfg);
+        }
+        
+        // Ensure at least one sensor is configured (backward compatibility)
+        if (g_vi_info.empty()) {
+            return -1;
         }
 
         ifs.close();
@@ -891,22 +916,22 @@ int main(int argc,char* argv[])
 
     //vi
     get_vi_info();
-    for(auto i = 0; i < MAX_CHANNEL; i++)
+    for(size_t i = 0; i < g_vi_info.size(); i++)
     {
-        printf("sensor%d:\n",i + 1);
-        printf("\tname:%s\n",g_vi_info[i].name);
+        printf("sensor%zu:\n", i + 1);
+        printf("\tname:%s\n", g_vi_info[i].name);
     }
 
     //venc
     get_venc_info();
-    for(auto i = 0; i < MAX_CHANNEL; i++)
+    for(size_t i = 0; i < g_venc_info.size(); i++)
     {
-        printf("venc%d:\n",i + 1);
-        printf("\tname:%s\n",g_venc_info[i].name);
-        printf("\tw:%d\n",g_venc_info[i].w);
-        printf("\th:%d\n",g_venc_info[i].h);
-        printf("\tfr:%d\n",g_venc_info[i].fr);
-        printf("\tbitrate:%d\n",g_venc_info[i].bitrate);
+        printf("venc%zu:\n", i + 1);
+        printf("\tname:%s\n", g_venc_info[i].name);
+        printf("\tw:%d\n", g_venc_info[i].w);
+        printf("\th:%d\n", g_venc_info[i].h);
+        printf("\tfr:%d\n", g_venc_info[i].fr);
+        printf("\tbitrate:%d\n", g_venc_info[i].bitrate);
     }
 
     g_chn = std::make_shared<chn_type>(g_vi_info[chn].name,g_venc_info[chn].name,chn);

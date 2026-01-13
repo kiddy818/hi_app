@@ -9,7 +9,8 @@ namespace hisilicon{namespace dev{
 
     ot_scene_param chn::g_scene_param;
     ot_scene_video_mode chn::g_scene_video_mode;
-    std::shared_ptr<chn> chn::g_chns[MAX_CHANNEL];
+    std::map<int, std::shared_ptr<chn>> chn::g_chn_map;
+    std::mutex chn::g_chn_map_mutex;
     rate_auto_param chn::g_rate_auto_param;
 
     chn::chn(const char* vi_name,const char* venc_mode,int chn_no)
@@ -116,7 +117,10 @@ namespace hisilicon{namespace dev{
         m_venc_main_ptr->register_stream_observer(shared_from_this());
         m_venc_sub_ptr->register_stream_observer(shared_from_this());
 
-        g_chns[m_chn] = shared_from_this();
+        {
+            std::lock_guard<std::mutex> lock(g_chn_map_mutex);
+            g_chn_map[m_chn] = shared_from_this();
+        }
         m_is_start = true;
         return true;
     }
@@ -154,7 +158,10 @@ namespace hisilicon{namespace dev{
         m_venc_sub_ptr = nullptr;
         m_vi_ptr = nullptr;
 
-        g_chns[m_chn] = nullptr;
+        {
+            std::lock_guard<std::mutex> lock(g_chn_map_mutex);
+            g_chn_map.erase(m_chn);
+        }
     }
 
     bool chn::start_save(const char* file)
@@ -387,12 +394,16 @@ namespace hisilicon{namespace dev{
 
     bool chn::request_i_frame(int chn,int stream)
     {
-        if(chn >= MAX_CHANNEL)
+        std::shared_ptr<dev::chn> chn_ptr;
         {
-            return false;
+            std::lock_guard<std::mutex> lock(g_chn_map_mutex);
+            auto it = g_chn_map.find(chn);
+            if (it == g_chn_map.end()) {
+                return false;
+            }
+            chn_ptr = it->second;
         }
 
-        std::shared_ptr<dev::chn> chn_ptr = g_chns[chn];
         if(!chn_ptr)
         {
             return false;
@@ -416,12 +427,16 @@ namespace hisilicon{namespace dev{
 
     bool chn::get_stream_head(int chn,int stream,ceanic::util::media_head* mh)
     {
-        if(chn >= MAX_CHANNEL)
+        std::shared_ptr<dev::chn> chn_ptr;
         {
-            return false;
+            std::lock_guard<std::mutex> lock(g_chn_map_mutex);
+            auto it = g_chn_map.find(chn);
+            if (it == g_chn_map.end()) {
+                return false;
+            }
+            chn_ptr = it->second;
         }
 
-        std::shared_ptr<dev::chn> chn_ptr = g_chns[chn];
         if(!chn_ptr)
         {
             return false;
