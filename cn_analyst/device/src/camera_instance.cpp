@@ -160,6 +160,8 @@ camera_instance::camera_instance(int32_t camera_id, const camera_config& config)
     , m_is_running(false)
 {
     m_vi_ptr = nullptr;
+    m_yolov5 = nullptr;
+    m_aiisp_ptr = nullptr;
 }
 
 camera_instance::~camera_instance() {
@@ -333,8 +335,23 @@ std::vector<int32_t> camera_instance::list_streams() const {
 bool camera_instance::enable_feature(const std::string& feature_name, const std::string& config) {
     std::lock_guard<std::mutex> lock(m_mutex);
     
+    DEV_WRITE_LOG_INFO("enable_feature %s with config %s", feature_name.c_str(), config.c_str());
+
     if (feature_name == "yolov5") {
-        return yolov5_start(config.c_str());
+        if (config.empty()) {
+            return yolov5_start(m_config.features.yolov5_model.c_str());
+        } else {
+            return yolov5_start(config.c_str());
+        }
+    }
+
+    // 暂时没有设置参数 mode， 先使用0 作为参数处理
+    if (feature_name == "aiisp") {
+        if (config.empty()) {
+            return aiisp_start(m_config.features.aiisp_model.c_str(), 0);
+        } else {
+            return aiisp_start(config.c_str(), 0);
+        }
     }
 
     return true;
@@ -345,6 +362,11 @@ bool camera_instance::disable_feature(const std::string& feature_name) {
     
     if (feature_name == "yolov5") {
         yolov5_stop();
+        return true;
+    }
+
+    if (feature_name == "aiisp") {
+        aiisp_stop();
         return true;
     }
 
@@ -658,6 +680,78 @@ void camera_instance::yolov5_stop()
         m_yolov5->stop();
         m_yolov5 = nullptr;
     }
+}
+
+bool camera_instance::aiisp_start(const char *model_file, int mode)
+{
+    if(m_aiisp_ptr)
+    {
+        return false;
+    }
+
+    if(!m_vi_ptr)
+    {
+        return false;
+    }
+
+    std::shared_ptr<vi_isp> viisp = std::dynamic_pointer_cast<vi_isp>(m_vi_ptr);
+    if(!viisp)
+    {
+        return false;
+    }
+
+    switch(mode)
+    {
+        case 0://bnr
+            {
+                aiisp_bnr::init(model_file, viisp->isp_w(), viisp->isp_h(), viisp->wdr_mode());
+                m_aiisp_ptr = std::make_shared<aiisp_bnr>(viisp->pipes()[0]);
+                break;
+            }
+
+        case 1://drc
+            {
+                aiisp_drc::init(model_file, viisp->isp_w(), viisp->isp_h(), viisp->wdr_mode());
+                m_aiisp_ptr = std::make_shared<aiisp_drc>(viisp->pipes()[0]);
+                break;
+            }
+
+        case 2://3dnr
+            {
+                aiisp_3dnr::init(model_file, viisp->isp_w(), viisp->isp_h());
+                m_aiisp_ptr = std::make_shared<aiisp_3dnr>(viisp->pipes()[0]);
+                break;
+            }
+
+        default:
+            {
+                return false;
+            }
+    }
+
+
+    if(!m_aiisp_ptr->start())
+    {
+        m_aiisp_ptr.reset();
+        return false;
+    }
+
+    DEV_WRITE_LOG_INFO("camera_instance::aiisp_start: start done");
+
+    return true;
+}
+
+void camera_instance::aiisp_stop()
+{
+    if(m_aiisp_ptr)
+    {
+        m_aiisp_ptr->stop();
+        m_aiisp_ptr.reset();
+    }
+
+    aiisp_bnr::release();
+    aiisp_drc::release();
+    aiisp_3dnr::release();
 }
 
 } // namespace device

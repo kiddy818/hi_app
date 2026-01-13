@@ -15,6 +15,12 @@
 #include "dev_vi_os08a20_liner.h"
 #include "dev_vi_os08a20_2to1wdr.h"
 
+//aiisp
+#include <aiisp_bnr.h>
+#include <aiisp_drc.h>
+#include <aiisp_3dnr.h>
+
+// yolov5
 #include "dev_svp_yolov5.h"
 
 using namespace hisilicon::dev;
@@ -260,6 +266,10 @@ public:
     bool yolov5_start(const char* model_file);
     void yolov5_stop();
 
+    // AIISP features
+    bool aiisp_start(const char* model_file, int mode);
+    void aiisp_stop();
+
     
 private:
     // Internal initialization methods
@@ -292,7 +302,9 @@ private:
     std::shared_ptr<vi> m_vi_ptr;
 
     std::shared_ptr<yolov5> m_yolov5;
-    
+
+    std::shared_ptr<aiisp> m_aiisp_ptr;
+
     // Thread safety
     mutable std::mutex m_mutex;
 };
